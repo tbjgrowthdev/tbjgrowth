@@ -1,0 +1,412 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+// ------------------------------------------------------
+// User & Authentication (NextAuth)
+// ------------------------------------------------------
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String?     @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role        @default(EDITOR)
+  slug          String?     @unique
+  bio           String?     @db.Text
+  socialLinks   String?     @db.Text // JSON string for social links
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  caseStudies   CaseStudy[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ------------------------------------------------------
+// CMS Content Models
+// ------------------------------------------------------
+
+model Page {
+  id      String  @id @default(cuid())
+  title   String
+  slug    String  @unique
+  content String? @db.Text
+
+  // SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  focusKeyword    String?
+  ogImage         String?
+  twitterCard     String?
+  canonicalUrl    String?
+  schemaJson      String? @db.Text
+  isIndexable     Boolean @default(true)
+
+  // Settings
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Post {
+  id               String  @id @default(cuid())
+  title            String
+  slug             String  @unique
+  content          String  @db.Text
+  excerpt          String? @db.Text
+  featuredImage    String?
+  featuredImageAlt String?
+
+  // Relations
+  authorId   String?
+  author     User?      @relation(fields: [authorId], references: [id])
+  categories Category[]
+  tags       Tag[]
+
+  // SEO Fields
+  metaTitle        String?
+  metaDescription  String?
+  focusKeyword     String?
+  ogImage          String?
+  twitterCard      String?
+  canonicalUrl     String?
+  schemaJson       String? @db.Text
+  seoScore         Int?
+  readabilityScore Int?
+  keywordDensity   Float?
+  isIndexable      Boolean @default(true)
+
+  // Settings
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  posts       Post[]
+  caseStudy   CaseStudy? @relation(fields: [caseStudyId], references: [id])
+  caseStudyId String?
+}
+
+model Tag {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  posts       Post[]
+  caseStudy   CaseStudy? @relation(fields: [caseStudyId], references: [id])
+  caseStudyId String?
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model CaseStudy {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  clientName       String
+  industry         String
+  serviceType      String
+  results          String?  @db.Text
+  content          String   @db.Text
+  excerpt          String?  @db.Text
+  featuredImage    String?
+  featuredImageAlt String?
+  imageGallery     String[] // Array of image URLs
+  isFeatured       Boolean  @default(false) // Show on home page
+
+  // Relations
+  authorId   String?
+  author     User?      @relation(fields: [authorId], references: [id])
+  categories Category[]
+  tags       Tag[]
+
+  // SEO Fields
+  metaTitle        String?
+  metaDescription  String?
+  focusKeyword     String?
+  ogImage          String?
+  twitterCard      String?
+  canonicalUrl     String?
+  schemaJson       String? @db.Text
+  seoScore         Int?
+  readabilityScore Int?
+  keywordDensity   Float?
+  isIndexable      Boolean @default(true)
+
+  // Settings
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// ------------------------------------------------------
+// Lead Capture
+// ------------------------------------------------------
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  message   String   @db.Text
+  source    String? // The page where the form was submitted
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+}
+
+// ------------------------------------------------------
+// Technical SEO
+// ------------------------------------------------------
+
+model Redirect {
+  id          String   @id @default(cuid())
+  source      String   @unique
+  destination String
+  permanent   Boolean  @default(true) // 301 vs 302
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NotFoundLog {
+  id        String   @id @default(cuid())
+  path      String
+  referer   String?
+  userAgent String?
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Dynamic Page Content Models (Phase 3)
+// ------------------------------------------------------
+
+model AgencyService {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  iconName    String   // String name to map to Lucide icon
+  features    String?  @db.Text // JSON array of feature objects or strings
+  statValue   String?
+  statLabel   String?
+  gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
+  order       Int      @default(0) // For sorting on the frontend
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  clientName  String
+  role        String?
+  company     String?
+  industry    String?
+  avatar      String?  // Image URL or Initials string
+  rating      Int      @default(5)
+  quote       String   @db.Text
+  metrics     String?  @db.Text // JSON array for metrics e.g., [{label: "Revenue Growth", value: "+320%", icon: "TrendingUp"}]
+  gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrustedPartner {
+  id          String   @id @default(cuid())
+  name        String
+  logoUrl     String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  // Singleton record, can enforce with id = "global"
+  phone       String?
+  email       String?
+  address     String?
+  facebookUrl String?
+  twitterUrl  String?
+  linkedinUrl String?
+  instagramUrl String?
+  gbpName     String?
+  gbpAddress  String?
+  gbpPhone    String?
+  gbpWebsite  String?
+  robotsTxt   String?  @db.Text
+  usdPerGbp   Float?   @default(1.27) // exchange rate for pricing display
+  bdtPerGbp   Float?   @default(148.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Phase 3: Keyword & Rank Tracking
+// ------------------------------------------------------
+
+model TrackedKeyword {
+  id         String       @id @default(cuid())
+  term       String
+  targetUrl  String? // page path this keyword is meant to rank for, e.g. "/services"
+  country    String       @default("GB")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  rankChecks RankCheck[]
+
+  @@unique([term, targetUrl])
+}
+
+model RankCheck {
+  id               String         @id @default(cuid())
+  trackedKeywordId String
+  trackedKeyword   TrackedKeyword @relation(fields: [trackedKeywordId], references: [id], onDelete: Cascade)
+  position         Int? // null = not found in top results
+  checkedAt        DateTime       @default(now())
+}
+
+model CompetitorDomain {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  name      String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+// ------------------------------------------------------
+// Phase 5: Google Analytics / Search Console Integration
+// ------------------------------------------------------
+
+model GoogleIntegration {
+  id             String   @id @default(cuid())
+  // Singleton record
+  accessToken    String   @db.Text
+  refreshToken   String   @db.Text
+  expiresAt      DateTime
+  scope          String?
+  connectedEmail String?
+  ga4PropertyId  String?
+  gscSiteUrl     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Phase 6: Technical/Admin
+// ------------------------------------------------------
+
+model WebVitalSample {
+  id        String   @id @default(cuid())
+  path      String
+  metric    String // LCP | CLS | INP | FCP | TTFB
+  value     Float
+  rating    String // good | needs-improvement | poor
+  createdAt DateTime @default(now())
+
+  @@index([metric, createdAt])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  success   Boolean
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
+model PricingPlan {
+  id          String   @id @default(cuid())
+  name        String
+  tagline     String?
+  priceGbp    Float
+  billingTerm String   @default("month") // month | year | one-time
+  features    String   @db.Text // JSON array of strings
+  isPopular   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TBJSystem {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  iconName    String
+  previewIcon String?
+  features    String?  @db.Text // JSON array of features
+  status      String?
+  progress    Int      @default(0)
+  tagline     String?
+  gradient    String?
+  quarterly   String?
+  availability String?
+  shapeName   String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

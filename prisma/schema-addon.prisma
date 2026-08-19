@@ -1,0 +1,77 @@
+// ------------------------------------------------------
+// Dynamic Page Content Models (Phase 3)
+// ------------------------------------------------------
+
+model AgencyService {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  iconName    String   // String name to map to Lucide icon
+  features    String?  @db.Text // JSON array of feature objects or strings
+  statValue   String?
+  statLabel   String?
+  gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
+  order       Int      @default(0) // For sorting on the frontend
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  clientName  String
+  role        String?
+  company     String?
+  industry    String?
+  avatar      String?  // Image URL or Initials string
+  rating      Int      @default(5)
+  quote       String   @db.Text
+  metrics     String?  @db.Text // JSON array for metrics e.g., [{label: "Revenue Growth", value: "+320%", icon: "TrendingUp"}]
+  gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TrustedPartner {
+  id          String   @id @default(cuid())
+  name        String
+  logoUrl     String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  // Singleton record, can enforce with id = "global"
+  phone       String?
+  email       String?
+  address     String?
+  facebookUrl String?
+  twitterUrl  String?
+  linkedinUrl String?
+  instagramUrl String?
+  gbpName     String?
+  gbpAddress  String?
+  gbpPhone    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TBJSystem {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  description String   @db.Text
+  iconName    String
+  previewIcon String?
+  features    String?  @db.Text // JSON array of features
+  status      String?
+  progress    Int      @default(0)
+  tagline     String?
+  gradient    String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
