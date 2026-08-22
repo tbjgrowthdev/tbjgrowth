@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && opennextjs-cloudflare build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "build:cloudflare": "prisma generate && opennextjs-cloudflare build",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "engines": {
