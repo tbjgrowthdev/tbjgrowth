@@ -8,6 +8,16 @@ import { Menu, X, Sun, Moon, ArrowRight } from "lucide-react";
 
 const navItems = [
   {
+    label: "Home",
+    href: "/",
+    type: "route",
+  },
+  {
+    label: "About us",
+    href: "/about",
+    type: "route",
+  },
+  {
     label: "Services",
     href: "/services",
     type: "route",
@@ -141,7 +151,7 @@ export default function Navbar() {
                   transition={{ delay: 0.1 * index, duration: 0.3 }}
                   className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 group ${activeSection === item.href
                     ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    : "text-gray-600 dark:text-white hover:text-gray-900 dark:hover:text-white"
                     }`}
                 >
                   {item.label}

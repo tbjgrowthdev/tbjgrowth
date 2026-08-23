@@ -64,7 +64,7 @@ export function Navbar() {
                 transition={{ delay: 0.1 * i + 0.3 }}
                 className="text-sm font-medium text-gray-600 hover:text-emerald-deep dark:text-gray-300 dark:hover:text-aurora transition-colors"
               >
-                {link.name}
+                {link.name}  
               </motion.a>
             ))}
           </nav>

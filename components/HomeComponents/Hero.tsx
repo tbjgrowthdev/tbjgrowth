@@ -9,9 +9,20 @@ import {
   TrendingUp,
   Building2,
   Sparkles,
+  Linkedin,
+  Twitter,
+  Instagram,
+  Facebook,
 } from "lucide-react";
 
-export default function Hero() {
+type SiteSettings = {
+  facebookUrl?: string | null;
+  twitterUrl?: string | null;
+  linkedinUrl?: string | null;
+  instagramUrl?: string | null;
+} | null;
+
+export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -66,6 +77,13 @@ export default function Hero() {
       duration: 18,
     },
   ];
+
+  const socialLinks = [
+    { icon: Linkedin, href: settings?.linkedinUrl, label: "LinkedIn" },
+    { icon: Twitter, href: settings?.twitterUrl, label: "Twitter" },
+    { icon: Instagram, href: settings?.instagramUrl, label: "Instagram" },
+    { icon: Facebook, href: settings?.facebookUrl, label: "Facebook" },
+  ].filter((social): social is typeof social & { href: string } => Boolean(social.href));
 
   // Trust badges with counting animation
   const stats = [
@@ -195,6 +213,34 @@ export default function Hero() {
                 <span>View Our Work</span>
               </motion.a>
             </motion.div>
+
+            {/* Social Links */}
+            {socialLinks.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+                className="flex items-center justify-center lg:justify-start gap-3 mb-12"
+              >
+                {socialLinks.map((social) => {
+                  const Icon = social.icon;
+                  return (
+                    <motion.a
+                      key={social.label}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      whileHover={{ scale: 1.1, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gradient-to-br hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                      aria-label={social.label}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </motion.a>
+                  );
+                })}
+              </motion.div>
+            )}
 
             {/* Funnel Steps Preview */}
             {/* <motion.div
