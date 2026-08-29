@@ -88,57 +88,57 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">TBJ System Details</h2>
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <h2 className="text-xl font-bold text-foreground mb-6">TBJ System Details</h2>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+              <label className="block text-sm font-medium text-muted mb-1">Title</label>
               <input
                 type="text"
                 name="title"
                 required
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. TBJ Intelligence"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subtitle</label>
+              <label className="block text-sm font-medium text-muted mb-1">Subtitle</label>
               <input
                 type="text"
                 name="subtitle"
                 value={formData.subtitle}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. AI-Powered Analytics Suite"
               />
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-muted mb-1">Description</label>
             <textarea
               name="description"
               required
               rows={3}
               value={formData.description}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               placeholder="Detailed description..."
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tagline</label>
+              <label className="block text-sm font-medium text-muted mb-1">Tagline</label>
               <input
                 type="text"
                 name="tagline"
                 value={formData.tagline}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. Know before they do"
               />
             </div>
@@ -146,46 +146,46 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Main Icon Name</label>
+              <label className="block text-sm font-medium text-muted mb-1">Main Icon Name</label>
               <input
                 type="text"
                 name="iconName"
                 required
                 value={formData.iconName}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. BrainCircuit"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Preview Icon Name</label>
+              <label className="block text-sm font-medium text-muted mb-1">Preview Icon Name</label>
               <input
                 type="text"
                 name="previewIcon"
                 value={formData.previewIcon}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. LineChart"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Shape Name (Lucide)</label>
+              <label className="block text-sm font-medium text-muted mb-1">Shape Name (Lucide)</label>
               <input
                 type="text"
                 name="shapeName"
                 value={formData.shapeName}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. Circle"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gradient Theme</label>
+              <label className="block text-sm font-medium text-muted mb-1">Gradient Theme</label>
               <select
                 name="gradient"
                 value={formData.gradient}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               >
                 {GRADIENTS.map((g) => (
                   <option key={g.value} value={g.value}>{g.label}</option>
@@ -193,37 +193,37 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort Order</label>
+              <label className="block text-sm font-medium text-muted mb-1">Sort Order</label>
               <input
                 type="number"
                 name="order"
                 value={formData.order}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Release (Quarterly)</label>
+              <label className="block text-sm font-medium text-muted mb-1">Expected Release (Quarterly)</label>
               <input
                 type="text"
                 name="quarterly"
                 value={formData.quarterly}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. Q4 2026"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Availability Status</label>
+              <label className="block text-sm font-medium text-muted mb-1">Availability Status</label>
               <input
                 type="text"
                 name="availability"
                 value={formData.availability}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. Closed Beta"
               />
             </div>
@@ -232,36 +232,36 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Status & Progress</h2>
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+          <h2 className="text-xl font-bold text-foreground mb-6">Status & Progress</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status Text</label>
+              <label className="block text-sm font-medium text-muted mb-1">Status Text</label>
               <input
                 type="text"
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
                 placeholder="e.g. Beta Q4 2026"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Progress (%)</label>
+              <label className="block text-sm font-medium text-muted mb-1">Progress (%)</label>
               <input
                 type="number"
                 name="progress"
                 min="0" max="100"
                 value={formData.progress}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Features (List)</h2>
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+          <h2 className="text-xl font-bold text-foreground mb-6">Features (List)</h2>
           <div className="space-y-4">
             {formData.features.map((feature: string, index: number) => (
               <input
@@ -269,7 +269,7 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
                 type="text"
                 value={feature}
                 onChange={(e) => handleFeatureChange(index, e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
                 placeholder={`Feature ${index + 1}`}
               />
             ))}
@@ -277,11 +277,11 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
         </div>
       </div>
 
-      <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex justify-end pt-6 border-t border-border">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
         >
           <Save size={20} />
           {isSubmitting ? "Saving..." : "Save System"}

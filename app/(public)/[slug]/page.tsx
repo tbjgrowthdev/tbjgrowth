@@ -51,15 +51,15 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
   const schemaMarkup = page.schemaJson || null;
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-24 pb-20">
+    <main className="min-h-screen bg-background pt-24 pb-20">
       {schemaMarkup && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaMarkup }} />
       )}
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight mb-10 text-center">
+        <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-10 text-center">
           {page.title}
         </h1>
-        <div className="prose prose-lg dark:prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-500 prose-pre:overflow-x-auto prose-img:rounded-2xl">
+        <div className="prose prose-lg dark:prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
           <div dangerouslySetInnerHTML={{ __html: page.content || "" }} />
         </div>
       </article>

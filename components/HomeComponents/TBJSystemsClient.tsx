@@ -27,13 +27,13 @@ const fallbackProducts = [
     ],
     status: "Beta Q4 2026",
     progress: 75,
-    gradient: "from-blue-500 to-cyan-500",
-    bgLight: "from-blue-50 to-cyan-50",
-    bgDark: "from-blue-500/10 to-cyan-500/10",
-    textGradient: "from-blue-600 to-cyan-600",
-    borderColor: "border-blue-200 dark:border-blue-500/30",
-    glowColor: "shadow-blue-500/25",
-    accentColor: "bg-blue-500",
+    gradient: "from-orange-600 to-orange-400",
+    bgLight: "from-orange-50 to-orange-100",
+    bgDark: "from-orange-500/10 to-orange-500/10",
+    textGradient: "from-orange-600 to-orange-600",
+    borderColor: "border-orange-200 dark:border-orange-500/30",
+    glowColor: "shadow-orange-500/25",
+    accentColor: "bg-orange-500",
     shape: "Circle",
     quarterly: "Q4 2026",
     availability: "Closed Beta",
@@ -42,8 +42,8 @@ const fallbackProducts = [
 
 // Helper to calculate derived colors based on gradient
 function processProduct(product: any) {
-  const gradient = product.gradient || "from-blue-500 to-cyan-500";
-  const colorName = gradient.split('-')[1] || "blue";
+  const gradient = product.gradient || "from-orange-600 to-orange-400";
+  const colorName = gradient.split('-')[1] || "orange";
 
   return {
     ...product,
@@ -84,14 +84,14 @@ function ProductDetail({
         exit={{ opacity: 0, scale: 0.9, y: 30 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800"
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-card rounded-3xl shadow-2xl border border-border"
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 z-10 p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:scale-110 transition-transform"
+          className="absolute top-5 right-5 z-10 p-2 bg-background rounded-full hover:scale-110 transition-transform"
         >
-          <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -106,15 +106,15 @@ function ProductDetail({
               <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${product.gradient} text-white mb-1`}>
                 {product.status}
               </span>
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
                 {product.title}
               </h2>
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-2">
+          <p className="text-sm text-caption font-medium mb-2">
             {product.tagline}
           </p>
-          <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+          <p className="text-muted leading-relaxed">
             {product.description}
           </p>
         </div>
@@ -124,12 +124,12 @@ function ProductDetail({
           {/* Progress */}
           <div>
             <div className="flex justify-between mb-2">
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">Development Progress</span>
+              <span className="text-sm font-semibold text-foreground">Development Progress</span>
               <span className={`text-sm font-bold bg-gradient-to-r ${product.textGradient} bg-clip-text text-transparent`}>
                 {product.progress}%
               </span>
             </div>
-            <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-2.5 bg-background rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${product.progress}%` }}
@@ -141,7 +141,7 @@ function ProductDetail({
 
           {/* Features */}
           <div>
-            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Key Features</h4>
+            <h4 className="text-lg font-bold text-foreground mb-4">Key Features</h4>
             <div className="space-y-3">
               {product.features && product.features.map((feature: any, i: number) => {
                 const featureText = typeof feature === 'string' ? feature : feature.text;
@@ -151,14 +151,14 @@ function ProductDetail({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-background border border-border"
                   >
                     <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${product.gradient} flex items-center justify-center flex-shrink-0`}>
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{featureText}</span>
+                    <span className="text-sm text-muted">{featureText}</span>
                   </motion.div>
                 );
               })}
@@ -167,15 +167,15 @@ function ProductDetail({
 
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <Clock className="w-5 h-5 text-gray-400 mb-2" />
-              <div className="text-sm text-gray-500 dark:text-gray-400">Expected Release</div>
-              <div className="font-bold text-gray-900 dark:text-white">{product.quarterly}</div>
+            <div className="p-4 rounded-xl bg-background border border-border">
+              <Clock className="w-5 h-5 text-caption mb-2" />
+              <div className="text-sm text-caption">Expected Release</div>
+              <div className="font-bold text-foreground">{product.quarterly}</div>
             </div>
-            <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <Rocket className="w-5 h-5 text-gray-400 mb-2" />
-              <div className="text-sm text-gray-500 dark:text-gray-400">Availability</div>
-              <div className="font-bold text-gray-900 dark:text-white">{product.availability}</div>
+            <div className="p-4 rounded-xl bg-background border border-border">
+              <Rocket className="w-5 h-5 text-caption mb-2" />
+              <div className="text-sm text-caption">Availability</div>
+              <div className="font-bold text-foreground">{product.availability}</div>
             </div>
           </div>
 
@@ -220,7 +220,7 @@ function ProductCard({
       className="group relative cursor-pointer"
     >
       {/* Card */}
-      <div className={`relative h-full bg-white dark:bg-gray-900 rounded-2xl border ${product.borderColor} overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 hover:-translate-y-2`}>
+      <div className={`relative h-full bg-card rounded-2xl border ${product.borderColor} overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-black/50 hover:-translate-y-2`}>
         {/* Top accent bar */}
         <div className={`h-1.5 bg-gradient-to-r ${product.gradient}`} />
 
@@ -233,7 +233,7 @@ function ProductCard({
             >
               <ProductIcon className={`w-6 h-6 text-transparent bg-clip-text bg-gradient-to-br ${product.textGradient}`} />
             </motion.div>
-            <ShapeIcon className={`w-5 h-5 text-gray-300 dark:text-gray-600 group-hover:text-gray-400 dark:group-hover:text-gray-500 transition-colors`} />
+            <ShapeIcon className={`w-5 h-5 text-caption group-hover:text-muted transition-colors`} />
           </div>
 
           {/* Status badge */}
@@ -244,22 +244,22 @@ function ProductCard({
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5">
+          <h3 className="text-lg font-bold text-foreground mb-1.5">
             {product.title}
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-caption mb-4">
             {product.tagline}
           </p>
 
           {/* Progress */}
           <div className="mb-4">
             <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-gray-500 dark:text-gray-500">Progress</span>
+              <span className="text-caption">Progress</span>
               <span className={`font-bold bg-gradient-to-r ${product.textGradient} bg-clip-text text-transparent`}>
                 {product.progress}%
               </span>
             </div>
-            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-background rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={isInView ? { width: `${product.progress}%` } : {}}
@@ -296,7 +296,7 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
       <section
         id="tbj-systems"
         ref={sectionRef}
-        className="relative py-20 lg:py-28 bg-white dark:bg-gray-950 transition-colors duration-500 overflow-hidden"
+        className="relative py-20 lg:py-28 bg-background transition-colors duration-500 overflow-hidden"
       >
         {/* Background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -307,12 +307,12 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
           <motion.div
             animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 10, repeat: Infinity }}
-            className="absolute top-1/4 -left-20 w-96 h-96 rounded-full blur-3xl bg-blue-500/10 dark:bg-blue-500/5"
+            className="absolute top-1/4 -left-20 w-96 h-96 rounded-full blur-3xl bg-brand-orange/10 dark:bg-brand-orange/5"
           />
           <motion.div
             animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
             transition={{ duration: 12, repeat: Infinity, delay: 2 }}
-            className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full blur-3xl bg-purple-500/10 dark:bg-purple-500/5"
+            className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full blur-3xl bg-charcoal/10 dark:bg-white/5"
           />
         </div>
 
@@ -329,21 +329,21 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-4"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
             >
-              <Rocket className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              <Rocket className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+              <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
                 What's Coming Next
               </span>
             </motion.div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               TBJ{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
                 Systems
               </span>
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-lg text-muted max-w-2xl mx-auto">
               We're building the next generation of AI-powered SaaS products.
               These tools will redefine how businesses grow, automate, and scale.
             </p>
@@ -383,10 +383,10 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
                 transition={{ delay: 0.6 + i * 0.1 }}
                 className="text-center"
               >
-                <div className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                <div className="text-2xl lg:text-3xl font-bold text-foreground">
                   {item.value}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <div className="text-sm text-caption mt-1">
                   {item.label}
                 </div>
               </motion.div>

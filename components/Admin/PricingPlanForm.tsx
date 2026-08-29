@@ -47,10 +47,10 @@ export default function PricingPlanForm({ initialData }: { initialData?: any }) 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/admin/pricing" className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+        <Link href="/admin/pricing" className="p-2 bg-card rounded-lg hover:bg-tint transition-colors">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{initialData ? "Edit Plan" : "Add Pricing Plan"}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{initialData ? "Edit Plan" : "Add Pricing Plan"}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -61,46 +61,46 @@ export default function PricingPlanForm({ initialData }: { initialData?: any }) 
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan Name</label>
+            <label className="block text-sm font-medium text-muted mb-1">Plan Name</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               placeholder="e.g. Growth"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tagline</label>
+            <label className="block text-sm font-medium text-muted mb-1">Tagline</label>
             <input
               type="text"
               value={formData.tagline}
               onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               placeholder="e.g. For growing businesses"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price (GBP)</label>
+              <label className="block text-sm font-medium text-muted mb-1">Price (GBP)</label>
               <input
                 type="number"
                 step="0.01"
                 required
                 value={formData.priceGbp}
                 onChange={(e) => setFormData({ ...formData, priceGbp: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Term</label>
+              <label className="block text-sm font-medium text-muted mb-1">Billing Term</label>
               <select
                 value={formData.billingTerm}
                 onChange={(e) => setFormData({ ...formData, billingTerm: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               >
                 <option value="month">Per Month</option>
                 <option value="year">Per Year</option>
@@ -109,23 +109,23 @@ export default function PricingPlanForm({ initialData }: { initialData?: any }) 
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Features (one per line)</label>
+            <label className="block text-sm font-medium text-muted mb-1">Features (one per line)</label>
             <textarea
               rows={6}
               value={formData.features}
               onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               placeholder={"Up to 5 pages\nBasic SEO setup\nMonthly report"}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Order</label>
+              <label className="block text-sm font-medium text-muted mb-1">Display Order</label>
               <input
                 type="number"
                 value={formData.order}
                 onChange={(e) => setFormData({ ...formData, order: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
             <div className="flex items-center gap-2 pt-6">
@@ -134,9 +134,9 @@ export default function PricingPlanForm({ initialData }: { initialData?: any }) 
                 id="isPopular"
                 checked={formData.isPopular}
                 onChange={(e) => setFormData({ ...formData, isPopular: e.target.checked })}
-                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+                className="w-4 h-4 rounded border-border"
               />
-              <label htmlFor="isPopular" className="text-sm text-gray-700 dark:text-gray-300">Mark as "Most Popular"</label>
+              <label htmlFor="isPopular" className="text-sm text-muted">Mark as "Most Popular"</label>
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function PricingPlanForm({ initialData }: { initialData?: any }) 
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
           >
             <Save size={20} />
             {loading ? "Saving..." : initialData ? "Update Plan" : "Create Plan"}

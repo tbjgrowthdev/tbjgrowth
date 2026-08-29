@@ -12,7 +12,7 @@ export default async function EditCaseStudy({ params }: { params: Promise<{ id: 
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Case Study: {caseStudy.title}</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Case Study: {caseStudy.title}</h1>
       <CaseStudyForm initialData={caseStudy} />
     </div>
   );

@@ -2,23 +2,38 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  /* Colors */
-  --color-emerald-deep: #064E3B;
-  --color-forest: #047857;
-  --color-aurora: #34D399;
-  --color-gold: #FCD34D;
-  --color-copper: #D97706;
-  --color-orange-accent: #FF5722;
-  --color-orange-glow: #FF8A65;
-  
-  /* Light Mode Neutrals */
-  --color-ivory: #FFFFF0;
-  --color-teal-muted: #F0FDFA;
-  
-  /* Dark Mode Neutrals */
+  /* Brand Scale - burnt orange / terracotta, matched to the TBJ logo */
+  --color-brand-100: #FFEDE2;
+  --color-brand-200: #FFD0B4;
+  --color-brand-300: #FF9557;
+  --color-brand-400: #F4732F;
+  --color-brand-500: #E2571F;
+  --color-brand-600: #C4491A;
+  --color-brand-700: #A83A11;
+  --color-brand-800: #7A290B;
+  --color-brand-900: #4A1806;
+
+  /* Back-compat aliases (used across the app) */
+  --color-brand-orange-light: var(--color-brand-300);
+  --color-brand-orange: var(--color-brand-500);
+  --color-brand-orange-deep: var(--color-brand-700);
+  --color-ivory: #FDFBFA;
+  --color-cream: #F4EEE9;
+  --color-off-black: #1B1512;
+  --color-charcoal: #1A1412;
   --color-graphite: #374151;
-  --color-charcoal: #1F2937;
-  --color-off-black: #0B0F19;
+
+  /* Theme-reactive surface tokens - values swap between :root and .dark below */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--card-bg);
+  --color-card-foreground: var(--card-fg);
+  --color-border: var(--border-c);
+  --color-accent-border: var(--accent-border-c);
+  --color-muted: var(--muted-fg);
+  --color-caption: var(--caption-fg);
+  --color-stat: var(--stat-bg);
+  --color-tint: var(--tint-bg);
 
   /* Typography */
   --font-heading: var(--font-syne);
@@ -29,27 +44,37 @@
 
 @layer base {
   :root {
-    --background: var(--color-ivory);
-    --foreground: var(--color-off-black);
-    --card: #ffffff;
-    --card-foreground: var(--color-off-black);
-    --border: #e2e8f0;
+    --bg: #FDFBFA;
+    --fg: #1B1512;
+    --card-bg: #F4EEE9;
+    --card-fg: #1B1512;
+    --border-c: #E3D9D2;
+    --accent-border-c: #F3C7AC;
+    --muted-fg: #5C4F48;
+    --caption-fg: #8A7C74;
+    --stat-bg: #FFF2E9;
+    --tint-bg: #FFF2E9;
   }
 
   .dark {
-    --background: var(--color-off-black);
-    --foreground: var(--color-ivory);
-    --card: rgba(31, 41, 55, 0.4);
-    --card-foreground: var(--color-ivory);
-    --border: rgba(255, 255, 255, 0.1);
+    --bg: #0E0B0A;
+    --fg: #F2ECE8;
+    --card-bg: #1A1412;
+    --card-fg: #F2ECE8;
+    --border-c: #241C18;
+    --accent-border-c: #46281B;
+    --muted-fg: #A2938B;
+    --caption-fg: #6E605A;
+    --stat-bg: #2A130A;
+    --tint-bg: #2A130A;
   }
 
   * {
-    @apply border-[var(--border)];
+    @apply border-border;
   }
 
   body {
-    @apply bg-[var(--background)] text-[var(--foreground)] font-body antialiased;
+    @apply bg-background text-foreground font-body antialiased;
     overflow-x: hidden;
   }
 
@@ -63,12 +88,12 @@
     @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-lg dark:bg-black/20 dark:border-white/10;
   }
   .glass-card {
-    @apply rounded-2xl bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl dark:bg-[var(--color-charcoal)]/40 dark:border-white/10;
+    @apply rounded-2xl bg-card/70 backdrop-blur-xl border border-border shadow-xl;
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-deep to-aurora dark:from-aurora dark:to-emerald-deep;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-700 to-brand-500 dark:from-brand-300 dark:to-brand-500;
   }
   .bg-gradient-premium {
-    @apply bg-gradient-to-br from-ivory to-teal-muted dark:from-off-black dark:to-charcoal;
+    @apply bg-gradient-to-br from-background to-card;
   }
 }

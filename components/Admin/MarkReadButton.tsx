@@ -20,7 +20,7 @@ export default function MarkReadButton({ id }: { id: string }) {
     <button
       onClick={handleClick}
       disabled={isMarking}
-      className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+      className="flex items-center gap-1.5 text-xs font-medium text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange disabled:opacity-50"
     >
       <CheckCheck size={14} />
       {isMarking ? "Marking..." : "Mark as read"}

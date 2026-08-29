@@ -16,20 +16,20 @@ export default function SslChecker() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">SSL Certificate</h3>
+        <h3 className="text-sm font-semibold text-foreground">SSL Certificate</h3>
         <button
           onClick={runCheck}
           disabled={isChecking}
-          className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50"
+          className="flex items-center gap-1.5 text-xs text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange disabled:opacity-50"
         >
           <PlayCircle size={14} />
           {isChecking ? "Checking..." : "Check Now"}
         </button>
       </div>
 
-      {!result && <p className="text-xs text-gray-500 dark:text-gray-400">Click "Check Now" to verify the live certificate.</p>}
+      {!result && <p className="text-xs text-caption">Click "Check Now" to verify the live certificate.</p>}
 
       {result && (
         result.error ? (
@@ -38,10 +38,10 @@ export default function SslChecker() {
           <div className="flex items-center gap-2">
             {result.valid ? <ShieldCheck size={18} className="text-green-500" /> : <ShieldAlert size={18} className="text-red-500" />}
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-sm font-medium text-foreground">
                 {result.valid ? "Valid" : "Invalid"} — expires in {result.daysRemaining} day{result.daysRemaining === 1 ? "" : "s"}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-caption">
                 {result.expiresAt && new Date(result.expiresAt).toLocaleDateString()}
               </p>
             </div>

@@ -20,12 +20,12 @@ const fallbackServices = [
             { icon: "Code2", text: "Next.js & React" },
             { icon: "Zap", text: "Performance Optimized" },
         ],
-        gradient: "from-blue-500 to-cyan-500",
-        bgGradient: "from-blue-500/10 to-cyan-500/10",
-        shadowColor: "shadow-blue-500/20",
+        gradient: "from-brand-orange-deep to-brand-orange",
+        bgGradient: "from-brand-orange/10 to-brand-orange/10",
+        shadowColor: "shadow-brand-orange/20",
         stat: "98%",
         statLabel: "PageSpeed Score",
-        color: "blue",
+        color: "orange",
     },
     {
         id: "smm",
@@ -40,12 +40,12 @@ const fallbackServices = [
             { icon: "Megaphone", text: "Paid Social Ads" },
             { icon: "TrendingUp", text: "Analytics & Insights" },
         ],
-        gradient: "from-purple-500 to-pink-500",
-        bgGradient: "from-purple-500/10 to-pink-500/10",
-        shadowColor: "shadow-purple-500/20",
+        gradient: "from-charcoal to-off-black",
+        bgGradient: "from-charcoal/10 to-off-black/10",
+        shadowColor: "shadow-charcoal/20",
         stat: "2.5M+",
         statLabel: "Monthly Reach",
-        color: "purple",
+        color: "charcoal",
     },
 ];
 
@@ -67,8 +67,8 @@ function ServiceCard({
     const featuresList = typeof service.features === 'string' ? JSON.parse(service.features) : service.features;
     
     // derive fields that might not be in DB but are needed
-    const bgGradient = service.bgGradient || (service.gradient ? service.gradient.replace(/-\d{3}/g, '$&/10') : "from-blue-500/10 to-cyan-500/10");
-    const shadowColor = service.shadowColor || (service.gradient ? `shadow-${service.gradient.split('-')[1]}-500/20` : "shadow-blue-500/20");
+    const bgGradient = service.bgGradient || (service.gradient ? service.gradient.replace(/-\d{3}/g, '$&/10') : "from-brand-orange/10 to-brand-orange/10");
+    const shadowColor = service.shadowColor || (service.gradient ? `shadow-${service.gradient.split('-')[1]}-500/20` : "shadow-brand-orange/20");
 
     return (
         <motion.div
@@ -79,7 +79,7 @@ function ServiceCard({
             onClick={onClick}
             className={`group relative cursor-pointer rounded-2xl p-6 transition-all duration-500 border ${isActive
                     ? `bg-gradient-to-br ${bgGradient} border-transparent shadow-2xl ${shadowColor} scale-[1.02] z-10`
-                    : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl hover:scale-[1.01]"
+                    : "bg-card border-border hover:border-accent-border hover:shadow-xl hover:scale-[1.01]"
                 }`}
         >
             {/* Card Content */}
@@ -90,22 +90,22 @@ function ServiceCard({
                     transition={{ duration: 2, repeat: Infinity }}
                     className={`inline-flex p-3 rounded-xl mb-4 transition-all duration-500 ${isActive
                             ? `bg-gradient-to-br ${service.gradient} text-white shadow-lg`
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-gray-750"
+                            : "bg-background text-muted group-hover:bg-tint"
                         }`}
                 >
                     <Icon className="w-6 h-6" />
                 </motion.div>
 
                 {/* Title & Subtitle */}
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                <h3 className="text-lg font-bold text-foreground mb-1">
                     {service.title}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                <p className="text-sm text-caption mb-3">
                     {service.subtitle}
                 </p>
 
                 {/* Description */}
-                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+                <p className="text-sm text-muted leading-relaxed mb-4">
                     {service.description}
                 </p>
 
@@ -117,7 +117,7 @@ function ServiceCard({
                         >
                             {service.stat}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-caption">
                             {service.statLabel}
                         </div>
                     </div>
@@ -133,7 +133,7 @@ function ServiceCard({
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                 >
-                    <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="space-y-2 pt-3 border-t border-border">
                         {Array.isArray(featuresList) && featuresList.map((feature: any, i: number) => {
                             const FeatureIcon = getIcon(feature.icon || "Check");
                             return (
@@ -142,9 +142,9 @@ function ServiceCard({
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={isActive ? { opacity: 1, x: 0 } : {}}
                                     transition={{ delay: i * 0.05 }}
-                                    className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+                                    className="flex items-center gap-2 text-sm text-muted"
                                 >
-                                    <FeatureIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                                    <FeatureIcon className="w-4 h-4 text-caption" />
                                     <span>{feature.text}</span>
                                 </motion.div>
                             );
@@ -189,8 +189,8 @@ function PreviewPanel({
 
     const Icon = getIcon(service.iconName || "Circle");
     const featuresList = typeof service.features === 'string' ? JSON.parse(service.features) : service.features;
-    const bgGradient = service.bgGradient || (service.gradient ? service.gradient.replace(/-\d{3}/g, '$&/10') : "from-blue-500/10 to-cyan-500/10");
-    const shadowColor = service.shadowColor || (service.gradient ? `shadow-${service.gradient.split('-')[1]}-500/20` : "shadow-blue-500/20");
+    const bgGradient = service.bgGradient || (service.gradient ? service.gradient.replace(/-\d{3}/g, '$&/10') : "from-brand-orange/10 to-brand-orange/10");
+    const shadowColor = service.shadowColor || (service.gradient ? `shadow-${service.gradient.split('-')[1]}-500/20` : "shadow-brand-orange/20");
 
     return (
         <motion.div
@@ -198,7 +198,7 @@ function PreviewPanel({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.4 }}
-            className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl shadow-gray-300/20 dark:shadow-black/40 border border-gray-200 dark:border-gray-800 overflow-hidden"
+            className="relative bg-card rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/40 border border-border overflow-hidden"
         >
             {/* Preview Background */}
             <div
@@ -216,10 +216,10 @@ function PreviewPanel({
                         <Icon className="w-8 h-8" />
                     </motion.div>
                     <div>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <h3 className="text-2xl font-bold text-foreground">
                             {service.title}
                         </h3>
-                        <p className="text-gray-500 dark:text-gray-400">
+                        <p className="text-caption">
                             {service.subtitle}
                         </p>
                     </div>
@@ -228,7 +228,7 @@ function PreviewPanel({
                 {/* Mock Dashboard Preview */}
                 <div className="space-y-4 mb-8">
                     {/* Chart Mock */}
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-6">
+                    <div className="bg-background rounded-2xl p-6">
                         <div className="flex items-end gap-2 h-24">
                             {[30, 50, 40, 70, 55, 85, 60, 90, 45, 75, 55, 80].map(
                                 (height, i) => (
@@ -254,14 +254,14 @@ function PreviewPanel({
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.1 }}
-                                    className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                                    className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border"
                                 >
                                     <div
                                         className={`p-2 rounded-lg bg-gradient-to-br ${bgGradient}`}
                                     >
-                                        <FeatureIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                                        <FeatureIcon className="w-4 h-4 text-muted" />
                                     </div>
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <span className="text-sm font-medium text-muted">
                                         {feature.text}
                                     </span>
                                 </motion.div>
@@ -294,7 +294,7 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
         <section
             id="services"
             ref={sectionRef}
-            className="relative py-20 lg:py-28 bg-gray-50 dark:bg-gray-900 transition-colors duration-500 overflow-hidden"
+            className="relative py-20 lg:py-28 bg-card transition-colors duration-500 overflow-hidden"
         >
             {/* Background Elements */}
             <div className="absolute inset-0 pointer-events-none">
@@ -309,7 +309,7 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                         y: [0, -30, 0],
                     }}
                     transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br from-blue-500/10 to-purple-500/10"
+                    className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br from-brand-orange-deep/10 to-brand-orange/10"
                 />
             </div>
 
@@ -327,21 +327,21 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                         initial={{ opacity: 0, scale: 0.9 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-4"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
                     >
-                        <Settings className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        <Settings className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+                        <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
                             What We Offer
                         </span>
                     </motion.div>
 
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
                         Agency{" "}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
                             Services
                         </span>
                     </h2>
-                    <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    <p className="text-lg text-muted max-w-2xl mx-auto">
                         End-to-end digital services to build your presence, attract your
                         audience, and scale your business with AI-powered efficiency.
                     </p>
@@ -397,10 +397,10 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                             whileHover={{ y: -5 }}
                             className="cursor-default"
                         >
-                            <div className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                            <div className="text-2xl lg:text-3xl font-bold text-foreground">
                                 {stat.value}
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            <div className="text-sm text-caption mt-1">
                                 {stat.label}
                             </div>
                         </motion.div>

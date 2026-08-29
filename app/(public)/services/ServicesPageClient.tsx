@@ -62,10 +62,10 @@ const services = [
       { step: "03", title: "Build", desc: "Develop with modern frameworks" },
       { step: "04", title: "Launch", desc: "Test, optimize & deploy" },
     ],
-    gradient: "from-blue-500 to-cyan-500",
-    bgGradient: "from-blue-500/10 to-cyan-500/10",
-    shadowGlow: "shadow-blue-500/25",
-    textGradient: "from-blue-600 to-cyan-600",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGradient: "from-brand-orange/10 to-brand-orange-light/10",
+    shadowGlow: "shadow-brand-orange/25",
+    textGradient: "from-brand-orange-deep to-brand-orange",
     deliverables: ["Figma Design Files", "Source Code", "Documentation", "30 Days Support"],
   },
   {
@@ -89,10 +89,10 @@ const services = [
       { step: "03", title: "Optimize", desc: "Implement on-page & technical SEO" },
       { step: "04", title: "Track", desc: "Monitor rankings & traffic" },
     ],
-    gradient: "from-indigo-500 to-blue-600",
-    bgGradient: "from-indigo-500/10 to-blue-600/10",
-    shadowGlow: "shadow-indigo-500/25",
-    textGradient: "from-indigo-600 to-blue-600",
+    gradient: "from-charcoal to-off-black",
+    bgGradient: "from-charcoal/10 to-off-black/10",
+    shadowGlow: "shadow-graphite/25",
+    textGradient: "from-graphite to-off-black",
     deliverables: ["SEO Audit Report", "Keyword Strategy", "Content Calendar", "Monthly Reports"],
   },
   {
@@ -116,10 +116,10 @@ const services = [
       { step: "03", title: "Engage", desc: "Post, respond & grow community" },
       { step: "04", title: "Optimize", desc: "Analyze & refine strategy" },
     ],
-    gradient: "from-purple-500 to-pink-500",
-    bgGradient: "from-purple-500/10 to-pink-500/10",
-    shadowGlow: "shadow-purple-500/25",
-    textGradient: "from-purple-600 to-pink-600",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGradient: "from-brand-orange/10 to-brand-orange-light/10",
+    shadowGlow: "shadow-brand-orange/25",
+    textGradient: "from-brand-orange-deep to-brand-orange",
     deliverables: ["Content Calendar", "Brand Assets", "Monthly Analytics", "Growth Strategy"],
   },
   {
@@ -143,10 +143,10 @@ const services = [
       { step: "03", title: "Optimize", desc: "Test creatives & audiences" },
       { step: "04", title: "Scale", desc: "Increase budget on winners" },
     ],
-    gradient: "from-orange-500 to-red-500",
-    bgGradient: "from-orange-500/10 to-red-500/10",
-    shadowGlow: "shadow-orange-500/25",
-    textGradient: "from-orange-600 to-red-600",
+    gradient: "from-charcoal to-off-black",
+    bgGradient: "from-charcoal/10 to-off-black/10",
+    shadowGlow: "shadow-graphite/25",
+    textGradient: "from-graphite to-off-black",
     deliverables: ["Ad Strategy Doc", "Creative Assets", "Weekly Reports", "ROI Dashboard"],
   },
   {
@@ -170,10 +170,10 @@ const services = [
       { step: "03", title: "Automate", desc: "Build workflows & sequences" },
       { step: "04", title: "Train", desc: "Onboard team & go live" },
     ],
-    gradient: "from-green-500 to-emerald-500",
-    bgGradient: "from-green-500/10 to-emerald-500/10",
-    shadowGlow: "shadow-green-500/25",
-    textGradient: "from-green-600 to-emerald-600",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGradient: "from-brand-orange/10 to-brand-orange-light/10",
+    shadowGlow: "shadow-brand-orange/25",
+    textGradient: "from-brand-orange-deep to-brand-orange",
     deliverables: ["CRM Setup", "Workflow Automation", "Training Docs", "30 Days Support"],
   },
   {
@@ -197,10 +197,10 @@ const services = [
       { step: "03", title: "Build", desc: "Implement & test automation" },
       { step: "04", title: "Monitor", desc: "Track performance & optimize" },
     ],
-    gradient: "from-violet-500 to-purple-600",
-    bgGradient: "from-violet-500/10 to-purple-600/10",
-    shadowGlow: "shadow-violet-500/25",
-    textGradient: "from-violet-600 to-purple-600",
+    gradient: "from-charcoal to-off-black",
+    bgGradient: "from-charcoal/10 to-off-black/10",
+    shadowGlow: "shadow-graphite/25",
+    textGradient: "from-graphite to-off-black",
     deliverables: ["Automation Map", "Workflow Setup", "Dashboard Access", "Ongoing Support"],
   },
 ];
@@ -210,7 +210,7 @@ export default function ServicesPageClient() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main className="relative bg-white dark:bg-gray-950 transition-colors duration-500">
+    <main className="relative bg-background transition-colors duration-500">
       {/* <Navbar /> */}
 
       {/* Hero Section */}
@@ -221,7 +221,7 @@ export default function ServicesPageClient() {
           <motion.div
             animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 8, repeat: Infinity }}
-            className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl bg-blue-500/10"
+            className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl bg-brand-orange/10"
           />
         </div>
 
@@ -229,20 +229,20 @@ export default function ServicesPageClient() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cream to-ivory dark:from-brand-orange/10 dark:to-brand-orange-light/10 border border-brand-orange/20 dark:border-brand-orange/20 rounded-full mb-6"
           >
-            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">What We Offer</span>
+            <Sparkles className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">What We Offer</span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 tracking-tight"
           >
             Our{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
               Services
             </span>
           </motion.h1>
@@ -251,7 +251,7 @@ export default function ServicesPageClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
+            className="text-lg text-muted max-w-2xl mx-auto"
           >
             End-to-end digital services to build your presence, attract your audience, and scale your business with AI-powered efficiency.
           </motion.p>
@@ -267,7 +267,7 @@ export default function ServicesPageClient() {
           <section
             key={service.id}
             id={service.id}
-            className={`relative py-20 lg:py-24 ${isEven ? "bg-white dark:bg-gray-950" : "bg-gray-50 dark:bg-gray-900"
+            className={`relative py-20 lg:py-24 ${isEven ? "bg-background" : "bg-card"
               } transition-colors duration-500`}
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -285,21 +285,21 @@ export default function ServicesPageClient() {
                       <Icon className="w-8 h-8" />
                     </div>
 
-                    <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+                    <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">
                       {service.title}
                     </h2>
-                    <p className="text-lg text-gray-500 dark:text-gray-400 mb-2">{service.subtitle}</p>
-                    <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-8">{service.description}</p>
+                    <p className="text-lg text-muted mb-2">{service.subtitle}</p>
+                    <p className="text-muted leading-relaxed mb-8">{service.description}</p>
 
                     {/* Features */}
                     <div className="space-y-3 mb-8">
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">Key Features</h4>
+                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Key Features</h4>
                       {service.features.map((feature) => (
                         <div key={feature} className="flex items-center gap-3">
                           <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${service.gradient} flex items-center justify-center flex-shrink-0`}>
                             <CheckCircle2 className="w-3 h-3 text-white" />
                           </div>
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                          <span className="text-sm text-muted">{feature}</span>
                         </div>
                       ))}
                     </div>
@@ -327,8 +327,8 @@ export default function ServicesPageClient() {
                     className="space-y-6"
                   >
                     {/* Process */}
-                    <div className={`p-6 lg:p-8 rounded-2xl bg-gradient-to-br ${service.bgGradient} border border-gray-200 dark:border-gray-700`}>
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">Our Process</h4>
+                    <div className={`p-6 lg:p-8 rounded-2xl bg-gradient-to-br ${service.bgGradient} border border-border`}>
+                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Our Process</h4>
                       <div className="space-y-4">
                         {service.process.map((step, i) => (
                           <div key={step.step} className="flex items-start gap-4">
@@ -336,8 +336,8 @@ export default function ServicesPageClient() {
                               {step.step}
                             </div>
                             <div>
-                              <h5 className="font-semibold text-gray-900 dark:text-white text-sm">{step.title}</h5>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{step.desc}</p>
+                              <h5 className="font-semibold text-foreground text-sm">{step.title}</h5>
+                              <p className="text-sm text-muted">{step.desc}</p>
                             </div>
                           </div>
                         ))}
@@ -345,13 +345,13 @@ export default function ServicesPageClient() {
                     </div>
 
                     {/* Deliverables */}
-                    <div className="p-6 lg:p-8 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">What You Get</h4>
+                    <div className="p-6 lg:p-8 rounded-2xl bg-card border border-border hover:border-accent-border transition-colors shadow-sm">
+                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">What You Get</h4>
                       <div className="grid grid-cols-2 gap-3">
                         {service.deliverables.map((item) => (
                           <div key={item} className="flex items-center gap-2">
                             <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{item}</span>
+                            <span className="text-sm text-muted">{item}</span>
                           </div>
                         ))}
                       </div>
@@ -365,26 +365,26 @@ export default function ServicesPageClient() {
       })}
 
       {/* Bottom CTA */}
-      <section className="relative py-20 lg:py-28 bg-gray-50 dark:bg-gray-900">
+      <section className="relative py-20 lg:py-28 bg-card">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white dark:bg-gray-800 rounded-3xl p-10 lg:p-14 shadow-2xl border border-gray-200 dark:border-gray-700"
+            className="bg-background rounded-3xl p-10 lg:p-14 shadow-2xl border border-border"
           >
-            <Sparkles className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-6" />
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <Sparkles className="w-12 h-12 text-brand-orange-deep dark:text-brand-orange-light mx-auto mb-6" />
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
               Ready to Grow Your Business?
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-lg mx-auto">
+            <p className="text-lg text-muted mb-8 max-w-lg mx-auto">
               Book a free strategy call and we'll create a custom growth plan tailored to your business goals.
             </p>
             <motion.a
               href="/contact"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/25 hover:shadow-2xl hover:shadow-purple-500/40 transition-shadow"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-bold rounded-2xl shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/40 transition-shadow"
             >
               <Calendar className="w-5 h-5" />
               <span>Book a Free Strategy Call</span>

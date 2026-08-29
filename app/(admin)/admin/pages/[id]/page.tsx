@@ -12,7 +12,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Page: {page.title}</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Page: {page.title}</h1>
       <PageForm initialData={page} />
     </div>
   );

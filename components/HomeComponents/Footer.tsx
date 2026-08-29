@@ -20,6 +20,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 // Footer data
 const footerLinks = {
@@ -98,7 +99,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
   };
 
   return (
-    <footer className="relative bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 transition-colors duration-500">
+    <footer className="relative bg-card border-t border-border transition-colors duration-500">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-12 lg:gap-8">
@@ -111,19 +112,23 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               viewport={{ once: true }}
               className="mb-6"
             >
-              <Link href="#" className="flex items-center gap-2 group">
+              <Link href="#" className="flex items-center group">
                 <div className="relative">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-shadow duration-300">
-                    TBJ
-                  </div>
-                  <div className="absolute -inset-0.5 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300 -z-10" />
+                  <Image
+                    src="/primarylogo.png"
+                    alt="TBJ Growth Tech"
+                    width={1000}
+                    height={200}
+                    className="h-9 w-auto dark:hidden"
+                  />
+                  <Image
+                    src="/primary-logo-dark.png"
+                    alt="TBJ Growth Tech"
+                    width={1000}
+                    height={200}
+                    className="hidden h-9 w-auto dark:block"
+                  />
                 </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  TBJ{" "}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                    Growth
-                  </span>
-                </span>
               </Link>
             </motion.div>
 
@@ -133,7 +138,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6 max-w-sm"
+              className="text-sm text-muted leading-relaxed mb-6 max-w-sm"
             >
               We help UK businesses grow with design that converts, marketing
               that attracts, and AI that scales. From strategy to automation,
@@ -150,24 +155,24 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
             >
               <a
                 href={`mailto:${contactEmail}`}
-                className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                className="flex items-center gap-3 text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors group"
               >
-                <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/10 transition-colors">
+                <div className="p-1.5 rounded-lg bg-background group-hover:bg-tint transition-colors">
                   <Mail className="w-4 h-4" />
                 </div>
                 {contactEmail}
               </a>
               <a
                 href={phoneHref}
-                className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                className="flex items-center gap-3 text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors group"
               >
-                <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-500/10 transition-colors">
+                <div className="p-1.5 rounded-lg bg-background group-hover:bg-tint transition-colors">
                   <Phone className="w-4 h-4" />
                 </div>
                 {contactPhone}
               </a>
-              <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800">
+              <div className="flex items-center gap-3 text-sm text-muted">
+                <div className="p-1.5 rounded-lg bg-background">
                   <MapPin className="w-4 h-4" />
                 </div>
                 {contactAddress}
@@ -190,7 +195,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
                     href={social.href}
                     whileHover={{ scale: 1.1, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gradient-to-br hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                    className="p-2.5 rounded-xl bg-background text-muted hover:bg-gradient-to-br hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
                     aria-label={social.label}
                   >
                     <Icon className="w-4 h-4" />
@@ -210,7 +215,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               transition={{ delay: 0.2 + sectionIndex * 0.1 }}
               className="lg:col-span-1"
             >
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
                 {section.title}
               </h3>
               <ul className="space-y-2.5">
@@ -218,7 +223,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
                   <li key={link.label}>
                     <a
                       href={link.href}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1 group"
+                      className="text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors flex items-center gap-1 group"
                     >
                       <ChevronRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                       {link.label}
@@ -237,10 +242,10 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
             transition={{ delay: 0.5 }}
             className="lg:col-span-1"
           >
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
               Newsletter
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-muted mb-4">
               Get growth tips, AI insights, and exclusive offers delivered to
               your inbox.
             </p>
@@ -253,13 +258,13 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
-                className="w-full px-4 py-3 pr-12 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white placeholder-gray-400 transition-all"
+                className="w-full px-4 py-3 pr-12 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent text-foreground placeholder-muted transition-all"
               />
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg hover:shadow-purple-500/25 transition-shadow"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white rounded-lg hover:shadow-lg hover:shadow-brand-orange/25 transition-shadow"
               >
                 {isSubscribed ? (
                   <motion.div
@@ -290,11 +295,11 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-200 dark:border-gray-800">
+      <div className="border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             {/* Copyright */}
-            <p className="text-sm text-gray-500 dark:text-gray-500 flex items-center gap-1">
+            <p className="text-sm text-caption flex items-center gap-1">
               © {new Date().getFullYear()} TBJ Growth Ltd. All rights reserved.
               <span className="hidden sm:inline">·</span>
               <br className="sm:hidden" />
@@ -307,20 +312,20 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
             <div className="flex items-center gap-6">
               <a
                 href="#"
-                className="text-sm text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="text-sm text-caption hover:text-foreground transition-colors"
               >
                 Privacy Policy
               </a>
               <a
                 href="#"
-                className="text-sm text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="text-sm text-caption hover:text-foreground transition-colors"
               >
                 Terms of Service
               </a>
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("tbj-open-cookie-preferences"))}
-                className="text-sm text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="text-sm text-caption hover:text-foreground transition-colors"
               >
                 Cookie Policy
               </button>
@@ -331,7 +336,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               onClick={scrollToTop}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gradient-to-br hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 shadow-sm"
+              className="p-2 rounded-xl bg-background text-muted hover:bg-gradient-to-br hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all duration-300 shadow-sm"
               aria-label="Back to top"
             >
               <ArrowUp className="w-4 h-4" />

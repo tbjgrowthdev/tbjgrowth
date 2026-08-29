@@ -6,7 +6,7 @@ export default async function NewPost() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Blog Post</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Create New Blog Post</h1>
       <PostForm categories={categories} tags={tags} />
     </div>
   );

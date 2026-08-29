@@ -58,49 +58,49 @@ export default function PartnerForm({ initialData = null }: { initialData?: any 
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Partner Details</h2>
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <h2 className="text-xl font-bold text-foreground mb-6">Partner Details</h2>
         <div className="space-y-4 max-w-2xl">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
+            <label className="block text-sm font-medium text-muted mb-1">Company Name</label>
             <input
               type="text"
               name="name"
               required
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo URL (Optional)</label>
+            <label className="block text-sm font-medium text-muted mb-1">Logo URL (Optional)</label>
             <input
               type="text"
               name="logoUrl"
               value={formData.logoUrl}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               placeholder="https://example.com/logo.png"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort Order</label>
+            <label className="block text-sm font-medium text-muted mb-1">Sort Order</label>
             <input
               type="number"
               name="order"
               value={formData.order}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex justify-end pt-6 border-t border-border">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
         >
           <Save size={20} />
           {isSubmitting ? "Saving..." : "Save Partner"}

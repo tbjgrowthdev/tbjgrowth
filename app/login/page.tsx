@@ -39,11 +39,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       {/* Background gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl bg-blue-500/10 dark:bg-blue-500/5" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl bg-purple-500/10 dark:bg-purple-500/5" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl bg-brand-orange/10 dark:bg-brand-orange/5" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl bg-off-black/10 dark:bg-off-black/20" />
       </div>
 
       <motion.div
@@ -52,16 +52,16 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div className="bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
           {/* Header */}
-          <div className="p-8 pb-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-b border-gray-100 dark:border-gray-800 text-center">
-            <div className="inline-flex p-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 mb-4">
+          <div className="p-8 pb-6 bg-gradient-to-br from-background to-card border-b border-border text-center">
+            <div className="inline-flex p-4 rounded-2xl bg-cream dark:bg-brand-orange-deep/20 text-brand-orange-deep dark:text-brand-orange-light mb-4">
               <Lock className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
               Secure Access
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted">
               Sign in to access the TBJ Administration Panel.
             </p>
           </div>
@@ -81,38 +81,38 @@ export default function LoginPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-muted mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
+                    <Mail className="h-5 w-5 text-caption" />
                   </div>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
                     placeholder="admin@example.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-muted mb-1.5">
                   Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
+                    <Lock className="h-5 w-5 text-caption" />
                   </div>
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
                     placeholder="••••••••"
                   />
                 </div>
@@ -121,7 +121,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange hover:from-brand-orange-deep hover:to-brand-orange-deep text-white rounded-xl font-medium shadow-lg shadow-brand-orange/30 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

@@ -134,7 +134,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
   };
 
   return (
-    <main className="relative bg-white dark:bg-gray-950 transition-colors duration-500">
+    <main className="relative bg-background transition-colors duration-500">
       {/* <Navbar /> */}
 
       {/* Hero Section */}
@@ -144,7 +144,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
           <motion.div
             animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
             transition={{ duration: 8, repeat: Infinity }}
-            className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl bg-blue-500/10"
+            className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl bg-brand-orange/10"
           />
         </div>
 
@@ -152,20 +152,20 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-6"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cream to-ivory dark:from-brand-orange/10 dark:to-brand-orange-light/10 border border-brand-orange/20 dark:border-brand-orange/20 rounded-full mb-6"
           >
-            <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Get In Touch</span>
+            <MessageSquare className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">Get In Touch</span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 tracking-tight"
           >
             Let's{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
               Talk
             </span>
           </motion.h1>
@@ -174,7 +174,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto"
+            className="text-lg text-muted max-w-xl mx-auto"
           >
             Ready to grow? Fill out the form and we'll get back to you within 24 hours.
           </motion.p>
@@ -192,12 +192,12 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl p-8 lg:p-10"
+                className="bg-card rounded-3xl border border-border shadow-xl p-8 lg:p-10"
               >
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-2xl font-bold text-foreground mb-2">
                   Send Us a Message
                 </h2>
-                <p className="text-gray-500 dark:text-gray-400 mb-8">
+                <p className="text-muted mb-8">
                   Fill out the form below and we'll get back to you within 24 hours.
                 </p>
 
@@ -210,8 +210,8 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Message Sent!</h3>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <h3 className="text-xl font-bold text-foreground mb-2">Message Sent!</h3>
+                    <p className="text-muted">
                       Thanks for reaching out. We'll get back to you within 24 hours.
                     </p>
                   </motion.div>
@@ -220,7 +220,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                     <div className="grid sm:grid-cols-2 gap-6">
                       {/* Name */}
                       <div>
-                        <label htmlFor="name" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                        <label htmlFor="name" className="block text-sm font-semibold text-foreground mb-2">
                           Full Name *
                         </label>
                         <input
@@ -231,13 +231,13 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                           onChange={handleChange}
                           required
                           placeholder="John Smith"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent transition-all"
                         />
                       </div>
 
                       {/* Email */}
                       <div>
-                        <label htmlFor="email" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                        <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
                           Email Address *
                         </label>
                         <input
@@ -248,7 +248,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                           onChange={handleChange}
                           required
                           placeholder="john@company.com"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent transition-all"
                         />
                       </div>
                     </div>
@@ -256,7 +256,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                     <div className="grid sm:grid-cols-2 gap-6">
                       {/* Company */}
                       <div>
-                        <label htmlFor="company" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                        <label htmlFor="company" className="block text-sm font-semibold text-foreground mb-2">
                           Company Name
                         </label>
                         <input
@@ -266,13 +266,13 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                           value={formState.company}
                           onChange={handleChange}
                           placeholder="Your Company Ltd"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent transition-all"
                         />
                       </div>
 
                       {/* Service */}
                       <div>
-                        <label htmlFor="service" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                        <label htmlFor="service" className="block text-sm font-semibold text-foreground mb-2">
                           Service Interested In
                         </label>
                         <select
@@ -280,7 +280,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                           name="service"
                           value={formState.service}
                           onChange={handleChange}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent transition-all"
                         >
                           <option value="">Select a service</option>
                           <option value="web">Web Development</option>
@@ -296,7 +296,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
 
                     {/* Message */}
                     <div>
-                      <label htmlFor="message" className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                      <label htmlFor="message" className="block text-sm font-semibold text-foreground mb-2">
                         Your Message *
                       </label>
                       <textarea
@@ -307,7 +307,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                         required
                         rows={5}
                         placeholder="Tell us about your project, goals, and how we can help..."
-                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                        className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent transition-all resize-none"
                       />
                     </div>
 
@@ -320,7 +320,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                       disabled={isSubmitting}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-2xl shadow-xl shadow-purple-500/25 hover:shadow-2xl hover:shadow-purple-500/40 transition-shadow group disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-bold rounded-2xl shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/40 transition-shadow group disabled:opacity-50"
                     >
                       <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       <span>{isSubmitting ? "Sending..." : "Send Message"}</span>
@@ -343,20 +343,20 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.1 }}
-                    className="block p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-lg transition-all group"
+                    className="block p-5 rounded-2xl bg-card border border-border hover:border-accent-border hover:shadow-lg transition-all group"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 group-hover:scale-110 transition-transform">
-                        <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-cream to-ivory dark:from-brand-orange/10 dark:to-brand-orange-light/10 group-hover:scale-110 transition-transform">
+                        <Icon className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                        <h4 className="font-semibold text-foreground text-sm">
                           {info.label}
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                        <p className="text-sm text-muted mt-0.5">
                           {info.value}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                        <p className="text-xs text-caption mt-1">
                           {info.description}
                         </p>
                       </div>
@@ -371,9 +371,9 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.4 }}
-                className="p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+                className="p-5 rounded-2xl bg-card border border-border"
               >
-                <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-4">
+                <h4 className="font-semibold text-foreground text-sm mb-4">
                   Services We Offer
                 </h4>
                 <div className="space-y-2">
@@ -381,7 +381,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                     <a
                       key={link}
                       href="/services"
-                      className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+                      className="flex items-center gap-2 text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors group"
                     >
                       <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                       {link}
@@ -396,11 +396,11 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.5 }}
-                className="flex items-center gap-3 p-5 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+                className="flex items-center gap-3 p-5 rounded-2xl bg-card border border-border"
               >
-                <span className="text-sm text-gray-500 dark:text-gray-400">Follow us:</span>
+                <span className="text-sm text-muted">Follow us:</span>
                 {socialLinks.length === 0 ? (
-                  <span className="text-sm text-gray-400 dark:text-gray-600">Coming soon</span>
+                  <span className="text-sm text-caption">Coming soon</span>
                 ) : (
                   socialLinks.map((social) => (
                     <a
@@ -409,7 +409,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={social.label}
-                      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gradient-to-br hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all"
+                      className="p-2 rounded-lg bg-background text-muted hover:bg-gradient-to-br hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all"
                     >
                       <social.icon className="w-4 h-4" />
                     </a>
@@ -431,7 +431,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
             className="relative rounded-3xl overflow-hidden"
           >
             {/* Gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600" />
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-orange-deep to-brand-orange" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
             <div className="relative p-10 lg:p-14 text-center">
@@ -446,7 +446,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 href="#"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-900 font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-shadow group"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-white text-off-black font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-shadow group"
               >
                 <Calendar className="w-5 h-5" />
                 <span>Book a Discovery Call</span>

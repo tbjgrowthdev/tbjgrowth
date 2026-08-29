@@ -7,10 +7,10 @@ export default function RankSparkline({ checks }: { checks: Check[] }) {
   const positions = ordered.map((c) => c.position).filter((p): p is number => p !== null);
 
   if (positions.length === 0) {
-    return <span className="text-xs text-gray-400">No data yet</span>;
+    return <span className="text-xs text-caption">No data yet</span>;
   }
   if (positions.length === 1) {
-    return <span className="text-sm font-semibold text-gray-900 dark:text-white">#{positions[0]}</span>;
+    return <span className="text-sm font-semibold text-foreground">#{positions[0]}</span>;
   }
 
   const max = Math.max(...positions);
@@ -41,7 +41,7 @@ export default function RankSparkline({ checks }: { checks: Check[] }) {
         <path d={pathD} fill="none" stroke={improved ? "#16a34a" : "#dc2626"} strokeWidth={1.5} />
       </svg>
       <div>
-        <div className="text-sm font-semibold text-gray-900 dark:text-white">#{latest}</div>
+        <div className="text-sm font-semibold text-foreground">#{latest}</div>
         <div className={`text-xs ${improved ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
           {improved ? "↑" : latest > first ? "↓" : "—"} from #{first}
         </div>

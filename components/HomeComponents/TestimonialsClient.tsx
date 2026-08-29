@@ -33,7 +33,7 @@ const fallbackTestimonials = [
       { label: "Revenue Growth", value: "+320%", icon: "TrendingUp" },
       { label: "Conversion Rate", value: "4.8%", icon: "Target" },
     ]),
-    gradient: "from-blue-500 to-cyan-500",
+    gradient: "from-brand-orange-deep to-brand-orange",
     avatar: "SM",
   },
 ];
@@ -112,10 +112,10 @@ function TestimonialCard({
         scale: isActive ? 1 : 0.95,
       }}
       transition={{ duration: 0.5 }}
-      className={`relative bg-white dark:bg-gray-900 rounded-3xl border transition-all duration-500 ${
+      className={`relative bg-card rounded-3xl border transition-all duration-500 ${
         isActive
-          ? `border-gray-200 dark:border-gray-700 shadow-2xl shadow-gray-200/50 dark:shadow-black/30`
-          : "border-gray-100 dark:border-gray-800"
+          ? `border-accent-border shadow-2xl shadow-black/5 dark:shadow-black/30`
+          : "border-border"
       }`}
     >
       {/* Quote icon */}
@@ -143,7 +143,7 @@ function TestimonialCard({
         </div>
 
         {/* Quote */}
-        <blockquote className="text-lg lg:text-xl text-gray-700 dark:text-gray-300 leading-relaxed mb-8 italic">
+        <blockquote className="text-lg lg:text-xl text-muted leading-relaxed mb-8 italic">
           &ldquo;{testimonial.quote}&rdquo;
         </blockquote>
 
@@ -158,7 +158,7 @@ function TestimonialCard({
                   initial={{ opacity: 0, y: 10 }}
                   animate={isActive ? { opacity: 1, y: 0 } : {}}
                   transition={{ delay: 0.3 + i * 0.1 }}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-stat border border-border"
                 >
                   <div
                     className={`p-2 rounded-lg bg-gradient-to-br ${testimonial.gradient} text-white`}
@@ -166,10 +166,10 @@ function TestimonialCard({
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    <div className="text-lg font-bold text-foreground">
                       {metric.value}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-caption">
                       {metric.label}
                     </div>
                   </div>
@@ -180,7 +180,7 @@ function TestimonialCard({
         )}
 
         {/* Author */}
-        <div className="flex items-center gap-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-4 pt-6 border-t border-border">
           {/* Avatar */}
           <div
             className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg`}
@@ -188,15 +188,15 @@ function TestimonialCard({
             {testimonial.avatar || testimonial.author.substring(0, 2).toUpperCase()}
           </div>
           <div>
-            <div className="font-bold text-gray-900 dark:text-white">
+            <div className="font-bold text-foreground">
               {testimonial.author}
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-caption">
               {testimonial.role}, {testimonial.company}
             </div>
           </div>
           <div className="ml-auto">
-            <span className="text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+            <span className="text-xs px-3 py-1 rounded-full bg-tint text-caption">
               {testimonial.industry}
             </span>
           </div>
@@ -223,7 +223,7 @@ function LogoCloud() {
         {[...logos, ...logos].map((logo, i) => (
           <div
             key={i}
-            className="flex-shrink-0 px-8 py-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 font-bold text-lg tracking-wide"
+            className="flex-shrink-0 px-8 py-4 rounded-2xl bg-card border border-border text-caption font-bold text-lg tracking-wide"
           >
             {logo}
           </div>
@@ -265,7 +265,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
     <section
       id="testimonials"
       ref={sectionRef}
-      className="relative py-20 lg:py-28 bg-gray-50 dark:bg-gray-900 transition-colors duration-500 overflow-hidden"
+      className="relative py-20 lg:py-28 bg-card transition-colors duration-500 overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -274,7 +274,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
         <motion.div
           animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/3 right-1/4 w-80 h-80 rounded-full blur-3xl bg-blue-500/5"
+          className="absolute top-1/3 right-1/4 w-80 h-80 rounded-full blur-3xl bg-brand-orange/5"
         />
       </div>
 
@@ -291,20 +291,20 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
           >
-            <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            <MessageSquare className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
               Client Success Stories
             </span>
           </motion.div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             Trusted by{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
               Growing Businesses
             </span>
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted max-w-2xl mx-auto">
             Don't just take our word for it. Here's what our clients say about
             working with TBJ Growth.
           </p>
@@ -325,15 +325,15 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
             {/* Navigation arrows */}
             <button
               onClick={handlePrev}
-              className="absolute left-0 top-1/2 -translate-x-4 lg:-translate-x-6 -translate-y-1/2 p-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all z-10 group"
+              className="absolute left-0 top-1/2 -translate-x-4 lg:-translate-x-6 -translate-y-1/2 p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
+              <ChevronLeft className="w-5 h-5 text-muted group-hover:text-foreground transition-colors" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-0 top-1/2 translate-x-4 lg:translate-x-6 -translate-y-1/2 p-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all z-10 group"
+              className="absolute right-0 top-1/2 translate-x-4 lg:translate-x-6 -translate-y-1/2 p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
+              <ChevronRight className="w-5 h-5 text-muted group-hover:text-foreground transition-colors" />
             </button>
           </div>
 
@@ -349,18 +349,18 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
                 className={`transition-all duration-300 rounded-full ${
                   index === activeIndex
                     ? `w-8 h-2.5 bg-gradient-to-r ${testimonialsList[index].gradient}`
-                    : "w-2.5 h-2.5 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                    : "w-2.5 h-2.5 bg-border hover:bg-accent-border"
                 }`}
               />
             ))}
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="ml-2 p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="ml-2 p-1.5 rounded-full hover:bg-background transition-colors"
             >
               {isAutoPlaying ? (
-                <Pause className="w-4 h-4 text-gray-400" />
+                <Pause className="w-4 h-4 text-caption" />
               ) : (
-                <Play className="w-4 h-4 text-gray-400" />
+                <Play className="w-4 h-4 text-caption" />
               )}
             </button>
           </div>
@@ -374,7 +374,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
           transition={{ delay: 0.3 }}
           className="mb-16 lg:mb-20"
         >
-          <p className="text-center text-sm text-gray-500 dark:text-gray-500 mb-6 uppercase tracking-wider">
+          <p className="text-center text-sm text-caption mb-6 uppercase tracking-wider">
             Trusted by innovative companies
           </p>
           <LogoCloud />
@@ -401,20 +401,20 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
                 whileHover={{ y: -5 }}
                 className="relative group cursor-default"
               >
-                <div className="text-center p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg group-hover:shadow-xl transition-all duration-300">
+                <div className="text-center p-6 rounded-2xl bg-card border border-border hover:border-accent-border shadow-lg group-hover:shadow-xl transition-all duration-300">
                   <div className="flex justify-center mb-3">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 group-hover:scale-110 transition-transform duration-300">
-                      <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <div className="p-2.5 rounded-xl bg-stat group-hover:scale-110 transition-transform duration-300">
+                      <Icon className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
                     </div>
                   </div>
-                  <div className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                  <div className="text-2xl lg:text-3xl font-bold text-foreground mb-1">
                     <AnimatedCounter
                       value={metric.value}
                       suffix={metric.suffix}
                       isInView={isMetricsInView}
                     />
                   </div>
-                  <div className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-xs lg:text-sm text-caption">
                     {metric.label}
                   </div>
                 </div>
@@ -431,8 +431,8 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
           transition={{ delay: 0.6, duration: 0.6 }}
           className="text-center mt-16 lg:mt-20"
         >
-          <div className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <Sparkles className="w-5 h-5 text-yellow-500" />
+          <div className="inline-flex items-center gap-2 text-muted">
+            <Sparkles className="w-5 h-5 text-brand-orange" />
             <span className="text-sm">
               Join 50+ businesses already growing with TBJ
             </span>

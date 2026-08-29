@@ -81,10 +81,10 @@ export default function KeywordTrackingManager({
       )}
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Tracked Keywords</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-3">Tracked Keywords</h2>
         <form
           onSubmit={handleAddKeyword}
-          className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 mb-4"
+          className="bg-card p-4 rounded-lg shadow-sm border border-border flex flex-col sm:flex-row gap-3 mb-4"
         >
           <input
             type="text"
@@ -92,18 +92,18 @@ export default function KeywordTrackingManager({
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             placeholder="Keyword phrase"
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
           />
           <input
             type="text"
             value={targetUrl}
             onChange={(e) => setTargetUrl(e.target.value)}
             placeholder="Target page path (optional, e.g. /services)"
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
           />
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"
           >
             <Plus size={18} />
             Track
@@ -114,28 +114,28 @@ export default function KeywordTrackingManager({
           <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm mb-4">{checkError}</div>
         )}
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Keyword</th>
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Target</th>
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Rank History</th>
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400 text-right">Actions</th>
+              <tr className="bg-background border-b border-border">
+                <th className="px-6 py-4 font-medium text-caption">Keyword</th>
+                <th className="px-6 py-4 font-medium text-caption">Target</th>
+                <th className="px-6 py-4 font-medium text-caption">Rank History</th>
+                <th className="px-6 py-4 font-medium text-caption text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-border">
               {keywords.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={4} className="px-6 py-8 text-center text-caption">
                     No keywords tracked yet. Add one above.
                   </td>
                 </tr>
               ) : (
                 keywords.map((kw) => (
-                  <tr key={kw.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{kw.term}</td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">{kw.targetUrl || "—"}</td>
+                  <tr key={kw.id} className="hover:bg-background transition-colors">
+                    <td className="px-6 py-4 font-medium text-foreground">{kw.term}</td>
+                    <td className="px-6 py-4 text-caption text-sm">{kw.targetUrl || "—"}</td>
                     <td className="px-6 py-4">
                       <RankSparkline checks={kw.rankChecks} />
                     </td>
@@ -144,7 +144,7 @@ export default function KeywordTrackingManager({
                         <button
                           onClick={() => handleRunCheck(kw.id)}
                           disabled={checkingId === kw.id}
-                          className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm disabled:opacity-50"
+                          className="flex items-center gap-1.5 text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange text-sm disabled:opacity-50"
                         >
                           <PlayCircle size={16} />
                           {checkingId === kw.id ? "Checking..." : "Check Rank"}
@@ -161,13 +161,13 @@ export default function KeywordTrackingManager({
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <Globe2 size={18} />
           Competitor Domains
         </h2>
         <form
           onSubmit={handleAddCompetitor}
-          className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 mb-4"
+          className="bg-card p-4 rounded-lg shadow-sm border border-border flex flex-col sm:flex-row gap-3 mb-4"
         >
           <input
             type="text"
@@ -175,45 +175,45 @@ export default function KeywordTrackingManager({
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             placeholder="competitor-domain.co.uk"
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
           />
           <input
             type="text"
             value={competitorName}
             onChange={(e) => setCompetitorName(e.target.value)}
             placeholder="Company name (optional)"
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
           />
           <button
             type="submit"
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"
           >
             <Plus size={18} />
             Add
           </button>
         </form>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Domain</th>
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400">Name</th>
-                <th className="px-6 py-4 font-medium text-gray-500 dark:text-gray-400 text-right">Actions</th>
+              <tr className="bg-background border-b border-border">
+                <th className="px-6 py-4 font-medium text-caption">Domain</th>
+                <th className="px-6 py-4 font-medium text-caption">Name</th>
+                <th className="px-6 py-4 font-medium text-caption text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-border">
               {competitors.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={3} className="px-6 py-8 text-center text-caption">
                     No competitor domains added yet.
                   </td>
                 </tr>
               ) : (
                 competitors.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-6 py-4 font-mono text-sm text-gray-900 dark:text-white">{c.domain}</td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{c.name || "—"}</td>
+                  <tr key={c.id} className="hover:bg-background transition-colors">
+                    <td className="px-6 py-4 font-mono text-sm text-foreground">{c.domain}</td>
+                    <td className="px-6 py-4 text-caption">{c.name || "—"}</td>
                     <td className="px-6 py-4 text-right">
                       <DeleteButton id={c.id} onDelete={deleteCompetitorDomain} entityName="competitor" />
                     </td>

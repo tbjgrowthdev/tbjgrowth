@@ -7,8 +7,8 @@ export default async function CategoriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Categories</h1>
-        <p className="text-gray-500 dark:text-gray-400">Organize blog posts into categories.</p>
+        <h1 className="text-2xl font-bold text-foreground">Categories</h1>
+        <p className="text-caption">Organize blog posts into categories.</p>
       </div>
       <TaxonomyManager
         entityName="category"

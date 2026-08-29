@@ -12,7 +12,7 @@ export default async function EditPartner({ params }: { params: Promise<{ id: st
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Partner: {p.name}</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Partner: {p.name}</h1>
       <PartnerForm initialData={p} />
     </div>
   );

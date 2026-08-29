@@ -73,13 +73,13 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       });
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-24 pb-20">
+    <main className="min-h-screen bg-background pt-24 pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaMarkup }} />
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
           href="/case-studies"
-          className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors mb-8"
         >
           <ArrowLeft size={16} />
           Back to Case Studies
@@ -87,32 +87,32 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
 
         <header className="mb-10 text-center md:text-left">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-6">
-            <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-semibold">
+            <span className="px-3 py-1 rounded-full bg-cream dark:bg-brand-orange-deep/30 text-brand-orange-deep dark:text-brand-orange-light text-sm font-semibold">
               {study.serviceType}
             </span>
-            <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-sm font-semibold">
+            <span className="px-3 py-1 rounded-full bg-background text-muted text-sm font-semibold">
               {study.industry}
             </span>
           </div>
 
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight mb-6">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
             {study.title}
           </h1>
 
           {study.excerpt && (
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
+            <p className="text-lg md:text-xl text-muted leading-relaxed mb-8">
               {study.excerpt}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-3 text-sm text-gray-500 dark:text-gray-400 border-y border-gray-200 dark:border-gray-800 py-5">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-3 text-sm text-muted border-y border-border py-5">
             <div className="flex items-center gap-2">
-              <Building2 size={16} className="text-blue-500" />
-              <span className="font-medium text-gray-900 dark:text-gray-200">{study.clientName}</span>
+              <Building2 size={16} className="text-brand-orange" />
+              <span className="font-medium text-foreground">{study.clientName}</span>
             </div>
             {study.results && (
               <div className="flex items-center gap-2">
-                <TrendingUp size={16} className="text-blue-500" />
+                <TrendingUp size={16} className="text-brand-orange" />
                 <span>{study.results}</span>
               </div>
             )}
@@ -134,19 +134,19 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto lg:mx-0 prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-500 prose-pre:overflow-x-auto prose-img:rounded-2xl">
+        <div className="max-w-3xl mx-auto lg:mx-0 prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
           <div dangerouslySetInnerHTML={{ __html: study.content }} />
         </div>
 
         {study.imageGallery && study.imageGallery.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <Briefcase size={22} className="text-blue-500" />
+            <h2 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
+              <Briefcase size={22} className="text-brand-orange" />
               Project Gallery
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {study.imageGallery.map((url: string, i: number) => (
-                <div key={url} className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+                <div key={url} className="relative aspect-video rounded-xl overflow-hidden border border-border">
                   <Image src={url} alt={`${study.title} gallery image ${i + 1}`} fill className="object-cover" />
                 </div>
               ))}

@@ -34,7 +34,7 @@ export default function CaseStudiesListClient({ caseStudies }: { caseStudies: Ca
         <select
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
-          className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="px-4 py-2.5 bg-card border border-border rounded-full text-sm text-muted focus:ring-2 focus:ring-brand-orange outline-none"
         >
           {industries.map((i) => (
             <option key={i} value={i}>
@@ -45,7 +45,7 @@ export default function CaseStudiesListClient({ caseStudies }: { caseStudies: Ca
         <select
           value={serviceType}
           onChange={(e) => setServiceType(e.target.value)}
-          className="px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+          className="px-4 py-2.5 bg-card border border-border rounded-full text-sm text-muted focus:ring-2 focus:ring-brand-orange outline-none"
         >
           {serviceTypes.map((s) => (
             <option key={s} value={s}>
@@ -57,11 +57,11 @@ export default function CaseStudiesListClient({ caseStudies }: { caseStudies: Ca
 
       {filtered.length === 0 ? (
         <div className="py-20 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-background text-caption mb-4">
             <Building2 size={32} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No case studies found</h3>
-          <p className="text-gray-500 dark:text-gray-400">Try a different filter combination.</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">No case studies found</h3>
+          <p className="text-muted">Try a different filter combination.</p>
         </div>
       ) : (
         <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -78,9 +78,9 @@ export default function CaseStudiesListClient({ caseStudies }: { caseStudies: Ca
               >
                 <Link
                   href={`/case-studies/${study.slug}`}
-                  className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
+                  className="flex flex-col h-full bg-card rounded-2xl border border-border overflow-hidden hover:shadow-2xl hover:shadow-brand-orange/10 transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="relative h-48 w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  <div className="relative h-48 w-full overflow-hidden bg-background">
                     {isValidImageSrc(study.featuredImage) ? (
                       <Image
                         src={study.featuredImage}
@@ -89,25 +89,25 @@ export default function CaseStudiesListClient({ caseStudies }: { caseStudies: Ca
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                        <Building2 className="text-gray-400" size={32} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-brand-orange-deep/20 to-brand-orange/20 flex items-center justify-center">
+                        <Building2 className="text-caption" size={32} />
                       </div>
                     )}
                     <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur text-xs font-semibold rounded-full text-blue-600 dark:text-blue-400">
+                      <span className="px-3 py-1 bg-card/90 backdrop-blur text-xs font-semibold rounded-full text-brand-orange-deep dark:text-brand-orange-light">
                         {study.serviceType}
                       </span>
                     </div>
                   </div>
                   <div className="p-6 flex-1 flex flex-col">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">{study.industry}</span>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span className="text-xs font-medium text-muted mb-2">{study.industry}</span>
+                    <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 group-hover:text-brand-orange-deep dark:group-hover:text-brand-orange-light transition-colors">
                       {study.title}
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 flex-1 mb-4">
+                    <p className="text-sm text-muted line-clamp-2 flex-1 mb-4">
                       {study.excerpt || study.results || "Click to read the full story."}
                     </p>
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-orange-deep dark:text-brand-orange-light">
                       Read case study <ArrowUpRight size={14} />
                     </span>
                   </div>

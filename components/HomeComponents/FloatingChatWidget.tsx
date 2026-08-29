@@ -23,7 +23,7 @@ export default function FloatingChatWidget({
       sublabel: contactPhone,
       href: callHref,
       icon: Phone,
-      color: "from-blue-600 to-blue-500",
+      color: "from-brand-orange-deep to-brand-orange",
     },
     {
       key: "whatsapp",
@@ -60,7 +60,7 @@ export default function FloatingChatWidget({
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className="group flex items-center gap-3 pl-4 pr-5 py-3 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800"
+                  className="group flex items-center gap-3 pl-4 pr-5 py-3 bg-card rounded-2xl shadow-xl border border-border hover:border-accent-border transition-colors"
                 >
                   <div
                     className={`p-2.5 rounded-xl bg-gradient-to-br ${option.color} text-white shadow-sm`}
@@ -68,10 +68,10 @@ export default function FloatingChatWidget({
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="text-sm font-semibold text-foreground">
                       {option.label}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-caption">
                       {option.sublabel}
                     </div>
                   </div>
@@ -89,10 +89,10 @@ export default function FloatingChatWidget({
         whileTap={{ scale: 0.95 }}
         aria-label={isOpen ? "Close contact options" : "Open contact options"}
         aria-expanded={isOpen}
-        className="relative flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:shadow-purple-500/40 transition-shadow duration-300"
+        className="relative flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-brand-orange-deep to-brand-orange text-white shadow-xl shadow-brand-orange/30 hover:shadow-2xl hover:shadow-brand-orange/40 transition-shadow duration-300"
       >
         {!isOpen && (
-          <span className="absolute inset-0 rounded-full bg-blue-500/40 animate-ping" />
+          <span className="absolute inset-0 rounded-full bg-brand-orange/40 animate-ping" />
         )}
         <AnimatePresence mode="wait" initial={false}>
           <motion.span

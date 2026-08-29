@@ -50,7 +50,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
   // Animated background orbs
   const floatingOrbs = [
     {
-      color: "bg-blue-500/20 dark:bg-blue-500/30",
+      color: "bg-brand-orange/20 dark:bg-brand-orange/30",
       size: "w-72 h-72 md:w-96 md:h-96",
       initialX: "0%",
       initialY: "0%",
@@ -59,7 +59,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
       duration: 20,
     },
     {
-      color: "bg-purple-500/20 dark:bg-purple-500/30",
+      color: "bg-charcoal/20 dark:bg-white/10",
       size: "w-64 h-64 md:w-80 md:h-80",
       initialX: "100%",
       initialY: "50%",
@@ -68,7 +68,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
       duration: 25,
     },
     {
-      color: "bg-cyan-500/15 dark:bg-cyan-500/25",
+      color: "bg-brand-orange-light/15 dark:bg-brand-orange-light/25",
       size: "w-56 h-56 md:w-72 md:h-72",
       initialX: "50%",
       initialY: "100%",
@@ -98,7 +98,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white dark:bg-gray-950 transition-colors duration-500"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background transition-colors duration-500"
     >
       {/* Floating Background Orbs */}
       {floatingOrbs.map((orb, index) => (
@@ -149,10 +149,10 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.6 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-6"
             >
-              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              <Sparkles className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+              <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
                 AI-Powered Growth Agency
               </span>
             </motion.div>
@@ -162,10 +162,10 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 dark:text-white tracking-tight leading-[1.1] mb-6"
+              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground tracking-tight leading-[1.1] mb-6"
             >
               We{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-purple-500 animate-gradient">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light animate-gradient">
                 Build, Attract
               </span>{" "}
               & Scale Your Digital Presence
@@ -176,7 +176,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0"
+              className="text-lg sm:text-xl text-muted leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0"
             >
               From strategy to automation, we help UK businesses grow with
               design that converts, marketing that attracts, and AI that scales.
@@ -194,7 +194,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                 href="#contact"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl overflow-hidden shadow-xl shadow-blue-500/25 hover:shadow-2xl hover:shadow-purple-500/30 transition-shadow duration-300"
+                className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-2xl overflow-hidden shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/30 transition-shadow duration-300"
               >
                 {/* Shine effect */}
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
@@ -207,7 +207,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                 href="#case-studies"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="group inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-2xl hover:border-blue-500 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
+                className="group inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-border text-muted font-semibold rounded-2xl hover:border-brand-orange hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-all duration-300"
               >
                 <Play className="w-5 h-5" />
                 <span>View Our Work</span>
@@ -232,7 +232,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                       rel="noopener noreferrer"
                       whileHover={{ scale: 1.1, y: -2 }}
                       whileTap={{ scale: 0.95 }}
-                      className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gradient-to-br hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                      className="p-2.5 rounded-xl bg-background text-muted hover:bg-gradient-to-br hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
                       aria-label={social.label}
                     >
                       <Icon className="w-4 h-4" />
@@ -249,7 +249,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               transition={{ delay: 0.8, duration: 0.5 }}
               className="hidden lg:block"
             >
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-500 mb-3 uppercase tracking-wider">
+              <p className="text-sm font-medium text-caption mb-3 uppercase tracking-wider">
                 Our Proven Process
               </p>
               <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 1 + index * 0.1, duration: 0.3 }}
-                        className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white transition-all duration-300 cursor-default"
+                        className="px-3 py-1.5 bg-background rounded-lg text-xs font-semibold text-muted hover:bg-gradient-to-r hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all duration-300 cursor-default"
                       >
                         {step}
                       </motion.div>
@@ -272,7 +272,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                             delay: 1.2 + index * 0.1,
                             duration: 0.3,
                           }}
-                          className="w-4 h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 mx-0.5 origin-left"
+                          className="w-4 h-0.5 bg-gradient-to-r from-brand-orange-light to-brand-orange mx-0.5 origin-left"
                         />
                       )}
                     </div>
@@ -304,10 +304,10 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-200 dark:border-gray-800 p-6 overflow-hidden"
+                className="relative bg-card rounded-3xl shadow-2xl shadow-black/5 dark:shadow-black/30 border border-border p-6 overflow-hidden"
               >
                 {/* Card inner glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10" />
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-orange-deep/5 to-brand-orange/5 dark:from-brand-orange-deep/10 dark:to-brand-orange/10" />
 
                 <div className="relative">
                   {/* Mock Dashboard Header */}
@@ -317,7 +317,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                       <div className="w-3 h-3 rounded-full bg-yellow-400" />
                       <div className="w-3 h-3 rounded-full bg-green-400" />
                     </div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500">
+                    <div className="text-xs text-caption">
                       TBJ Dashboard
                     </div>
                   </div>
@@ -336,7 +336,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                               duration: 0.5,
                               ease: "easeOut",
                             }}
-                            className="flex-1 bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-md opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                            className="flex-1 bg-gradient-to-t from-brand-orange-deep to-brand-orange rounded-t-md opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
                           />
                         )
                       )}
@@ -345,23 +345,23 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                     {/* Mock Stats */}
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { label: "Traffic", value: "+245%", color: "blue" },
-                        { label: "Leads", value: "+180%", color: "purple" },
-                        { label: "Revenue", value: "+320%", color: "cyan" },
+                        { label: "Traffic", value: "+245%", color: "orange" },
+                        { label: "Leads", value: "+180%", color: "orange" },
+                        { label: "Revenue", value: "+320%", color: "orange" },
                       ].map((stat) => (
                         <motion.div
                           key={stat.label}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 1.5, duration: 0.3 }}
-                          className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-center"
+                          className="bg-stat rounded-xl p-3 text-center"
                         >
                           <div
                             className={`text-lg font-bold text-${stat.color}-600 dark:text-${stat.color}-400`}
                           >
                             {stat.value}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-xs text-caption">
                             {stat.label}
                           </div>
                         </motion.div>
@@ -383,17 +383,17 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                   ease: "easeInOut",
                   delay: 1,
                 }}
-                className="absolute -top-8 -right-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-4"
+                className="absolute -top-8 -right-8 bg-card rounded-2xl shadow-xl border border-border p-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <div className="w-10 h-10 bg-brand-orange/10 dark:bg-brand-orange/20 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    <div className="text-lg font-bold text-foreground">
                       +98%
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-caption">
                       Growth Rate
                     </div>
                   </div>
@@ -411,17 +411,17 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                   ease: "easeInOut",
                   delay: 2,
                 }}
-                className="absolute -bottom-6 -left-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-4"
+                className="absolute -bottom-6 -left-6 bg-card rounded-2xl shadow-xl border border-border p-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <div className="w-10 h-10 bg-off-black/5 dark:bg-white/10 rounded-full flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-off-black dark:text-white" />
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">
+                    <div className="text-lg font-bold text-foreground">
                       AI Active
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-caption">
                       Automating 24/7
                     </div>
                   </div>
@@ -448,14 +448,14 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               className="text-center group cursor-default"
             >
               <div className="flex justify-center mb-2">
-                <div className="p-2.5 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  <stat.icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="p-2.5 bg-stat rounded-xl group-hover:scale-110 transition-transform duration-300">
+                  <stat.icon className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
                 </div>
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
                 {stat.value}
               </div>
-              <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-xs sm:text-sm text-caption">
                 {stat.label}
               </div>
             </motion.div>

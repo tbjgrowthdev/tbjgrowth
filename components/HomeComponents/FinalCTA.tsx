@@ -241,7 +241,7 @@
 //                         onMouseLeave={() => setIsHoveringCTA(false)}
 //                         whileHover={{ scale: 1.03 }}
 //                         whileTap={{ scale: 0.97 }}
-//                         className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-purple-500/25 hover:shadow-2xl hover:shadow-purple-500/40 transition-shadow duration-300"
+//                         className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/40 transition-shadow duration-300"
 //                       >
 //                         {/* Shine effect */}
 //                         <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
@@ -412,7 +412,7 @@ export default function FinalCTA() {
         <section
             id="contact"
             ref={sectionRef}
-            className="relative h-screen min-h-[600px] max-h-[300px] flex items-center justify-center overflow-hidden bg-gray-950"
+            className="relative h-screen min-h-[600px] max-h-[300px] flex items-center justify-center overflow-hidden bg-[#0E0B0A]"
         >
             {/* Sticky Background Image with Parallax */}
             <motion.div
@@ -438,7 +438,7 @@ export default function FinalCTA() {
             {/* Gradient Overlay */}
             <motion.div
                 style={{ opacity: overlayOpacity }}
-                className="absolute inset-0 z-10 bg-gradient-to-t from-gray-950 via-gray-950/80 to-gray-950/40"
+                className="absolute inset-0 z-10 bg-gradient-to-t from-[#0E0B0A] via-[#0E0B0A]/80 to-[#0E0B0A]/40"
             />
 
             {/* Content */}
@@ -454,7 +454,7 @@ export default function FinalCTA() {
                     transition={{ duration: 0.6 }}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full mb-8"
                 >
-                    <Sparkles className="w-4 h-4 text-blue-400" />
+                    <Sparkles className="w-4 h-4 text-brand-orange-light" />
                     <span className="text-sm font-medium text-white/90">
                         Let's Build Something Great
                     </span>
@@ -469,7 +469,7 @@ export default function FinalCTA() {
                     className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-tight"
                 >
                     Ready to{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-light via-brand-orange to-brand-orange-deep">
                         Scale
                     </span>
                     ?
@@ -501,7 +501,7 @@ export default function FinalCTA() {
                         onMouseLeave={() => setIsHovering(false)}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
-                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-purple-500/25 hover:shadow-2xl hover:shadow-purple-500/40 transition-shadow duration-300"
+                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-bold rounded-2xl overflow-hidden shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/40 transition-shadow duration-300"
                     >
                         {/* Shine effect */}
                         <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />

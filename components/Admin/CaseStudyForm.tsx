@@ -133,104 +133,104 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
       )}
 
       {/* Basic Info */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
+      <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Basic Information</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
+            <label className="block text-sm font-medium text-muted">Title</label>
             <input
               type="text"
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Slug</label>
+            <label className="block text-sm font-medium text-muted">Slug</label>
             <input
               type="text"
               required
               value={formData.slug}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               onBlur={(e) => setFormData((prev) => ({ ...prev, slug: slugify(e.target.value) }))}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Client Name</label>
+            <label className="block text-sm font-medium text-muted">Client Name</label>
             <input
               type="text"
               required
               value={formData.clientName}
               onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Industry</label>
+            <label className="block text-sm font-medium text-muted">Industry</label>
             <input
               type="text"
               required
               value={formData.industry}
               onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Service Type</label>
+            <label className="block text-sm font-medium text-muted">Service Type</label>
             <input
               type="text"
               required
               value={formData.serviceType}
               onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Results Summary</label>
+            <label className="block text-sm font-medium text-muted">Results Summary</label>
             <input
               type="text"
               value={formData.results}
               onChange={(e) => setFormData({ ...formData, results: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Excerpt</label>
+          <label className="block text-sm font-medium text-muted">Excerpt</label>
           <textarea
             rows={3}
             value={formData.excerpt}
             onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Featured Image</label>
+          <label className="block text-sm font-medium text-muted">Featured Image</label>
           <input
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
             disabled={uploadingImage}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent disabled:opacity-50"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent disabled:opacity-50"
           />
           {uploadingImage && (
-            <div className="mt-2 text-sm text-gray-500">Uploading...</div>
+            <div className="mt-2 text-sm text-caption">Uploading...</div>
           )}
           {uploadError && (
             <div className="mt-2 text-sm text-red-600">{uploadError}</div>
           )}
           {formData.featuredImage && !uploadingImage && (
-            <div className="mt-2 text-sm text-gray-500">
+            <div className="mt-2 text-sm text-caption">
               Image uploaded (URL: {formData.featuredImage})
             </div>
           )}
@@ -238,34 +238,34 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
 
         {formData.featuredImage && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Featured Image Alt Text</label>
+            <label className="block text-sm font-medium text-muted">Featured Image Alt Text</label>
             <input
               type="text"
               value={formData.featuredImageAlt}
               onChange={(e) => setFormData({ ...formData, featuredImageAlt: e.target.value })}
               placeholder="Describe the image for accessibility & image SEO"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             />
           </div>
         )}
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Image Gallery</label>
+          <label className="block text-sm font-medium text-muted">Image Gallery</label>
           <input
             type="file"
             accept="image/*"
             multiple
             onChange={handleGalleryUpload}
             disabled={uploadingGallery}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent disabled:opacity-50"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent disabled:opacity-50"
           />
           {uploadingGallery && (
-            <div className="mt-2 text-sm text-gray-500">Uploading gallery images...</div>
+            <div className="mt-2 text-sm text-caption">Uploading gallery images...</div>
           )}
           {formData.imageGallery.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-3">
               {formData.imageGallery.map((url: string) => (
-                <div key={url} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                <div key={url} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={url} alt="Gallery item" className="w-full h-full object-cover" />
                   <button
@@ -283,11 +283,11 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+            <label className="block text-sm font-medium text-muted">Status</label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
             >
               <option value="DRAFT">Draft</option>
               <option value="SCHEDULED">Scheduled</option>
@@ -298,13 +298,13 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
 
           {formData.status === "SCHEDULED" && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Publish Date & Time</label>
+              <label className="block text-sm font-medium text-muted">Publish Date & Time</label>
               <input
                 type="datetime-local"
                 required
                 value={formData.publishedAt}
                 onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
               />
             </div>
           )}
@@ -316,19 +316,19 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
             id="isIndexable"
             checked={formData.isIndexable}
             onChange={(e) => setFormData({ ...formData, isIndexable: e.target.checked })}
-            className="w-4 h-4 rounded border-gray-300 dark:border-gray-600"
+            className="w-4 h-4 rounded border-border"
           />
-          <label htmlFor="isIndexable" className="text-sm text-gray-700 dark:text-gray-300">
+          <label htmlFor="isIndexable" className="text-sm text-muted">
             Allow search engines to index this case study (unchecking sets meta robots to noindex)
           </label>
         </div>
 
-        <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 mt-2 pt-4">
+        <div className="flex items-center justify-between border-t border-border mt-2 pt-4">
           <div>
-            <label htmlFor="isFeatured" className="text-sm font-medium text-gray-900 dark:text-white">
+            <label htmlFor="isFeatured" className="text-sm font-medium text-foreground">
               Show on Home Page
             </label>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-caption">
               Featured case studies appear in the Case Studies section on the home page.
             </p>
           </div>
@@ -339,7 +339,7 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
             id="isFeatured"
             onClick={() => setFormData({ ...formData, isFeatured: !formData.isFeatured })}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
-              formData.isFeatured ? "bg-blue-600" : "bg-gray-300 dark:bg-gray-600"
+              formData.isFeatured ? "bg-brand-orange-deep" : "bg-border"
             }`}
           >
             <span
@@ -352,8 +352,8 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
       </div>
 
       {/* Editor */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Content</h2>
+      <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Content</h2>
         <RichTextEditor
           content={formData.content}
           onChange={(content) => setFormData({ ...formData, content })}
@@ -361,68 +361,68 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
       </div>
 
       {/* SEO Settings */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">SEO Settings</h2>
+      <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">SEO Settings</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Meta Title</label>
+              <label className="block text-sm font-medium text-muted">Meta Title</label>
               <input
                 type="text"
                 value={formData.metaTitle}
                 onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Meta Description</label>
+              <label className="block text-sm font-medium text-muted">Meta Description</label>
               <textarea
                 rows={3}
                 value={formData.metaDescription}
                 onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Focus Keyword</label>
+              <label className="block text-sm font-medium text-muted">Focus Keyword</label>
               <input
                 type="text"
                 value={formData.focusKeyword}
                 onChange={(e) => setFormData({ ...formData, focusKeyword: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Canonical URL</label>
+              <label className="block text-sm font-medium text-muted">Canonical URL</label>
               <input
                 type="text"
                 value={formData.canonicalUrl}
                 onChange={(e) => setFormData({ ...formData, canonicalUrl: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
                 placeholder="https://example.com/canonical-url"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Open Graph Image URL</label>
+              <label className="block text-sm font-medium text-muted">Open Graph Image URL</label>
               <input
                 type="text"
                 value={formData.ogImage}
                 onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Twitter Card Type</label>
+              <label className="block text-sm font-medium text-muted">Twitter Card Type</label>
               <select
                 value={formData.twitterCard}
                 onChange={(e) => setFormData({ ...formData, twitterCard: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
               >
                 <option value="">Default</option>
                 <option value="summary">Summary</option>
@@ -433,7 +433,7 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Live SERP Preview</label>
+              <label className="block text-sm font-medium text-muted">Live SERP Preview</label>
               <SERPPreview
                 title={formData.metaTitle}
                 description={formData.metaDescription}
@@ -451,8 +451,8 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
         </div>
 
         {/* Schema Builder Section */}
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Schema Markup (JSON-LD)</h3>
+        <div className="mt-8 pt-6 border-t border-border">
+          <h3 className="text-lg font-medium text-foreground mb-4">Schema Markup (JSON-LD)</h3>
           <SchemaBuilder
             initialSchema={formData.schemaJson}
             onChange={(schemaJson) => setFormData({ ...formData, schemaJson })}
@@ -464,14 +464,14 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="px-6 py-2 border border-border rounded-lg hover:bg-background"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="px-6 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50"
         >
           {loading ? "Saving..." : initialData ? "Update Case Study" : "Create Case Study"}
         </button>

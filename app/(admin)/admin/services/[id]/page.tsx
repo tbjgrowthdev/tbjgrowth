@@ -12,7 +12,7 @@ export default async function EditService({ params }: { params: Promise<{ id: st
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Service: {service.title}</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Service: {service.title}</h1>
       <ServiceForm initialData={service} />
     </div>
   );

@@ -9,7 +9,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Global Site Settings</h1>
+      <h1 className="text-2xl font-bold text-foreground">Global Site Settings</h1>
 
       {nap.checked && (
         <div className={`p-4 rounded-lg flex items-start gap-3 text-sm ${nap.issues.length === 0 ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"}`}>

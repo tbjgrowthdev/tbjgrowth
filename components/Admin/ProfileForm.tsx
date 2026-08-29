@@ -108,10 +108,10 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-6">
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-6">
           <div className="flex items-center gap-3">
-            <UserIcon size={20} className="text-gray-400" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h2>
+            <UserIcon size={20} className="text-caption" />
+            <h2 className="text-xl font-bold text-foreground">Profile</h2>
           </div>
 
           <div className="flex items-center gap-5">
@@ -128,10 +128,10 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
                 accept="image/*"
                 onChange={handleImageUpload}
                 disabled={uploadingImage}
-                className="block text-sm text-gray-600 dark:text-gray-400 disabled:opacity-50"
+                className="block text-sm text-muted disabled:opacity-50"
               />
               {uploadingImage && (
-                <div className="mt-1 text-sm text-gray-500">Uploading...</div>
+                <div className="mt-1 text-sm text-caption">Uploading...</div>
               )}
               {uploadError && (
                 <div className="mt-1 text-sm text-red-600">{uploadError}</div>
@@ -141,73 +141,73 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-muted mb-1">Full Name</label>
               <input
                 type="text"
                 name="name"
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-muted mb-1">Email Address</label>
               <input
                 type="email"
                 name="email"
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+            <label className="block text-sm font-medium text-muted mb-1">Bio</label>
             <textarea
               name="bio"
               rows={3}
               value={formData.bio}
               onChange={handleChange}
               placeholder="A short bio shown on your author profile."
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Social Links</h2>
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
+          <h2 className="text-xl font-bold text-foreground mb-2">Social Links</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
+              <label className="block text-sm font-medium text-muted mb-1">Website</label>
               <input
                 type="url"
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Twitter / X</label>
+              <label className="block text-sm font-medium text-muted mb-1">Twitter / X</label>
               <input
                 type="url"
                 name="twitter"
                 value={formData.twitter}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">LinkedIn</label>
+              <label className="block text-sm font-medium text-muted mb-1">LinkedIn</label>
               <input
                 type="url"
                 name="linkedin"
                 value={formData.linkedin}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
           </div>
@@ -217,7 +217,7 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
           <button
             type="submit"
             disabled={isSubmitting || uploadingImage}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
           >
             <Save size={20} />
             {isSubmitting ? "Saving..." : "Save Profile"}
@@ -290,26 +290,26 @@ function PasswordForm() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
         <div className="flex items-center gap-3">
-          <KeyRound size={20} className="text-gray-400" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Change Password</h2>
+          <KeyRound size={20} className="text-caption" />
+          <h2 className="text-xl font-bold text-foreground">Change Password</h2>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Password</label>
+          <label className="block text-sm font-medium text-muted mb-1">Current Password</label>
           <input
             type="password"
             name="currentPassword"
             required
             value={passwordData.currentPassword}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+            <label className="block text-sm font-medium text-muted mb-1">New Password</label>
             <input
               type="password"
               name="newPassword"
@@ -317,12 +317,12 @@ function PasswordForm() {
               minLength={6}
               value={passwordData.newPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               placeholder="Min. 6 characters"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm New Password</label>
+            <label className="block text-sm font-medium text-muted mb-1">Confirm New Password</label>
             <input
               type="password"
               name="confirmPassword"
@@ -330,7 +330,7 @@ function PasswordForm() {
               minLength={6}
               value={passwordData.confirmPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
         </div>
@@ -340,7 +340,7 @@ function PasswordForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-gray-900 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
         >
           <KeyRound size={20} />
           {isSubmitting ? "Updating..." : "Update Password"}

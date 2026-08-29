@@ -47,9 +47,9 @@ export default function GoogleIntegrationPanel({
 
   if (!integration) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Connect Google Analytics & Search Console</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+      <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Connect Google Analytics & Search Console</h2>
+        <p className="text-sm text-caption mb-4">
           Connect your Google account to pull live GA4 traffic and Search Console performance data into this dashboard.
         </p>
         {googleError && (
@@ -62,7 +62,7 @@ export default function GoogleIntegrationPanel({
         )}
         <a
           href="/api/google/connect"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white text-sm font-medium rounded-lg hover:bg-brand-orange transition-colors"
         >
           Connect Google Account
         </a>
@@ -71,12 +71,12 @@ export default function GoogleIntegrationPanel({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
+    <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CheckCircle2 size={18} className="text-green-500" />
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
+            <p className="text-sm font-medium text-foreground">
               Connected {integration.connectedEmail ? `as ${integration.connectedEmail}` : ""}
             </p>
             {justConnected && <p className="text-xs text-green-600 dark:text-green-400">Connected successfully.</p>}
@@ -92,36 +92,36 @@ export default function GoogleIntegrationPanel({
         </button>
       </div>
 
-      <form onSubmit={handleSaveConfig} className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+      <form onSubmit={handleSaveConfig} className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">GA4 Property ID</label>
+          <label className="block text-xs font-medium text-caption">GA4 Property ID</label>
           <input
             type="text"
             value={ga4PropertyId}
             onChange={(e) => setGa4PropertyId(e.target.value)}
             placeholder="e.g. 123456789"
-            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent"
+            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-transparent"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">GSC Verified Site URL</label>
+          <label className="block text-xs font-medium text-caption">GSC Verified Site URL</label>
           <input
             type="text"
             value={gscSiteUrl}
             onChange={(e) => setGscSiteUrl(e.target.value)}
             placeholder="https://tbjgrowth.com/"
-            className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent"
+            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-transparent"
           />
         </div>
         <div className="sm:col-span-2 flex items-center gap-3">
           <button
             type="submit"
             disabled={isSaving}
-            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="px-3 py-1.5 bg-brand-orange-deep text-white text-xs font-medium rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
           >
             {isSaving ? "Saving..." : "Save"}
           </button>
-          {saveMsg && <span className="text-xs text-gray-500 dark:text-gray-400">{saveMsg}</span>}
+          {saveMsg && <span className="text-xs text-caption">{saveMsg}</span>}
         </div>
       </form>
     </div>

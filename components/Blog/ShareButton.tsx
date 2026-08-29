@@ -30,7 +30,7 @@ export default function ShareButton({ title }: { title: string }) {
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      className="flex items-center gap-2 px-4 py-2 rounded-full border border-border text-sm font-medium text-muted hover:bg-background hover:border-accent-border transition-colors"
     >
       {copied ? <Check size={16} className="text-green-600" /> : <Share2 size={16} />}
       {copied ? "Link copied" : "Share"}

@@ -47,11 +47,11 @@ const servicesData = [
       "SEO-Optimized Structure",
       "Conversion Rate Optimization",
     ],
-    gradient: "from-blue-500 to-cyan-500",
-    bgGlow: "bg-blue-500/20",
-    borderGlow: "border-blue-500/30",
-    shadowGlow: "shadow-blue-500/25",
-    textGradient: "from-blue-400 to-cyan-400",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/20",
+    borderGlow: "border-brand-orange/30",
+    shadowGlow: "shadow-brand-orange/25",
+    textGradient: "from-brand-orange-deep to-brand-orange-light",
     preview: "dashboard",
     stat: "98%",
     statLabel: "Performance Score",
@@ -69,11 +69,11 @@ const servicesData = [
       "Content That Converts",
       "Monthly Performance Reports",
     ],
-    gradient: "from-indigo-500 to-blue-600",
-    bgGlow: "bg-indigo-500/20",
-    borderGlow: "border-indigo-500/30",
-    shadowGlow: "shadow-indigo-500/25",
-    textGradient: "from-indigo-400 to-blue-400",
+    gradient: "from-charcoal to-off-black",
+    bgGlow: "bg-charcoal/20",
+    borderGlow: "border-charcoal/30",
+    shadowGlow: "shadow-charcoal/25",
+    textGradient: "from-graphite to-off-black",
     preview: "analytics",
     stat: "+245%",
     statLabel: "Organic Traffic",
@@ -91,11 +91,11 @@ const servicesData = [
       "Content That Engages",
       "Paid & Organic Mix",
     ],
-    gradient: "from-purple-500 to-pink-500",
-    bgGlow: "bg-purple-500/20",
-    borderGlow: "border-purple-500/30",
-    shadowGlow: "shadow-purple-500/25",
-    textGradient: "from-purple-400 to-pink-400",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/20",
+    borderGlow: "border-brand-orange/30",
+    shadowGlow: "shadow-brand-orange/25",
+    textGradient: "from-brand-orange-deep to-brand-orange-light",
     preview: "social",
     stat: "2.5M+",
     statLabel: "Monthly Reach",
@@ -113,11 +113,11 @@ const servicesData = [
       "A/B Testing & Optimization",
       "Transparent Reporting",
     ],
-    gradient: "from-orange-500 to-red-500",
-    bgGlow: "bg-orange-500/20",
-    borderGlow: "border-orange-500/30",
-    shadowGlow: "shadow-orange-500/25",
-    textGradient: "from-orange-400 to-red-400",
+    gradient: "from-charcoal to-off-black",
+    bgGlow: "bg-charcoal/20",
+    borderGlow: "border-charcoal/30",
+    shadowGlow: "shadow-charcoal/25",
+    textGradient: "from-graphite to-off-black",
     preview: "ads",
     stat: "4.5x",
     statLabel: "Average ROAS",
@@ -135,11 +135,11 @@ const servicesData = [
       "Team Collaboration Tools",
       "Integration With 50+ Tools",
     ],
-    gradient: "from-green-500 to-emerald-500",
-    bgGlow: "bg-green-500/20",
-    borderGlow: "border-green-500/30",
-    shadowGlow: "shadow-green-500/25",
-    textGradient: "from-green-400 to-emerald-400",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/20",
+    borderGlow: "border-brand-orange/30",
+    shadowGlow: "shadow-brand-orange/25",
+    textGradient: "from-brand-orange-deep to-brand-orange-light",
     preview: "crm",
     stat: "85%",
     statLabel: "Efficiency Gain",
@@ -157,11 +157,11 @@ const servicesData = [
       "Email Automation",
       "Smart Analytics & BI",
     ],
-    gradient: "from-violet-500 to-purple-600",
-    bgGlow: "bg-violet-500/20",
-    borderGlow: "border-violet-500/30",
-    shadowGlow: "shadow-violet-500/25",
-    textGradient: "from-violet-400 to-purple-400",
+    gradient: "from-charcoal to-off-black",
+    bgGlow: "bg-charcoal/20",
+    borderGlow: "border-charcoal/30",
+    shadowGlow: "shadow-charcoal/25",
+    textGradient: "from-graphite to-off-black",
     preview: "automation",
     stat: "24/7",
     statLabel: "Automated Operations",
@@ -201,7 +201,7 @@ const previewMockups = {
             initial={{ height: 0 }}
             animate={{ height: `${h}%` }}
             transition={{ delay: i * 0.03, duration: 0.4 }}
-            className="flex-1 bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t-sm opacity-70"
+            className="flex-1 bg-gradient-to-t from-brand-orange-deep to-brand-orange-light rounded-t-sm opacity-70"
           />
         ))}
       </div>
@@ -222,8 +222,8 @@ const previewMockups = {
           />
           <defs>
             <linearGradient id="analyticsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#818cf8" />
-              <stop offset="100%" stopColor="#3b82f6" />
+              <stop offset="0%" stopColor="#F0813D" />
+              <stop offset="100%" stopColor="#A83A08" />
             </linearGradient>
           </defs>
         </svg>
@@ -238,9 +238,9 @@ const previewMockups = {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.1 }}
-          className="aspect-square rounded-lg bg-gradient-to-br from-purple-400/20 to-pink-400/20 flex items-center justify-center"
+          className="aspect-square rounded-lg bg-off-black/10 dark:bg-white/10 flex items-center justify-center"
         >
-          <Users className="w-4 h-4 text-purple-400" />
+          <Users className="w-4 h-4 text-off-black dark:text-white" />
         </motion.div>
       ))}
     </div>
@@ -248,26 +248,26 @@ const previewMockups = {
   ads: () => (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "85%" }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
+            className="h-full bg-gradient-to-r from-charcoal to-off-black rounded-full"
           />
         </div>
-        <span className="text-xs font-bold text-orange-500">85%</span>
+        <span className="text-xs font-bold text-charcoal dark:text-white">85%</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "92%" }}
             transition={{ duration: 1, delay: 0.4 }}
-            className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
+            className="h-full bg-gradient-to-r from-charcoal to-off-black rounded-full"
           />
         </div>
-        <span className="text-xs font-bold text-orange-500">92%</span>
+        <span className="text-xs font-bold text-charcoal dark:text-white">92%</span>
       </div>
     </div>
   ),
@@ -281,9 +281,9 @@ const previewMockups = {
           transition={{ delay: i * 0.1 }}
           className="flex items-center gap-2 text-xs"
         >
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-          <span className="text-gray-600 dark:text-gray-400">{item}</span>
-          <span className="ml-auto text-gray-400 dark:text-gray-500">2min ago</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-brand-orange" />
+          <span className="text-muted">{item}</span>
+          <span className="ml-auto text-caption">2min ago</span>
         </motion.div>
       ))}
     </div>
@@ -298,18 +298,18 @@ const previewMockups = {
           transition={{ delay: i * 0.15 }}
           className="flex items-center gap-2"
         >
-          <div className="w-6 h-6 rounded-lg bg-violet-500/20 flex items-center justify-center">
-            <BrainCircuit className="w-3 h-3 text-violet-400" />
+          <div className="w-6 h-6 rounded-lg bg-charcoal/20 dark:bg-white/10 flex items-center justify-center">
+            <BrainCircuit className="w-3 h-3 text-off-black dark:text-white" />
           </div>
-          <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-background rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${i * 30}%` }}
               transition={{ duration: 0.8, delay: i * 0.2 }}
-              className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+              className="h-full bg-gradient-to-r from-charcoal to-off-black rounded-full"
             />
           </div>
-          <Zap className="w-3 h-3 text-violet-400" />
+          <Zap className="w-3 h-3 text-off-black dark:text-white" />
         </motion.div>
       ))}
     </div>
@@ -392,7 +392,7 @@ function ServiceNode({
         className={`absolute -inset-1 rounded-full border-2 transition-all duration-500 ${
           isActive
             ? `${service.borderGlow} opacity-100`
-            : "border-gray-300 dark:border-gray-600 opacity-40"
+            : "border-border opacity-40"
         }`}
       />
 
@@ -400,8 +400,8 @@ function ServiceNode({
       <div
         className={`relative w-16 h-16 lg:w-20 lg:h-20 rounded-full flex flex-col items-center justify-center gap-0.5 backdrop-blur-xl transition-all duration-500 ${
           isActive
-            ? `bg-white dark:bg-gray-800 shadow-2xl ${service.shadowGlow}`
-            : "bg-white/80 dark:bg-gray-800/80 shadow-lg hover:shadow-xl"
+            ? `bg-card shadow-2xl ${service.shadowGlow}`
+            : "bg-card/80 shadow-lg hover:shadow-xl"
         }`}
       >
         {/* Glass reflection */}
@@ -411,14 +411,14 @@ function ServiceNode({
           className={`w-5 h-5 lg:w-6 lg:h-6 transition-all duration-500 ${
             isActive
               ? `text-transparent bg-clip-text bg-gradient-to-br ${service.gradient}`
-              : "text-gray-500 dark:text-gray-400"
+              : "text-muted"
           }`}
         />
         <span
           className={`text-[8px] lg:text-[10px] font-semibold text-center leading-tight px-1 transition-colors duration-500 ${
             isActive
-              ? "text-gray-900 dark:text-white"
-              : "text-gray-500 dark:text-gray-400"
+              ? "text-foreground"
+              : "text-muted"
           }`}
         >
           {service.title.split(" ")[0]}
@@ -451,7 +451,7 @@ function ConnectionLines({
           >
             <stop
               offset="0%"
-              stopColor={index === activeIndex ? "#6366f1" : "#94a3b8"}
+              stopColor={index === activeIndex ? "#D9500E" : "#94a3b8"}
               stopOpacity={index === activeIndex ? 1 : 0.3}
             />
             <stop
@@ -483,9 +483,9 @@ function ConnectionLines({
       />
       <defs>
         <linearGradient id="circleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6366f1" />
-          <stop offset="50%" stopColor="#a855f7" />
-          <stop offset="100%" stopColor="#6366f1" />
+          <stop offset="0%" stopColor="#A83A08" />
+          <stop offset="50%" stopColor="#F0813D" />
+          <stop offset="100%" stopColor="#A83A08" />
         </linearGradient>
       </defs>
 
@@ -510,7 +510,7 @@ function ConnectionLines({
           {/* Animated dot traveling along the line */}
           <motion.circle
             r={index === activeIndex ? 4 : 2.5}
-            fill={index === activeIndex ? "#6366f1" : "#94a3b8"}
+            fill={index === activeIndex ? "#D9500E" : "#94a3b8"}
             initial={{ opacity: 0 }}
             animate={{
               opacity: [0, 1, 0],
@@ -555,7 +555,7 @@ function FeaturedPanel({
         className="relative"
       >
         {/* Main card */}
-        <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl shadow-gray-300/20 dark:shadow-black/40 border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div className="relative bg-card rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/40 border border-border overflow-hidden">
           {/* Gradient overlay */}
           <div
             className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-5 dark:opacity-10`}
@@ -573,13 +573,13 @@ function FeaturedPanel({
             </motion.div>
 
             {/* Title & description */}
-            <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h3 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
               {service.title}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-sm text-caption mb-2">
               {service.subtitle}
             </p>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+            <p className="text-muted mb-6 leading-relaxed">
               {service.description}
             </p>
 
@@ -588,7 +588,7 @@ function FeaturedPanel({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 mb-6 border border-gray-200 dark:border-gray-700"
+              className="bg-background rounded-2xl p-6 mb-6 border border-border"
             >
               <PreviewComponent />
             </motion.div>
@@ -620,7 +620,7 @@ function FeaturedPanel({
                       />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-muted">
                     {benefit}
                   </span>
                 </motion.div>
@@ -635,7 +635,7 @@ function FeaturedPanel({
                 >
                   {service.stat}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-caption">
                   {service.statLabel}
                 </div>
               </div>
@@ -673,7 +673,7 @@ export default function Services() {
     <section
       id="services"
       ref={sectionRef}
-      className="relative py-20 lg:py-28 bg-white dark:bg-gray-950 transition-colors duration-500 overflow-hidden"
+      className="relative py-20 lg:py-28 bg-background transition-colors duration-500 overflow-hidden"
     >
       {/* Background elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -688,7 +688,7 @@ export default function Services() {
             scale: [1, 1.1, 0.9, 1],
           }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl bg-blue-500/5"
+          className="absolute top-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl bg-brand-orange/5"
         />
         <motion.div
           animate={{
@@ -697,14 +697,14 @@ export default function Services() {
             scale: [1, 0.9, 1.1, 1],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/3 left-1/4 w-80 h-80 rounded-full blur-3xl bg-purple-500/5"
+          className="absolute bottom-1/3 left-1/4 w-80 h-80 rounded-full blur-3xl bg-charcoal/5 dark:bg-white/5"
         />
 
         {/* Floating particles */}
         {particles.map((particle, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-blue-400/20 dark:bg-blue-400/10"
+            className="absolute w-1 h-1 rounded-full bg-brand-orange/20 dark:bg-brand-orange/10"
             style={{
               left: particle.left,
               top: particle.top,
@@ -736,20 +736,20 @@ export default function Services() {
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
           >
-            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            <Sparkles className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
               Our Services Ecosystem
             </span>
           </motion.div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             Complete{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
               Growth Solutions
             </span>
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted max-w-2xl mx-auto">
             Hover over any service to explore. Everything you need to build,
             attract, convert, automate, and scale — working together as one
             seamless ecosystem.
@@ -786,19 +786,19 @@ export default function Services() {
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                  className="absolute -inset-3 rounded-full border border-blue-400/30 dark:border-blue-400/20"
+                  className="absolute -inset-3 rounded-full border border-brand-orange/30 dark:border-brand-orange/20"
                 />
                 <motion.div
                   animate={{ rotate: -360 }}
                   transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                  className="absolute -inset-6 rounded-full border border-purple-400/20 dark:border-purple-400/10 border-dashed"
+                  className="absolute -inset-6 rounded-full border border-off-black/20 dark:border-white/10 border-dashed"
                 />
 
                 {/* Outer glow */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/40 to-purple-500/40 blur-2xl scale-150 animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-orange-deep/40 to-brand-orange/40 blur-2xl scale-150 animate-pulse" />
 
                 {/* Center card */}
-                <div className="relative w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex flex-col items-center justify-center shadow-2xl shadow-purple-500/30 border-2 border-white/20">
+                <div className="relative w-24 h-24 lg:w-28 lg:h-28 rounded-full bg-gradient-to-br from-brand-orange-deep to-brand-orange flex flex-col items-center justify-center shadow-2xl shadow-brand-orange/30 border-2 border-white/20">
                   <Hexagon className="w-8 h-8 lg:w-10 lg:h-10 text-white mb-0.5" />
                   <span className="text-[10px] lg:text-xs font-bold text-white text-center leading-tight">
                     Your

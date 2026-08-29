@@ -26,7 +26,7 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="relative bg-white dark:bg-gray-950 transition-colors duration-500">
+    <main className="relative bg-background transition-colors duration-500">
       <Hero settings={settings} />
       <Services></Services>
       <BusinessJourney></BusinessJourney>

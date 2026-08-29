@@ -38,9 +38,9 @@ const stages = [
     id: "build",
     label: "Build",
     icon: Wrench,
-    color: "from-blue-500 to-cyan-500",
-    glowColor: "shadow-blue-500/30",
-    bgGradient: "from-blue-500/10 to-cyan-500/5",
+    color: "from-brand-orange-deep to-brand-orange",
+    glowColor: "shadow-brand-orange/30",
+    bgGradient: "from-brand-orange/10 to-brand-orange/5",
     description: "We design and build your digital foundation — websites, brands, and user experiences that convert.",
     dashboardItems: [
       { icon: Monitor, label: "Website Design", value: "Responsive & Fast" },
@@ -54,9 +54,9 @@ const stages = [
     id: "attract",
     label: "Attract",
     icon: TrendingUp,
-    color: "from-purple-500 to-pink-500",
-    glowColor: "shadow-purple-500/30",
-    bgGradient: "from-purple-500/10 to-pink-500/5",
+    color: "from-charcoal to-off-black",
+    glowColor: "shadow-charcoal/30",
+    bgGradient: "from-charcoal/10 to-off-black/5",
     description: "Drive targeted traffic through SEO, paid ads, and social media strategies that bring qualified leads.",
     dashboardItems: [
       { icon: Search, label: "SEO Strategy", value: "Top 3 Rankings" },
@@ -70,9 +70,9 @@ const stages = [
     id: "convert",
     label: "Convert",
     icon: Target,
-    color: "from-orange-500 to-red-500",
-    glowColor: "shadow-orange-500/30",
-    bgGradient: "from-orange-500/10 to-red-500/5",
+    color: "from-brand-orange-deep to-brand-orange",
+    glowColor: "shadow-brand-orange/30",
+    bgGradient: "from-brand-orange/10 to-brand-orange/5",
     description: "Turn visitors into customers with high-converting landing pages, CRM integration, and smart lead capture.",
     dashboardItems: [
       { icon: MousePointerClick, label: "Landing Pages", value: "4.2% Conv. Rate" },
@@ -86,9 +86,9 @@ const stages = [
     id: "automate",
     label: "Automate",
     icon: Bot,
-    color: "from-green-500 to-emerald-500",
-    glowColor: "shadow-green-500/30",
-    bgGradient: "from-green-500/10 to-emerald-500/5",
+    color: "from-charcoal to-off-black",
+    glowColor: "shadow-charcoal/30",
+    bgGradient: "from-charcoal/10 to-off-black/5",
     description: "Set your growth on autopilot with AI workflows, email automation, and intelligent chatbots that work 24/7.",
     dashboardItems: [
       { icon: BrainCircuit, label: "AI Workflows", value: "Smart Automation" },
@@ -102,9 +102,9 @@ const stages = [
     id: "scale",
     label: "Scale",
     icon: Rocket,
-    color: "from-violet-500 to-purple-600",
-    glowColor: "shadow-violet-500/30",
-    bgGradient: "from-violet-500/10 to-purple-600/5",
+    color: "from-brand-orange-deep to-brand-orange",
+    glowColor: "shadow-brand-orange/30",
+    bgGradient: "from-brand-orange/10 to-brand-orange/5",
     description: "Scale intelligently with advanced analytics, business intelligence, and AI-driven growth strategies.",
     dashboardItems: [
       { icon: LineChart, label: "Analytics Suite", value: "Real-time Data" },
@@ -160,7 +160,7 @@ export default function BusinessJourney() {
     <section
       id="business-journey"
       ref={sectionRef}
-      className="relative min-h-screen bg-white dark:bg-gray-950 py-20 lg:py-28 overflow-hidden transition-colors duration-500"
+      className="relative min-h-screen bg-background py-20 lg:py-28 overflow-hidden transition-colors duration-500"
     >
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -195,13 +195,13 @@ export default function BusinessJourney() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16 lg:mb-20"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             Your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
               Business Journey
             </span>
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted max-w-2xl mx-auto">
             From foundation to scale — a proven framework that transforms your
             digital presence into a growth engine.
           </p>
@@ -216,11 +216,11 @@ export default function BusinessJourney() {
           className="relative mb-16 lg:mb-24"
         >
           {/* Background Line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-800 -translate-y-1/2 rounded-full" />
+          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-1/2 rounded-full" />
           
           {/* Active Progress Line */}
           <motion.div
-            className="hidden lg:block absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-violet-500 -translate-y-1/2 rounded-full"
+            className="hidden lg:block absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light -translate-y-1/2 rounded-full"
             style={{ width: `${((activeStage + 1) / stages.length) * 100}%` }}
             transition={{ duration: 0.8, ease: "easeInOut" }}
           />
@@ -240,8 +240,8 @@ export default function BusinessJourney() {
                     isActive
                       ? "bg-gradient-to-r " + stage.color + " text-white shadow-2xl " + stage.glowColor + " scale-105 lg:scale-110"
                       : isCompleted
-                      ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white"
-                      : "bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      ? "bg-card text-foreground"
+                      : "bg-background text-caption hover:bg-card"
                   }`}
                   whileHover={{ scale: isActive ? 1.1 : 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -254,7 +254,7 @@ export default function BusinessJourney() {
                         ? "bg-white/20"
                         : isCompleted
                         ? "bg-gradient-to-r " + stage.color + " text-white"
-                        : "bg-gray-200 dark:bg-gray-700"
+                        : "bg-card"
                     }`}
                   >
                     {isCompleted ? (
@@ -271,7 +271,7 @@ export default function BusinessJourney() {
 
                   {/* Connection dot on mobile */}
                   {index < stages.length - 1 && (
-                    <div className="lg:hidden w-0.5 h-6 bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-700 dark:to-gray-600 mx-auto" />
+                    <div className="lg:hidden w-0.5 h-6 bg-border mx-auto" />
                   )}
                 </motion.button>
               );
@@ -295,7 +295,7 @@ export default function BusinessJourney() {
           className="relative max-w-5xl mx-auto"
         >
           {/* Dashboard Container */}
-          <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl shadow-gray-300/20 dark:shadow-black/40 border border-gray-200 dark:border-gray-800 overflow-hidden">
+          <div className="relative bg-card rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/40 border border-border overflow-hidden">
             {/* Dashboard inner gradient */}
             <div className={`absolute inset-0 bg-gradient-to-br ${currentStage.bgGradient} opacity-50 dark:opacity-30`} />
 
@@ -309,11 +309,11 @@ export default function BusinessJourney() {
                     <div className="w-3 h-3 rounded-full bg-yellow-400" />
                     <div className="w-3 h-3 rounded-full bg-green-400" />
                   </div>
-                  <span className="text-sm text-gray-400 dark:text-gray-500 ml-2">
+                  <span className="text-sm text-caption ml-2">
                     tbj-growth-dashboard
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                <div className="flex items-center gap-2 text-xs text-caption">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   Live
                 </div>
@@ -342,10 +342,10 @@ export default function BusinessJourney() {
                       <StageIcon className="w-8 h-8" />
                     </motion.div>
                     <div className="flex-1">
-                      <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
                         {currentStage.label} Phase
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400">
+                      <p className="text-muted">
                         {currentStage.description}
                       </p>
                     </div>
@@ -354,12 +354,12 @@ export default function BusinessJourney() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring" }}
-                      className="flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-850 rounded-2xl p-6 text-center border border-gray-200 dark:border-gray-700"
+                      className="flex-shrink-0 bg-stat rounded-2xl p-6 text-center border border-border"
                     >
                       <div className={`text-3xl font-bold bg-gradient-to-r ${currentStage.color} bg-clip-text text-transparent`}>
                         {currentStage.metrics.primary}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <div className="text-sm text-caption mt-1">
                         {currentStage.metrics.secondary}
                       </div>
                     </motion.div>
@@ -375,17 +375,17 @@ export default function BusinessJourney() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.1 * index, duration: 0.4 }}
-                          className="group relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-300 cursor-pointer"
+                          className="group relative bg-card/80 backdrop-blur-sm rounded-2xl p-5 border border-border hover:border-accent-border transition-all duration-300 cursor-pointer"
                           whileHover={{ y: -4, scale: 1.02 }}
                         >
                           <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${currentStage.bgGradient} mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                            <ItemIcon className={`w-5 h-5 text-gray-700 dark:text-gray-300`} />
+                            <ItemIcon className={`w-5 h-5 text-muted`} />
                           </div>
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                          <div className="text-sm font-semibold text-foreground mb-1">
                             {item.label}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          <div className="text-xs text-caption flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-orange" />
                             {item.value}
                           </div>
                         </motion.div>
@@ -402,8 +402,8 @@ export default function BusinessJourney() {
                           index === activeStage
                             ? `bg-gradient-to-r ${currentStage.color} flex-1`
                             : index < activeStage
-                            ? "bg-green-500 w-8"
-                            : "bg-gray-200 dark:bg-gray-700 w-8"
+                            ? "bg-brand-orange w-8"
+                            : "bg-border w-8"
                         }`}
                         animate={
                           index === activeStage
@@ -426,14 +426,14 @@ export default function BusinessJourney() {
               rotate: [0, 5, 0],
             }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-6 -right-6 lg:-top-8 lg:-right-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 flex items-center gap-3"
+            className="absolute -top-6 -right-6 lg:-top-8 lg:-right-8 bg-card rounded-xl shadow-lg border border-border p-3 flex items-center gap-3"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-brand-orange-deep to-brand-orange rounded-lg flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-sm font-bold text-gray-900 dark:text-white">Live</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Processing</div>
+              <div className="text-sm font-bold text-foreground">Live</div>
+              <div className="text-xs text-caption">Processing</div>
             </div>
           </motion.div>
 
@@ -443,14 +443,14 @@ export default function BusinessJourney() {
               rotate: [0, -3, 0],
             }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute -bottom-4 -left-6 lg:-bottom-6 lg:-left-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 flex items-center gap-3"
+            className="absolute -bottom-4 -left-6 lg:-bottom-6 lg:-left-8 bg-card rounded-xl shadow-lg border border-border p-3 flex items-center gap-3"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-charcoal to-off-black rounded-lg flex items-center justify-center">
               <ArrowUpRight className="w-4 h-4 text-white" />
             </div>
             <div>
-              <div className="text-sm font-bold text-gray-900 dark:text-white">Growth</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">+{activeStage * 60 + 45}%</div>
+              <div className="text-sm font-bold text-foreground">Growth</div>
+              <div className="text-xs text-caption">+{activeStage * 60 + 45}%</div>
             </div>
           </motion.div>
         </motion.div>

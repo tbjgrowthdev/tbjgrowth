@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sun, Moon, ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 
 const navItems = [
@@ -112,7 +113,7 @@ export default function Navbar() {
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-          ? "bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl shadow-lg shadow-gray-200/20 dark:shadow-black/20 border-b border-gray-200/50 dark:border-gray-800/50"
+          ? "bg-background/80 backdrop-blur-xl shadow-lg shadow-black/5 dark:shadow-black/30 border-b border-border/70"
           : "bg-transparent"
           }`}
       >
@@ -121,22 +122,28 @@ export default function Navbar() {
             {/* Logo */}
             <motion.a
               href="/"
-              className="flex items-center gap-2 group"
+              className="flex items-center group"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               <div className="relative">
-                <div className="w-9 h-9 lg:w-10 lg:h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm lg:text-base shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-shadow duration-300">
-                  TBJ
-                </div>
-                <div className="absolute -inset-0.5 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-50 transition-opacity duration-300 -z-10" />
+                <Image
+                  src="/primarylogo.png"
+                  alt="TBJ Growth Tech"
+                  width={1100}
+                  height={300}
+                  priority
+                  className="h-8 lg:h-9 w-auto dark:hidden"
+                />
+                <Image
+                  src="/primary-logo-dark.png"
+                  alt="TBJ Growth Tech"
+                  width={1000}
+                  height={200}
+                  priority
+                  className="hidden h-8 lg:h-9 w-auto dark:block"
+                />
               </div>
-              <span className="text-lg lg:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                TBJ{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                  Growth
-                </span>
-              </span>
             </motion.a>
 
             {/* Desktop Navigation */}
@@ -150,13 +157,13 @@ export default function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * index, duration: 0.3 }}
                   className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 group ${activeSection === item.href
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-600 dark:text-white hover:text-gray-900 dark:hover:text-white"
+                    ? "text-brand-orange-deep dark:text-brand-orange-light"
+                    : "text-muted hover:text-foreground"
                     }`}
                 >
                   {item.label}
                   <span
-                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300 rounded-full ${activeSection === item.href
+                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange transition-all duration-300 rounded-full ${activeSection === item.href
                       ? "w-3/4 opacity-100"
                       : "w-0 opacity-0 group-hover:w-1/2 group-hover:opacity-100"
                       }`}
@@ -173,8 +180,8 @@ export default function Navbar() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 className={`relative p-2 rounded-xl transition-all duration-300 ${isScrolled
-                    ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 dark:hover:bg-gray-800/50"
+                    ? "bg-card text-muted hover:text-foreground"
+                    : "text-muted hover:text-foreground hover:bg-card/60"
                   }`}
                 aria-label="Toggle dark mode"
               >
@@ -214,14 +221,14 @@ export default function Navbar() {
                 transition={{ delay: 0.5, duration: 0.3 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="relative group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-semibold rounded-xl overflow-hidden shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-shadow duration-300"
+                className="relative group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white text-sm font-semibold rounded-xl overflow-hidden shadow-lg shadow-brand-orange/25 hover:shadow-brand-orange/40 transition-shadow duration-300"
               >
                 <span className="relative z-10">Get Started</span>
                 <ArrowRight
                   size={16}
                   className="relative z-10 group-hover:translate-x-1 transition-transform duration-300"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-r from-brand-orange to-brand-orange-deep opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </motion.a>
             </div>
 
@@ -230,8 +237,8 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               whileTap={{ scale: 0.9 }}
               className={`lg:hidden relative p-2 rounded-xl transition-all duration-300 ${isScrolled
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                : "text-gray-600 dark:text-gray-400 hover:bg-white/10 dark:hover:bg-gray-800/50"
+                ? "bg-card text-muted"
+                : "text-muted hover:bg-card/60"
                 }`}
               aria-label="Toggle menu"
             >
@@ -266,22 +273,30 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-800"
+              className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-card shadow-2xl border-l border-border"
             >
               <div className="flex flex-col h-full p-6">
                 {/* Mobile Menu Header */}
                 <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
-                      TBJ
-                    </div>
-                    <span className="text-lg font-bold text-gray-900 dark:text-white">
-                      TBJ Growth
-                    </span>
+                  <div className="flex items-center">
+                    <Image
+                      src="/primarylogo.png"
+                      alt="TBJ Growth Tech"
+                      width={1000}
+                      height={200}
+                      className="h-7 w-auto dark:hidden"
+                    />
+                    <Image
+                      src="/primary-logo-dark.png"
+                      alt="TBJ Growth Tech"
+                      width={1000}
+                      height={200}
+                      className="hidden h-7 w-auto dark:block"
+                    />
                   </div>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-background transition-colors"
                   >
                     <X size={24} />
                   </button>
@@ -297,12 +312,12 @@ export default function Navbar() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 * index }}
-                      className="group flex items-center justify-between px-4 py-3 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all duration-200 font-medium"
+                      className="group flex items-center justify-between px-4 py-3 text-foreground/85 hover:text-brand-orange-deep dark:hover:text-brand-orange-light hover:bg-tint rounded-xl transition-all duration-200 font-medium"
                     >
                       <span>{item.label}</span>
                       <ArrowRight
                         size={16}
-                        className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-blue-600 dark:text-blue-400"
+                        className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-brand-orange-deep dark:text-brand-orange-light"
                       />
                     </motion.a>
                   ))}
@@ -313,7 +328,7 @@ export default function Navbar() {
                   {/* Dark Mode Toggle */}
                   <button
                     onClick={toggleDarkMode}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors font-medium"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-foreground/85 hover:bg-background rounded-xl transition-colors font-medium"
                   >
                     {darkMode ? (
                       <>
@@ -333,7 +348,7 @@ export default function Navbar() {
                     href="#contact"
                     onClick={(e) => handleNavClick(e, "#contact")}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 active:scale-95 transition-transform"
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-xl shadow-lg shadow-brand-orange/25 active:scale-95 transition-transform"
                   >
                     <span>Get Started</span>
                     <ArrowRight size={18} />

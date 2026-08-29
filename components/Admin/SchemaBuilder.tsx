@@ -99,7 +99,7 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
     );
   };
 
-  const inputClass = "w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-transparent";
+  const inputClass = "w-full px-3 py-1.5 border border-border rounded bg-transparent";
   const labelClass = "block text-sm mb-1";
 
   const renderVisualFields = () => {
@@ -151,7 +151,7 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
         return (
           <div className="space-y-4">
             {faqItems.map((item, i) => (
-              <div key={i} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg space-y-2 relative">
+              <div key={i} className="p-3 border border-border rounded-lg space-y-2 relative">
                 <button
                   type="button"
                   onClick={() => updateFaqItems(faqItems.filter((_, idx) => idx !== i))}
@@ -182,7 +182,7 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
             <button
               type="button"
               onClick={() => updateFaqItems([...faqItems, { question: '', answer: '' }])}
-              className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              className="flex items-center gap-2 text-sm text-brand-orange-deep dark:text-brand-orange-light hover:underline"
             >
               <Plus size={14} /> Add Question
             </button>
@@ -210,7 +210,7 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
         );
 
       default:
-        return <div className="text-sm text-gray-500">Visual builder not available for this schema type yet. Use code editor.</div>;
+        return <div className="text-sm text-caption">Visual builder not available for this schema type yet. Use code editor.</div>;
     }
   };
 
@@ -220,63 +220,63 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
         return faqItems.length > 0 ? (
           <div className="space-y-2">
             {faqItems.filter((i) => i.question).map((item, i) => (
-              <div key={i} className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-400">{item.question}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{item.answer}</p>
+              <div key={i} className="border-b border-border pb-2">
+                <p className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">{item.question}</p>
+                <p className="text-xs text-caption mt-1">{item.answer}</p>
               </div>
             ))}
           </div>
-        ) : <p className="text-sm text-gray-400">Add questions to preview the FAQ rich result.</p>;
+        ) : <p className="text-sm text-caption">Add questions to preview the FAQ rich result.</p>;
 
       case 'Review':
         return (
           <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">{schemaData.itemReviewed?.name || 'Item Name'}</p>
+            <p className="text-sm font-medium text-foreground">{schemaData.itemReviewed?.name || 'Item Name'}</p>
             <div className="flex items-center gap-1 my-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={14} className={i < (schemaData.reviewRating?.ratingValue || 0) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"} />
+                <Star key={i} size={14} className={i < (schemaData.reviewRating?.ratingValue || 0) ? "fill-yellow-400 text-yellow-400" : "text-caption"} />
               ))}
-              <span className="text-xs text-gray-500 ml-1">by {schemaData.author?.name || 'Reviewer'}</span>
+              <span className="text-xs text-caption ml-1">by {schemaData.author?.name || 'Reviewer'}</span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{schemaData.reviewBody}</p>
+            <p className="text-xs text-caption">{schemaData.reviewBody}</p>
           </div>
         );
 
       case 'LocalBusiness':
         return (
           <div>
-            <p className="text-sm font-bold text-gray-900 dark:text-white">{schemaData.name || 'Business Name'}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-sm font-bold text-foreground">{schemaData.name || 'Business Name'}</p>
+            <p className="text-xs text-caption">
               {[schemaData.address?.streetAddress, schemaData.address?.addressLocality, schemaData.address?.postalCode].filter(Boolean).join(', ')}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{schemaData.telephone} {schemaData.priceRange}</p>
+            <p className="text-xs text-caption">{schemaData.telephone} {schemaData.priceRange}</p>
           </div>
         );
 
       default:
         return (
           <div>
-            <p className="text-sm font-medium text-blue-700 dark:text-blue-400">{schemaData.name || schemaData.headline || 'Preview title'}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{schemaData.description || schemaData.reviewBody || `Type: ${schemaType}`}</p>
+            <p className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">{schemaData.name || schemaData.headline || 'Preview title'}</p>
+            <p className="text-xs text-caption mt-1">{schemaData.description || schemaData.reviewBody || `Type: ${schemaType}`}</p>
           </div>
         );
     }
   };
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-      <div className="flex border-b border-gray-200 dark:border-gray-700">
+    <div className="border border-border rounded-lg overflow-hidden bg-card">
+      <div className="flex border-b border-border">
         <button
           type="button"
           onClick={() => setMode('visual')}
-          className={`px-4 py-2 text-sm font-medium ${mode === 'visual' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'}`}
+          className={`px-4 py-2 text-sm font-medium ${mode === 'visual' ? 'bg-brand-orange/10 text-brand-orange-deep dark:bg-brand-orange/20 dark:text-brand-orange-light' : 'text-muted hover:bg-background'}`}
         >
           Visual Builder
         </button>
         <button
           type="button"
           onClick={() => setMode('code')}
-          className={`px-4 py-2 text-sm font-medium ${mode === 'code' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700'}`}
+          className={`px-4 py-2 text-sm font-medium ${mode === 'code' ? 'bg-brand-orange/10 text-brand-orange-deep dark:bg-brand-orange/20 dark:text-brand-orange-light' : 'text-muted hover:bg-background'}`}
         >
           JSON-LD Editor
         </button>
@@ -300,7 +300,7 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
             </div>
             <div>
               <label className={labelClass + " font-medium"}>Rich Snippet Preview</label>
-              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+              <div className="p-4 border border-border rounded-lg bg-background">
                 {renderPreview()}
               </div>
             </div>
@@ -310,7 +310,7 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
             rows={10}
             value={jsonText}
             onChange={handleTextChange}
-            className="w-full p-3 font-mono text-sm bg-gray-50 dark:bg-gray-900 border rounded"
+            className="w-full p-3 font-mono text-sm bg-background border border-border rounded"
             placeholder="{\n  &quot;@context&quot;: &quot;https://schema.org&quot;,\n  &quot;@type&quot;: &quot;Organization&quot;\n}"
           />
         )}

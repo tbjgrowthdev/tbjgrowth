@@ -44,10 +44,10 @@ const benefits = [
       { value: "150+", label: "Projects" },
       { value: "98%", label: "Success Rate" },
     ],
-    gradient: "from-blue-500 to-cyan-500",
-    bgGlow: "bg-blue-500/10",
-    borderGlow: "border-blue-500/30",
-    color: "blue",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/10",
+    borderGlow: "border-brand-orange/30",
+    color: "orange",
   },
   {
     id: "roi-focused",
@@ -59,10 +59,10 @@ const benefits = [
       { value: "3x", label: "Avg. ROI" },
       { value: "6mo", label: "Payback Period" },
     ],
-    gradient: "from-green-500 to-emerald-500",
-    bgGlow: "bg-green-500/10",
-    borderGlow: "border-green-500/30",
-    color: "green",
+    gradient: "from-charcoal to-off-black",
+    bgGlow: "bg-charcoal/10",
+    borderGlow: "border-charcoal/30",
+    color: "charcoal",
   },
   {
     id: "speed-matters",
@@ -74,9 +74,9 @@ const benefits = [
       { value: "48hrs", label: "Avg. Launch" },
       { value: "99.9%", label: "Uptime" },
     ],
-    gradient: "from-orange-500 to-red-500",
-    bgGlow: "bg-orange-500/10",
-    borderGlow: "border-orange-500/30",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/10",
+    borderGlow: "border-brand-orange/30",
     color: "orange",
   },
   {
@@ -89,10 +89,10 @@ const benefits = [
       { value: "85%", label: "Time Saved" },
       { value: "24/7", label: "Automation" },
     ],
-    gradient: "from-purple-500 to-pink-500",
-    bgGlow: "bg-purple-500/10",
-    borderGlow: "border-purple-500/30",
-    color: "purple",
+    gradient: "from-charcoal to-off-black",
+    bgGlow: "bg-charcoal/10",
+    borderGlow: "border-charcoal/30",
+    color: "charcoal",
   },
   {
     id: "dedicated-support",
@@ -104,10 +104,10 @@ const benefits = [
       { value: "<15min", label: "Response Time" },
       { value: "98%", label: "Satisfaction" },
     ],
-    gradient: "from-indigo-500 to-blue-600",
-    bgGlow: "bg-indigo-500/10",
-    borderGlow: "border-indigo-500/30",
-    color: "indigo",
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/10",
+    borderGlow: "border-brand-orange/30",
+    color: "orange",
   },
   {
     id: "transparent",
@@ -119,10 +119,10 @@ const benefits = [
       { value: "100%", label: "Transparency" },
       { value: "Real-time", label: "Reporting" },
     ],
-    gradient: "from-violet-500 to-purple-600",
-    bgGlow: "bg-violet-500/10",
-    borderGlow: "border-violet-500/30",
-    color: "violet",
+    gradient: "from-charcoal to-off-black",
+    bgGlow: "bg-charcoal/10",
+    borderGlow: "border-charcoal/30",
+    color: "charcoal",
   },
 ];
 
@@ -140,7 +140,7 @@ const processSteps = [
       "Goal setting & KPI definition",
       "Technology stack planning",
     ],
-    gradient: "from-blue-500 to-cyan-500",
+    gradient: "from-brand-orange-deep to-brand-orange",
   },
   {
     step: "02",
@@ -154,7 +154,7 @@ const processSteps = [
       "Quality assurance & testing",
       "Deployment & go-live",
     ],
-    gradient: "from-purple-500 to-pink-500",
+    gradient: "from-charcoal to-off-black",
   },
   {
     step: "03",
@@ -168,7 +168,7 @@ const processSteps = [
       "Social media management",
       "Conversion rate optimization",
     ],
-    gradient: "from-orange-500 to-red-500",
+    gradient: "from-brand-orange-deep to-brand-orange",
   },
   {
     step: "04",
@@ -182,7 +182,7 @@ const processSteps = [
       "Analytics & BI dashboards",
       "Continuous optimization",
     ],
-    gradient: "from-green-500 to-emerald-500",
+    gradient: "from-charcoal to-off-black",
   },
 ];
 
@@ -212,7 +212,7 @@ function BenefitCard({
       className={`group relative cursor-pointer rounded-2xl p-6 transition-all duration-500 border ${
         isActive
           ? `bg-gradient-to-br ${benefit.bgGlow} ${benefit.borderGlow} shadow-2xl scale-[1.02] z-10`
-          : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xl"
+          : "bg-card border-border hover:border-accent-border hover:shadow-xl"
       }`}
     >
       {/* Icon */}
@@ -222,24 +222,24 @@ function BenefitCard({
         className={`inline-flex p-3 rounded-xl mb-4 transition-all duration-500 ${
           isActive
             ? `bg-gradient-to-br ${benefit.gradient} text-white shadow-lg`
-            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-gray-750"
+            : "bg-background text-muted group-hover:bg-tint"
         }`}
       >
         <Icon className="w-6 h-6" />
       </motion.div>
 
       {/* Title */}
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-bold text-foreground mb-2">
         {benefit.title}
       </h3>
 
       {/* Description */}
-      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
+      <p className="text-sm text-muted leading-relaxed mb-4">
         {benefit.description}
       </p>
 
       {/* Stats */}
-      <div className="flex items-center gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div className="flex items-center gap-4 pt-4 border-t border-border">
         {benefit.stats.map((stat) => (
           <div key={stat.label} className="text-center">
             <div
@@ -247,7 +247,7 @@ function BenefitCard({
             >
               {stat.value}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-caption">
               {stat.label}
             </div>
           </div>
@@ -281,16 +281,12 @@ function ProcessStep({
   const getLineColor = () => {
     if (isActive) {
       switch (step.gradient) {
-        case "from-blue-500 to-cyan-500":
-          return "#3b82f6";
-        case "from-purple-500 to-pink-500":
-          return "#a855f7";
-        case "from-orange-500 to-red-500":
-          return "#f97316";
-        case "from-green-500 to-emerald-500":
-          return "#22c55e";
+        case "from-brand-orange-deep to-brand-orange":
+          return "#D9500E";
+        case "from-charcoal to-off-black":
+          return "#1F2937";
         default:
-          return "#6366f1";
+          return "#D9500E";
       }
     }
     return "#e5e7eb";
@@ -314,7 +310,7 @@ function ProcessStep({
           className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
             isActive
               ? `bg-gradient-to-br ${step.gradient} text-white shadow-lg scale-110`
-              : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-gray-200 dark:group-hover:bg-gray-700"
+              : "bg-background text-muted group-hover:bg-tint"
           }`}
         >
           <Icon className="w-5 h-5" />
@@ -342,7 +338,7 @@ function ProcessStep({
           className={`p-5 rounded-2xl transition-all duration-500 ${
             isActive
               ? `bg-gradient-to-br ${step.gradient} text-white shadow-lg`
-              : "bg-gray-50 dark:bg-gray-800/50 group-hover:bg-gray-100 dark:group-hover:bg-gray-800"
+              : "bg-background group-hover:bg-card"
           }`}
         >
           <div className="flex items-center gap-3 mb-2">
@@ -350,14 +346,14 @@ function ProcessStep({
               className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                 isActive
                   ? "bg-white/20 text-white"
-                  : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                  : "bg-card text-muted"
               }`}
             >
               {step.step}
             </span>
             <h4
               className={`font-bold ${
-                isActive ? "text-white" : "text-gray-900 dark:text-white"
+                isActive ? "text-white" : "text-foreground"
               }`}
             >
               {step.title}
@@ -365,7 +361,7 @@ function ProcessStep({
           </div>
           <p
             className={`text-sm leading-relaxed ${
-              isActive ? "text-white/90" : "text-gray-600 dark:text-gray-400"
+              isActive ? "text-white/90" : "text-muted"
             }`}
           >
             {step.description}
@@ -413,7 +409,7 @@ export default function WhyChooseTBJ() {
     <section
       id="why-tbj"
       ref={sectionRef}
-      className="relative py-20 lg:py-28 bg-white dark:bg-gray-950 transition-colors duration-500 overflow-hidden"
+      className="relative py-20 lg:py-28 bg-background transition-colors duration-500 overflow-hidden"
     >
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -428,7 +424,7 @@ export default function WhyChooseTBJ() {
             scale: [1, 1.15, 0.9, 1],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/3 left-1/4 w-80 h-80 rounded-full blur-3xl bg-blue-500/5"
+          className="absolute top-1/3 left-1/4 w-80 h-80 rounded-full blur-3xl bg-brand-orange/5"
         />
         <motion.div
           animate={{
@@ -437,7 +433,7 @@ export default function WhyChooseTBJ() {
             scale: [1, 0.9, 1.1, 1],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl bg-purple-500/5"
+          className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl bg-charcoal/5 dark:bg-white/5"
         />
       </div>
 
@@ -454,20 +450,20 @@ export default function WhyChooseTBJ() {
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
           >
-            <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            <Sparkles className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
               Why Businesses Choose Us
             </span>
           </motion.div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             Why Choose{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
               TBJ Growth
             </span>
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg text-muted max-w-2xl mx-auto">
             We combine proven methodology, cutting-edge AI, and a relentless
             focus on ROI to deliver growth that actually matters.
           </p>
@@ -499,20 +495,20 @@ export default function WhyChooseTBJ() {
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 border border-blue-200/50 dark:border-blue-500/20 rounded-full mb-4"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
             >
-              <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              <RefreshCw className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+              <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
                 How We Work
               </span>
             </motion.div>
-            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
               Our{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
                 Proven Process
               </span>
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
+            <p className="text-muted max-w-xl mx-auto">
               A streamlined 4-step approach that takes your business from where
               it is to where you want it to be.
             </p>
@@ -558,14 +554,14 @@ export default function WhyChooseTBJ() {
                 className="cursor-default"
               >
                 <div className="flex justify-center mb-3">
-                  <div className="p-3 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-500/10 dark:to-purple-500/10 rounded-xl">
-                    <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-3 bg-stat rounded-xl">
+                    <Icon className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
                   </div>
                 </div>
-                <div className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                <div className="text-2xl lg:text-3xl font-bold text-foreground mb-1">
                   {stat.value}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-sm text-caption">
                   {stat.label}
                 </div>
               </motion.div>

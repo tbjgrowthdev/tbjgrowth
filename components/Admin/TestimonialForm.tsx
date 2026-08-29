@@ -85,90 +85,90 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Client Info</h2>
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <h2 className="text-xl font-bold text-foreground mb-6">Client Info</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client Name</label>
+            <label className="block text-sm font-medium text-muted mb-1">Client Name</label>
             <input
               type="text"
               name="clientName"
               required
               value={formData.clientName}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+            <label className="block text-sm font-medium text-muted mb-1">Role</label>
             <input
               type="text"
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company</label>
+            <label className="block text-sm font-medium text-muted mb-1">Company</label>
             <input
               type="text"
               name="company"
               value={formData.company}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Industry</label>
+            <label className="block text-sm font-medium text-muted mb-1">Industry</label>
             <input
               type="text"
               name="industry"
               value={formData.industry}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Avatar (Initials or URL)</label>
+            <label className="block text-sm font-medium text-muted mb-1">Avatar (Initials or URL)</label>
             <input
               type="text"
               name="avatar"
               value={formData.avatar}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rating (1-5)</label>
+            <label className="block text-sm font-medium text-muted mb-1">Rating (1-5)</label>
             <input
               type="number"
               name="rating"
               min="1" max="5"
               value={formData.rating}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quote</label>
+          <label className="block text-sm font-medium text-muted mb-1">Quote</label>
           <textarea
             name="quote"
             required
             rows={4}
             value={formData.quote}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Metrics (2 Items)</h2>
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+          <h2 className="text-xl font-bold text-foreground mb-6">Metrics (2 Items)</h2>
           <div className="space-y-4">
             {formData.metrics.map((metric: any, index: number) => (
               <div key={index} className="grid grid-cols-3 gap-2">
@@ -176,21 +176,21 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
                   type="text"
                   value={metric.label}
                   onChange={(e) => handleMetricChange(index, "label", e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
                   placeholder="Label (e.g. Revenue)"
                 />
                 <input
                   type="text"
                   value={metric.value}
                   onChange={(e) => handleMetricChange(index, "value", e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
                   placeholder="Value (e.g. +320%)"
                 />
                 <input
                   type="text"
                   value={metric.icon}
                   onChange={(e) => handleMetricChange(index, "icon", e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                  className="px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
                   placeholder="Icon (e.g. Target)"
                 />
               </div>
@@ -198,16 +198,16 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Styling</h2>
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+          <h2 className="text-xl font-bold text-foreground mb-6">Styling</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gradient Theme</label>
+              <label className="block text-sm font-medium text-muted mb-1">Gradient Theme</label>
               <select
                 name="gradient"
                 value={formData.gradient}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               >
                 {GRADIENTS.map((g) => (
                   <option key={g.value} value={g.value}>{g.label}</option>
@@ -215,24 +215,24 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort Order</label>
+              <label className="block text-sm font-medium text-muted mb-1">Sort Order</label>
               <input
                 type="number"
                 name="order"
                 value={formData.order}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex justify-end pt-6 border-t border-border">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
         >
           <Save size={20} />
           {isSubmitting ? "Saving..." : "Save Testimonial"}

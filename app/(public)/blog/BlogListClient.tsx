@@ -61,8 +61,8 @@ export default function BlogListClient({
             onClick={() => setSelectedCategory("All")}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               selectedCategory === "All"
-                ? "bg-blue-600 text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                ? "bg-brand-orange-deep text-white"
+                : "bg-card text-muted hover:bg-background border border-border"
             }`}
           >
             All
@@ -73,8 +73,8 @@ export default function BlogListClient({
               onClick={() => setSelectedCategory(category.name)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 selectedCategory === category.name
-                  ? "bg-blue-600 text-white"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                  ? "bg-brand-orange-deep text-white"
+                  : "bg-card text-muted hover:bg-background border border-border"
               }`}
             >
               {category.name}
@@ -85,14 +85,14 @@ export default function BlogListClient({
         {/* Search */}
         <div className="relative w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+            <Search className="h-5 w-5 text-caption" />
           </div>
           <input
             type="text"
             placeholder="Search articles..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white"
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-full focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
           />
         </div>
       </div>
@@ -103,11 +103,11 @@ export default function BlogListClient({
           animate={{ opacity: 1 }}
           className="py-20 text-center"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-background text-caption mb-4">
             <Search size={32} />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts found</h3>
-          <p className="text-gray-500 dark:text-gray-400">
+          <h3 className="text-xl font-bold text-foreground mb-2">No posts found</h3>
+          <p className="text-muted">
             Try adjusting your search or filter to find what you're looking for.
           </p>
         </motion.div>
@@ -123,9 +123,9 @@ export default function BlogListClient({
             >
               <Link
                 href={`/blog/${featuredPost.slug}`}
-                className="flex flex-col bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
+                className="flex flex-col bg-card rounded-2xl border border-border overflow-hidden hover:shadow-2xl hover:shadow-brand-orange/10 transition-all duration-300"
               >
-                <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-background">
                   {isValidImageSrc(featuredPost.featuredImage) ? (
                     <Image
                       src={featuredPost.featuredImage}
@@ -135,26 +135,26 @@ export default function BlogListClient({
                       priority
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                      <span className="text-gray-400">No Image</span>
+                    <div className="absolute inset-0 bg-gradient-to-br from-brand-orange-deep/20 to-brand-orange/20 flex items-center justify-center">
+                      <span className="text-caption">No Image</span>
                     </div>
                   )}
                   {featuredPost.categories?.[0] && (
                     <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur text-xs font-semibold rounded-full text-blue-600 dark:text-blue-400">
+                      <span className="px-3 py-1 bg-card/90 backdrop-blur text-xs font-semibold rounded-full text-brand-orange-deep dark:text-brand-orange-light">
                         {featuredPost.categories[0].name}
                       </span>
                     </div>
                   )}
                 </div>
                 <div className="p-6 sm:p-8">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3 group-hover:text-brand-orange-deep dark:group-hover:text-brand-orange-light transition-colors">
                     {featuredPost.title}
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-2">
+                  <p className="text-muted mb-6 line-clamp-2">
                     {featuredPost.excerpt || "Click to read more about this topic."}
                   </p>
-                  <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-800 pt-4">
+                  <div className="flex flex-wrap items-center gap-6 text-sm text-muted border-t border-border pt-4">
                     <div className="flex items-center gap-2">
                       <User size={16} />
                       <span>{featuredPost.author?.name || "TBJ Partners"}</span>
@@ -163,7 +163,7 @@ export default function BlogListClient({
                       <Calendar size={16} />
                       <span>{formatDate(featuredPost.createdAt)}</span>
                     </div>
-                    <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium ml-auto">
+                    <span className="flex items-center gap-1 text-brand-orange-deep dark:text-brand-orange-light font-medium ml-auto">
                       Read article <ArrowRight size={16} />
                     </span>
                   </div>
@@ -173,7 +173,7 @@ export default function BlogListClient({
           )}
 
           {/* Feed */}
-          <motion.div layout className="divide-y divide-gray-200 dark:divide-gray-800">
+          <motion.div layout className="divide-y divide-border">
             <AnimatePresence>
               {feedPosts.map((post) => (
                 <motion.div
@@ -186,7 +186,7 @@ export default function BlogListClient({
                   className="group py-6 first:pt-0"
                 >
                   <Link href={`/blog/${post.slug}`} className="flex flex-col sm:flex-row gap-5">
-                    <div className="relative w-full sm:w-52 h-40 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                    <div className="relative w-full sm:w-52 h-40 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-background">
                       {isValidImageSrc(post.featuredImage) ? (
                         <Image
                           src={post.featuredImage}
@@ -195,25 +195,25 @@ export default function BlogListClient({
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
-                          <span className="text-gray-400 text-xs">No Image</span>
+                        <div className="absolute inset-0 bg-gradient-to-br from-brand-orange-deep/20 to-brand-orange/20 flex items-center justify-center">
+                          <span className="text-caption text-xs">No Image</span>
                         </div>
                       )}
                     </div>
 
                     <div className="flex-1 flex flex-col">
                       {post.categories?.[0] && (
-                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1.5">
+                        <span className="text-xs font-semibold text-brand-orange-deep dark:text-brand-orange-light mb-1.5">
                           {post.categories[0].name}
                         </span>
                       )}
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <h3 className="text-lg font-bold text-foreground mb-1.5 line-clamp-2 group-hover:text-brand-orange-deep dark:group-hover:text-brand-orange-light transition-colors">
                         {post.title}
                       </h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2 flex-1">
+                      <p className="text-muted text-sm mb-3 line-clamp-2 flex-1">
                         {post.excerpt || "Click to read more about this topic."}
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-4 text-xs text-muted">
                         <div className="flex items-center gap-1.5">
                           <User size={14} />
                           <span>{post.author?.name || "TBJ Partners"}</span>

@@ -7,8 +7,8 @@ export default async function TagsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tags</h1>
-        <p className="text-gray-500 dark:text-gray-400">Fine-grained labels for blog posts.</p>
+        <h1 className="text-2xl font-bold text-foreground">Tags</h1>
+        <p className="text-caption">Fine-grained labels for blog posts.</p>
       </div>
       <TaxonomyManager
         entityName="tag"

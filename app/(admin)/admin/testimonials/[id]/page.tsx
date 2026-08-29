@@ -12,7 +12,7 @@ export default async function EditTestimonial({ params }: { params: Promise<{ id
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Testimonial: {t.clientName}</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Testimonial: {t.clientName}</h1>
       <TestimonialForm initialData={t} />
     </div>
   );
