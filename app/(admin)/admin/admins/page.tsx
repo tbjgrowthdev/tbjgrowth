@@ -1,7 +1,9 @@
 import { getAdmins, deleteAdmin } from "@/app/(admin)/actions/admins";
 import Link from "next/link";
+import Image from "next/image";
 import { Plus, ShieldAlert, ShieldCheck } from "lucide-react";
 import DeleteButton from "@/components/Admin/DeleteButton";
+import { isValidImageSrc } from "@/lib/utils";
 
 export default async function AdminsPage() {
   const admins = await getAdmins();
@@ -39,8 +41,12 @@ export default async function AdminsPage() {
                 <tr key={admin.id} className="hover:bg-background">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
-                        {admin.name ? admin.name.charAt(0) : "A"}
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold flex-shrink-0">
+                        {isValidImageSrc(admin.image) ? (
+                          <Image src={admin.image} alt={admin.name || "Admin"} fill className="object-cover" />
+                        ) : (
+                          <span>{admin.name ? admin.name.charAt(0) : "A"}</span>
+                        )}
                       </div>
                       <span className="font-medium text-foreground">
                         {admin.name || "Unnamed User"}
