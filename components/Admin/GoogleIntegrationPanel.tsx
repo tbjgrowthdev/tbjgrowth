@@ -100,7 +100,7 @@ export default function GoogleIntegrationPanel({
             value={ga4PropertyId}
             onChange={(e) => setGa4PropertyId(e.target.value)}
             placeholder="e.g. 123456789"
-            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-transparent"
+            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground"
           />
         </div>
         <div className="space-y-1">
@@ -110,7 +110,7 @@ export default function GoogleIntegrationPanel({
             value={gscSiteUrl}
             onChange={(e) => setGscSiteUrl(e.target.value)}
             placeholder="https://tbjgrowth.com/"
-            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-transparent"
+            className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground"
           />
         </div>
         <div className="sm:col-span-2 flex items-center gap-3">

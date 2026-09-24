@@ -137,7 +137,7 @@ export default function PostForm({
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
             />
           </div>
 
@@ -149,7 +149,7 @@ export default function PostForm({
               value={formData.slug}
               onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
               onBlur={(e) => setFormData((prev) => ({ ...prev, slug: slugify(e.target.value) }))}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
             />
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function PostForm({
             rows={3}
             value={formData.excerpt}
             onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
         </div>
 
@@ -171,7 +171,7 @@ export default function PostForm({
             accept="image/*"
             onChange={handleImageUpload}
             disabled={uploadingImage}
-            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent disabled:opacity-50"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
           />
           {uploadingImage && (
             <div className="mt-2 text-sm text-caption">Uploading...</div>
@@ -194,7 +194,7 @@ export default function PostForm({
               value={formData.featuredImageAlt}
               onChange={(e) => setFormData({ ...formData, featuredImageAlt: e.target.value })}
               placeholder="Describe the image for accessibility & image SEO"
-              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
             />
           </div>
         )}
@@ -249,7 +249,7 @@ export default function PostForm({
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
             >
               <option value="DRAFT">Draft</option>
               <option value="SCHEDULED">Scheduled</option>
@@ -266,7 +266,7 @@ export default function PostForm({
                 required
                 value={formData.publishedAt}
                 onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
               />
             </div>
           )}
@@ -307,7 +307,7 @@ export default function PostForm({
                 type="text"
                 value={formData.metaTitle}
                 onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
@@ -317,7 +317,7 @@ export default function PostForm({
                 rows={3}
                 value={formData.metaDescription}
                 onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
@@ -327,7 +327,7 @@ export default function PostForm({
                 type="text"
                 value={formData.focusKeyword}
                 onChange={(e) => setFormData({ ...formData, focusKeyword: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
@@ -337,7 +337,7 @@ export default function PostForm({
                 type="text"
                 value={formData.canonicalUrl}
                 onChange={(e) => setFormData({ ...formData, canonicalUrl: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
                 placeholder="https://example.com/canonical-url"
               />
             </div>
@@ -348,7 +348,7 @@ export default function PostForm({
                 type="text"
                 value={formData.ogImage}
                 onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
               />
             </div>
 
@@ -357,7 +357,7 @@ export default function PostForm({
               <select
                 value={formData.twitterCard}
                 onChange={(e) => setFormData({ ...formData, twitterCard: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
               >
                 <option value="">Default</option>
                 <option value="summary">Summary</option>

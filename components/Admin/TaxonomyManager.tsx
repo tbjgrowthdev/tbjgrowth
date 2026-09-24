@@ -67,7 +67,7 @@ export default function TaxonomyManager({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={`New ${entityName} name`}
-          className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+          className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
         />
         {showDescription && (
           <input
@@ -75,7 +75,7 @@ export default function TaxonomyManager({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (optional)"
-            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
         )}
         <button

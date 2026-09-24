@@ -292,6 +292,9 @@ model SiteSetting {
   twitterUrl  String?
   linkedinUrl String?
   instagramUrl String?
+  youtubeUrl  String?
+  behanceUrl  String?
+  dribbbleUrl String?
   gbpName     String?
   gbpAddress  String?
   gbpPhone    String?
@@ -389,6 +392,43 @@ model PricingPlan {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// Booking / Conversation Scheduling
+// ------------------------------------------------------
+
+model AvailableSlot {
+  id        String    @id @default(cuid())
+  startsAt  DateTime
+  duration  Int       @default(30) // minutes
+  isBooked  Boolean   @default(false)
+  booking   Booking?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([startsAt])
+}
+
+model Booking {
+  id        String        @id @default(cuid())
+  slotId    String        @unique
+  slot      AvailableSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  message   String?       @db.Text
+  status    BookingStatus @default(CONFIRMED)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
 }
 
 model TBJSystem {

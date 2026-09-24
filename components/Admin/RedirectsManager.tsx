@@ -73,7 +73,7 @@ export default function RedirectsManager({ redirects }: { redirects: RedirectIte
             value={source}
             onChange={(e) => setSource(e.target.value)}
             placeholder="/old-page"
-            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
         </div>
         <div className="flex-1 w-full space-y-1">
@@ -84,7 +84,7 @@ export default function RedirectsManager({ redirects }: { redirects: RedirectIte
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
             placeholder="/new-page"
-            className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
         </div>
         <div className="space-y-1">
@@ -92,7 +92,7 @@ export default function RedirectsManager({ redirects }: { redirects: RedirectIte
           <select
             value={permanent ? "301" : "302"}
             onChange={(e) => setPermanent(e.target.value === "301")}
-            className="px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           >
             <option value="301">301 (Permanent)</option>
             <option value="302">302 (Temporary)</option>
@@ -118,7 +118,7 @@ export default function RedirectsManager({ redirects }: { redirects: RedirectIte
           value={csvText}
           onChange={(e) => setCsvText(e.target.value)}
           placeholder={"/old-blog-post,/blog/new-post,301\n/promo,/services,302"}
-          className="w-full px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange font-mono text-sm"
+          className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange font-mono text-sm"
         />
         {importResult && (
           <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">

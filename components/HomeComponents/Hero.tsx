@@ -14,12 +14,16 @@ import {
   Instagram,
   Facebook,
 } from "lucide-react";
+import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 
 type SiteSettings = {
   facebookUrl?: string | null;
   twitterUrl?: string | null;
   linkedinUrl?: string | null;
   instagramUrl?: string | null;
+  youtubeUrl?: string | null;
+  behanceUrl?: string | null;
+  dribbbleUrl?: string | null;
 } | null;
 
 export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
@@ -83,6 +87,9 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
     { icon: Twitter, href: settings?.twitterUrl, label: "Twitter" },
     { icon: Instagram, href: settings?.instagramUrl, label: "Instagram" },
     { icon: Facebook, href: settings?.facebookUrl, label: "Facebook" },
+    { icon: FaYoutube, href: settings?.youtubeUrl, label: "YouTube" },
+    { icon: FaBehance, href: settings?.behanceUrl, label: "Behance" },
+    { icon: FaDribbble, href: settings?.dribbbleUrl, label: "Dribbble" },
   ].filter((social): social is typeof social & { href: string } => Boolean(social.href));
 
   // Trust badges with counting animation

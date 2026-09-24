@@ -19,6 +19,9 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
     twitterUrl: initialData?.twitterUrl || "",
     linkedinUrl: initialData?.linkedinUrl || "",
     instagramUrl: initialData?.instagramUrl || "",
+    youtubeUrl: initialData?.youtubeUrl || "",
+    behanceUrl: initialData?.behanceUrl || "",
+    dribbbleUrl: initialData?.dribbbleUrl || "",
     gbpName: initialData?.gbpName || "",
     gbpAddress: initialData?.gbpAddress || "",
     gbpPhone: initialData?.gbpPhone || "",
@@ -149,6 +152,36 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
                 type="url"
                 name="facebookUrl"
                 value={formData.facebookUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted mb-1">YouTube URL</label>
+              <input
+                type="url"
+                name="youtubeUrl"
+                value={formData.youtubeUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted mb-1">Behance URL</label>
+              <input
+                type="url"
+                name="behanceUrl"
+                value={formData.behanceUrl}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted mb-1">Dribbble URL</label>
+              <input
+                type="url"
+                name="dribbbleUrl"
+                value={formData.dribbbleUrl}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />

@@ -92,14 +92,14 @@ export default function KeywordTrackingManager({
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             placeholder="Keyword phrase"
-            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
           <input
             type="text"
             value={targetUrl}
             onChange={(e) => setTargetUrl(e.target.value)}
             placeholder="Target page path (optional, e.g. /services)"
-            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
           <button
             type="submit"
@@ -175,14 +175,14 @@ export default function KeywordTrackingManager({
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             placeholder="competitor-domain.co.uk"
-            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
           <input
             type="text"
             value={competitorName}
             onChange={(e) => setCompetitorName(e.target.value)}
             placeholder="Company name (optional)"
-            className="flex-1 px-4 py-2 border border-border rounded-lg bg-transparent focus:ring-2 focus:ring-brand-orange"
+            className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
           />
           <button
             type="submit"

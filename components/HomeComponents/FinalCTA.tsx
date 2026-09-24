@@ -496,7 +496,7 @@ export default function FinalCTA() {
                 >
                     {/* Primary CTA - Book a Conversation */}
                     <motion.a
-                        href="#book-call"
+                        href="/book-a-call"
                         onMouseEnter={() => setIsHovering(true)}
                         onMouseLeave={() => setIsHovering(false)}
                         whileHover={{ scale: 1.03 }}
@@ -513,7 +513,7 @@ export default function FinalCTA() {
 
                     {/* Secondary CTA - Contact Us */}
                     <motion.a
-                        href="mailto:hello@tbjgrowth.co.uk"
+                        href="/contact"
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         className="group inline-flex items-center gap-2 px-8 py-4 border-2 border-white/20 text-white font-semibold rounded-2xl hover:bg-white/10 hover:border-white/40 transition-all duration-300 backdrop-blur-sm"

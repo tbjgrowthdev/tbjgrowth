@@ -20,6 +20,7 @@ import {
   Twitter,
   Instagram,
 } from "lucide-react";
+import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 // import Navbar from "@/components/homethreecomponents/Navbar";
 // import Footer from "@/components/homethreecomponents/Footer";
 import { submitContactForm } from "@/app/(admin)/actions/forms";
@@ -32,6 +33,9 @@ type SiteSettings = {
   twitterUrl?: string | null;
   linkedinUrl?: string | null;
   instagramUrl?: string | null;
+  youtubeUrl?: string | null;
+  behanceUrl?: string | null;
+  dribbbleUrl?: string | null;
 } | null;
 
 function getContactInfo(settings: SiteSettings | undefined) {
@@ -87,6 +91,9 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
     { icon: Linkedin, href: settings?.linkedinUrl, label: "LinkedIn" },
     { icon: Twitter, href: settings?.twitterUrl, label: "Twitter" },
     { icon: Instagram, href: settings?.instagramUrl, label: "Instagram" },
+    { icon: FaYoutube, href: settings?.youtubeUrl, label: "YouTube" },
+    { icon: FaBehance, href: settings?.behanceUrl, label: "Behance" },
+    { icon: FaDribbble, href: settings?.dribbbleUrl, label: "Dribbble" },
   ].filter((social): social is typeof social & { href: string } => Boolean(social.href));
 
   const [formState, setFormState] = useState({
@@ -443,7 +450,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 Schedule a 15-minute discovery call. No pressure, just a conversation about your goals.
               </p>
               <motion.a
-                href="#"
+                href="/book-a-call"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="inline-flex items-center gap-3 px-8 py-4 bg-white text-off-black font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-shadow group"
