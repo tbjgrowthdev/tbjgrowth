@@ -336,9 +336,9 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                     </motion.div>
 
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-                        Agency{" "}
+                        Everything You Need to{" "} <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-                            Services
+                            Build, Attract, and Scale
                         </span>
                     </h2>
                     <p className="text-lg text-muted max-w-2xl mx-auto">

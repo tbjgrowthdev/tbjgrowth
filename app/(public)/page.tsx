@@ -13,8 +13,8 @@ import { getSiteSettings } from "@/app/(admin)/actions/settings";
 
 export async function generateMetadata() {
   return getPageMetadata("home", {
-    title: "TBJ Growth | AI-Powered Digital Growth Agency",
-    description: "Experience the complete business growth journey with TBJ Growth: Build, Attract, Convert, Automate, Scale.",
+    title: "TBJ Growth Tech | Website, Ads & AI Automation Agency",
+    description: "TBJ Growth Tech builds websites, runs Meta & Google Ads, and automates lead follow-up with AI — for UK & US businesses. Book a free strategy call.",
     path: "/",
   });
 }

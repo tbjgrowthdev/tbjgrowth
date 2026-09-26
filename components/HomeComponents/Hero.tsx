@@ -13,6 +13,9 @@ import {
   Twitter,
   Instagram,
   Facebook,
+  Calendar,
+  Briefcase,
+  Globe
 } from "lucide-react";
 import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 
@@ -94,9 +97,10 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
 
   // Trust badges with counting animation
   const stats = [
-    { value: "150+", label: "Projects Delivered", icon: Building2 },
-    { value: "98%", label: "Client Retention", icon: TrendingUp },
-    { value: "3x", label: "Avg. ROI", icon: Zap },
+    { value: "50+", label: "Projects Delivered", icon: Building2 },
+    { value: "95%", label: "Client Retention", icon: TrendingUp },
+    { value: "3+", label: "Years Running Campaigns", icon: Calendar },
+    { value: "6", label: "Industries Served", icon: Globe },
   ];
 
   return (
@@ -152,7 +156,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
           {/* Left Column - Text Content */}
           <div className="text-center lg:text-left">
             {/* Badge */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.6 }}
@@ -162,20 +166,24 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
                 AI-Powered Growth Agency
               </span>
-            </motion.div>
+            </motion.div> */}
 
             {/* Main Headline */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
-              className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground tracking-tight leading-[1.1] mb-6"
+              className="text-4xl sm:text-5xl lg:text-6xl xl:text-6xl font-bold text-foreground tracking-tight leading-[1.1] mb-6"
             >
-              We{" "}
+              {/* We{" "} */}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light animate-gradient">
                 Build, Attract
               </span>{" "}
-              & Scale Your Digital Presence
+              and {" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light animate-gradient">
+                Automate
+              </span>{" "}
+              Your Business Growth
             </motion.h1>
 
             {/* Subheadline */}
@@ -185,8 +193,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               transition={{ delay: 0.4, duration: 0.6 }}
               className="text-lg sm:text-xl text-muted leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0"
             >
-              From strategy to automation, we help UK businesses grow with
-              design that converts, marketing that attracts, and AI that scales.
+               TBJ Growth Tech is a Bangladesh-based growth partner for UK and US businesses — we design the website, run the ads that fill your pipeline, and build the AI automation that follows up on every lead so nothing gets missed.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -198,26 +205,26 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
             >
               {/* Primary CTA */}
               <motion.a
-                href="#contact"
+                href="/book-a-call"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-2xl overflow-hidden shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/30 transition-shadow duration-300"
               >
                 {/* Shine effect */}
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
-                <span className="relative z-10">Start Your Growth Journey</span>
+                <span className="relative z-10">Book a Free Strategy Call</span>
                 <ArrowRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </motion.a>
 
               {/* Secondary CTA */}
               <motion.a
-                href="#case-studies"
+                href="/services"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="group inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-border text-muted font-semibold rounded-2xl hover:border-brand-orange hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-all duration-300"
               >
                 <Play className="w-5 h-5" />
-                <span>View Our Work</span>
+                <span>See Our Services</span>
               </motion.a>
             </motion.div>
 
@@ -443,7 +450,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.6 }}
-          className="mt-16 lg:mt-20 grid grid-cols-3 gap-4 sm:gap-8 max-w-3xl mx-auto"
+          className="mt-16 lg:mt-20 grid grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto"
         >
           {stats.map((stat, index) => (
             <motion.div
