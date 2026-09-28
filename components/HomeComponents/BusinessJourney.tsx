@@ -356,7 +356,13 @@ export default function BusinessJourney() {
                       transition={{ delay: 0.2, type: "spring" }}
                       className="w-full lg:w-auto flex-shrink-0 bg-stat rounded-2xl p-5 sm:p-6 text-center border border-border"
                     >
-                      <div className={`text-2xl sm:text-3xl font-bold bg-gradient-to-r ${currentStage.color} bg-clip-text text-transparent`}>
+                      <div
+                        className={
+                          currentStage.color === "from-charcoal to-off-black"
+                            ? "text-2xl sm:text-3xl font-bold text-foreground"
+                            : `text-2xl sm:text-3xl font-bold bg-gradient-to-r ${currentStage.color} bg-clip-text text-transparent`
+                        }
+                      >
                         {currentStage.metrics.primary}
                       </div>
                       <div className="text-sm text-caption mt-1">

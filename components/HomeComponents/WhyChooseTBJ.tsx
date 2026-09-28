@@ -30,19 +30,22 @@ import {
   Headphones,
   RefreshCw,
   TrendingDown,
+  Layers,
+  Cpu,
+  Globe,
 } from "lucide-react";
 
-// Benefits data
-const benefits = [
+
+export const benefits = [
   {
-    id: "proven-process",
-    icon: Workflow,
-    title: "Proven Growth Framework",
+    id: "results-first-reporting",
+    icon: TrendingUp,
+    title: "Results-First Reporting",
     description:
-      "Our Build → Attract → Convert → Automate → Scale methodology isn't theory — it's a battle-tested system that's delivered 150+ successful projects.",
+      "You get a real dashboard and a monthly report tied directly to leads and revenue — not just vanity reach and impressions.",
     stats: [
-      { value: "150+", label: "Projects" },
-      { value: "98%", label: "Success Rate" },
+      { value: "100%", label: "Revenue-Focused" },
+      { value: "Monthly", label: "Executive Reports" },
     ],
     gradient: "from-brand-orange-deep to-brand-orange",
     bgGlow: "bg-brand-orange/10",
@@ -50,14 +53,14 @@ const benefits = [
     color: "orange",
   },
   {
-    id: "roi-focused",
-    icon: DollarSign,
-    title: "ROI-First Approach",
+    id: "one-team-every-channel",
+    icon: Layers,
+    title: "One Team, Every Channel",
     description:
-      "Every strategy starts with your business goals. We don't just deliver pretty designs — we deliver measurable returns. Average client sees 3x ROI within 6 months.",
+      "Website, ads, SEO, and CRM automation come from the exact same team, so nothing gets lost in handoffs between vendors.",
     stats: [
-      { value: "3x", label: "Avg. ROI" },
-      { value: "6mo", label: "Payback Period" },
+      { value: "1", label: "Unified Team" },
+      { value: "4-in-1", label: "Core Services" },
     ],
     gradient: "from-charcoal to-off-black",
     bgGlow: "bg-charcoal/10",
@@ -65,44 +68,44 @@ const benefits = [
     color: "charcoal",
   },
   {
-    id: "speed-matters",
-    icon: Timer,
-    title: "Speed Without Compromise",
-    description:
-      "We launch websites in days, not months. Our AI-assisted development and streamlined processes mean you get to market faster without sacrificing quality.",
-    stats: [
-      { value: "48hrs", label: "Avg. Launch" },
-      { value: "99.9%", label: "Uptime" },
-    ],
-    gradient: "from-brand-orange-deep to-brand-orange",
-    bgGlow: "bg-brand-orange/10",
-    borderGlow: "border-brand-orange/30",
-    color: "orange",
-  },
-  {
-    id: "ai-powered",
-    icon: BrainCircuit,
+    id: "ai-powered-efficiency",
+    icon: Cpu,
     title: "AI-Powered Efficiency",
     description:
-      "We leverage cutting-edge AI tools to automate repetitive tasks, analyze data faster, and deliver smarter solutions — giving you an unfair advantage.",
+      "We use AI tools to speed up content production, ad testing, and lead follow-up. The human strategy stays human; the repetitive work doesn't.",
     stats: [
       { value: "85%", label: "Time Saved" },
       { value: "24/7", label: "Automation" },
     ],
+    gradient: "from-brand-orange-deep to-brand-orange",
+    bgGlow: "bg-brand-orange/10",
+    borderGlow: "border-brand-orange/30",
+    color: "orange",
+  },
+  {
+    id: "direct-access",
+    icon: MessageSquare,
+    title: "Direct Access",
+    description:
+      "A dedicated WhatsApp channel and direct access with your account lead — no impersonal support ticket queues or long delays.",
+    stats: [
+      { value: "<15min", label: "Response Time" },
+      { value: "Direct", label: "WhatsApp Channel" },
+    ],
     gradient: "from-charcoal to-off-black",
     bgGlow: "bg-charcoal/10",
     borderGlow: "border-charcoal/30",
     color: "charcoal",
   },
   {
-    id: "dedicated-support",
-    icon: Headphones,
-    title: "Dedicated Support Team",
+    id: "full-transparency",
+    icon: Eye,
+    title: "Full Transparency",
     description:
-      "You're not just another client. We assign a dedicated account manager who becomes an extension of your team, available when you need them.",
+      "No black-box reporting. You see exactly what's spent, what revenue it returned, and what strategic changes happen next.",
     stats: [
-      { value: "<15min", label: "Response Time" },
-      { value: "98%", label: "Satisfaction" },
+      { value: "100%", label: "Visibility" },
+      { value: "Real-time", label: "Dashboard Access" },
     ],
     gradient: "from-brand-orange-deep to-brand-orange",
     bgGlow: "bg-brand-orange/10",
@@ -110,14 +113,14 @@ const benefits = [
     color: "orange",
   },
   {
-    id: "transparent",
-    icon: Eye,
-    title: "Complete Transparency",
+    id: "built-for-uk-us",
+    icon: Globe,
+    title: "Built for UK & US Businesses",
     description:
-      "No hidden fees, no black boxes. You get real-time dashboards, monthly reports, and full visibility into every campaign, every metric, every result.",
+      "Aligned with UK & US business hours, offering GDPR-aware data handling, and specialized in scaling Western markets.",
     stats: [
-      { value: "100%", label: "Transparency" },
-      { value: "Real-time", label: "Reporting" },
+      { value: "100%", label: "GDPR Compliant" },
+      { value: "US/UK", label: "Timezone Alignment" },
     ],
     gradient: "from-charcoal to-off-black",
     bgGlow: "bg-charcoal/10",
@@ -125,6 +128,100 @@ const benefits = [
     color: "charcoal",
   },
 ];
+
+// Benefits data
+// const benefits = [
+//   {
+//     id: "proven-process",
+//     icon: Workflow,
+//     title: "Proven Growth Framework",
+//     description:
+//       "Our Build → Attract → Convert → Automate → Scale methodology isn't theory — it's a battle-tested system that's delivered 150+ successful projects.",
+//     stats: [
+//       { value: "150+", label: "Projects" },
+//       { value: "98%", label: "Success Rate" },
+//     ],
+//     gradient: "from-brand-orange-deep to-brand-orange",
+//     bgGlow: "bg-brand-orange/10",
+//     borderGlow: "border-brand-orange/30",
+//     color: "orange",
+//   },
+//   {
+//     id: "roi-focused",
+//     icon: DollarSign,
+//     title: "ROI-First Approach",
+//     description:
+//       "Every strategy starts with your business goals. We don't just deliver pretty designs — we deliver measurable returns. Average client sees 3x ROI within 6 months.",
+//     stats: [
+//       { value: "3x", label: "Avg. ROI" },
+//       { value: "6mo", label: "Payback Period" },
+//     ],
+//     gradient: "from-charcoal to-off-black",
+//     bgGlow: "bg-charcoal/10",
+//     borderGlow: "border-charcoal/30",
+//     color: "charcoal",
+//   },
+//   {
+//     id: "speed-matters",
+//     icon: Timer,
+//     title: "Speed Without Compromise",
+//     description:
+//       "We launch websites in days, not months. Our AI-assisted development and streamlined processes mean you get to market faster without sacrificing quality.",
+//     stats: [
+//       { value: "48hrs", label: "Avg. Launch" },
+//       { value: "99.9%", label: "Uptime" },
+//     ],
+//     gradient: "from-brand-orange-deep to-brand-orange",
+//     bgGlow: "bg-brand-orange/10",
+//     borderGlow: "border-brand-orange/30",
+//     color: "orange",
+//   },
+//   {
+//     id: "ai-powered",
+//     icon: BrainCircuit,
+//     title: "AI-Powered Efficiency",
+//     description:
+//       "We leverage cutting-edge AI tools to automate repetitive tasks, analyze data faster, and deliver smarter solutions — giving you an unfair advantage.",
+//     stats: [
+//       { value: "85%", label: "Time Saved" },
+//       { value: "24/7", label: "Automation" },
+//     ],
+//     gradient: "from-charcoal to-off-black",
+//     bgGlow: "bg-charcoal/10",
+//     borderGlow: "border-charcoal/30",
+//     color: "charcoal",
+//   },
+//   {
+//     id: "dedicated-support",
+//     icon: Headphones,
+//     title: "Dedicated Support Team",
+//     description:
+//       "You're not just another client. We assign a dedicated account manager who becomes an extension of your team, available when you need them.",
+//     stats: [
+//       { value: "<15min", label: "Response Time" },
+//       { value: "98%", label: "Satisfaction" },
+//     ],
+//     gradient: "from-brand-orange-deep to-brand-orange",
+//     bgGlow: "bg-brand-orange/10",
+//     borderGlow: "border-brand-orange/30",
+//     color: "orange",
+//   },
+//   {
+//     id: "transparent",
+//     icon: Eye,
+//     title: "Complete Transparency",
+//     description:
+//       "No hidden fees, no black boxes. You get real-time dashboards, monthly reports, and full visibility into every campaign, every metric, every result.",
+//     stats: [
+//       { value: "100%", label: "Transparency" },
+//       { value: "Real-time", label: "Reporting" },
+//     ],
+//     gradient: "from-charcoal to-off-black",
+//     bgGlow: "bg-charcoal/10",
+//     borderGlow: "border-charcoal/30",
+//     color: "charcoal",
+//   },
+// ];
 
 // Process steps
 const processSteps = [
@@ -209,21 +306,19 @@ function BenefitCard({
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ delay: index * 0.1, duration: 0.5 }}
       onMouseEnter={onHover}
-      className={`group relative cursor-pointer rounded-2xl p-6 transition-all duration-500 border ${
-        isActive
+      className={`group relative cursor-pointer rounded-2xl p-6 transition-all duration-500 border ${isActive
           ? `bg-gradient-to-br ${benefit.bgGlow} ${benefit.borderGlow} shadow-2xl scale-[1.02] z-10`
           : "bg-card border-border hover:border-accent-border hover:shadow-xl"
-      }`}
+        }`}
     >
       {/* Icon */}
       <motion.div
         animate={isActive ? { rotate: [0, 10, -10, 0] } : {}}
         transition={{ duration: 2, repeat: Infinity }}
-        className={`inline-flex p-3 rounded-xl mb-4 transition-all duration-500 ${
-          isActive
+        className={`inline-flex p-3 rounded-xl mb-4 transition-all duration-500 ${isActive
             ? `bg-gradient-to-br ${benefit.gradient} text-white shadow-lg`
             : "bg-background text-muted group-hover:bg-tint"
-        }`}
+          }`}
       >
         <Icon className="w-6 h-6" />
       </motion.div>
@@ -243,7 +338,11 @@ function BenefitCard({
         {benefit.stats.map((stat) => (
           <div key={stat.label} className="text-center">
             <div
-              className={`text-xl font-bold bg-gradient-to-r ${benefit.gradient} bg-clip-text text-transparent`}
+              className={
+                benefit.gradient === "from-charcoal to-off-black"
+                  ? "text-xl font-bold text-foreground"
+                  : `text-xl font-bold bg-gradient-to-r ${benefit.gradient} bg-clip-text text-transparent`
+              }
             >
               {stat.value}
             </div>
@@ -307,11 +406,10 @@ function ProcessStep({
         <motion.div
           animate={isActive ? { scale: [1, 1.1, 1] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
-          className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
-            isActive
+          className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${isActive
               ? `bg-gradient-to-br ${step.gradient} text-white shadow-lg scale-110`
               : "bg-background text-muted group-hover:bg-tint"
-          }`}
+            }`}
         >
           <Icon className="w-5 h-5" />
         </motion.div>
@@ -335,34 +433,30 @@ function ProcessStep({
       {/* Content */}
       <div className="flex-1 pb-8">
         <div
-          className={`p-5 rounded-2xl transition-all duration-500 ${
-            isActive
+          className={`p-5 rounded-2xl transition-all duration-500 ${isActive
               ? `bg-gradient-to-br ${step.gradient} text-white shadow-lg`
               : "bg-background group-hover:bg-card"
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3 mb-2">
             <span
-              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                isActive
+              className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive
                   ? "bg-white/20 text-white"
                   : "bg-card text-muted"
-              }`}
+                }`}
             >
               {step.step}
             </span>
             <h4
-              className={`font-bold ${
-                isActive ? "text-white" : "text-foreground"
-              }`}
+              className={`font-bold ${isActive ? "text-white" : "text-foreground"
+                }`}
             >
               {step.title}
             </h4>
           </div>
           <p
-            className={`text-sm leading-relaxed ${
-              isActive ? "text-white/90" : "text-muted"
-            }`}
+            className={`text-sm leading-relaxed ${isActive ? "text-white/90" : "text-muted"
+              }`}
           >
             {step.description}
           </p>

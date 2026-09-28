@@ -119,15 +119,15 @@ function TestimonialCard({
       }`}
     >
       {/* Quote icon */}
-      <div className="absolute -top-4 -left-4">
+      <div className="absolute -top-3 -left-3 sm:-top-4 sm:-left-4">
         <div
-          className={`p-3 rounded-2xl bg-gradient-to-br ${testimonial.gradient} text-white shadow-lg`}
+          className={`p-2.5 sm:p-3 rounded-2xl bg-gradient-to-br ${testimonial.gradient} text-white shadow-lg`}
         >
-          <Quote className="w-6 h-6" />
+          <Quote className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
       </div>
 
-      <div className="p-8 lg:p-10">
+      <div className="p-6 sm:p-8 lg:p-10">
         {/* Stars */}
         <div className="flex items-center gap-1 mb-6">
           {[...Array(testimonial.rating || 5)].map((_, i) => (
@@ -180,23 +180,23 @@ function TestimonialCard({
         )}
 
         {/* Author */}
-        <div className="flex items-center gap-4 pt-6 border-t border-border">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pt-6 border-t border-border">
           {/* Avatar */}
           <div
-            className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg`}
+            className={`flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg`}
           >
             {testimonial.avatar || testimonial.author.substring(0, 2).toUpperCase()}
           </div>
-          <div>
-            <div className="font-bold text-foreground">
+          <div className="min-w-0 flex-1">
+            <div className="font-bold text-foreground truncate">
               {testimonial.author}
             </div>
-            <div className="text-sm text-caption">
+            <div className="text-sm text-caption truncate">
               {testimonial.role}, {testimonial.company}
             </div>
           </div>
           <div className="ml-auto">
-            <span className="text-xs px-3 py-1 rounded-full bg-tint text-caption">
+            <span className="text-xs px-3 py-1 rounded-full bg-tint text-caption whitespace-nowrap">
               {testimonial.industry}
             </span>
           </div>
@@ -322,18 +322,20 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               />
             </AnimatePresence>
 
-            {/* Navigation arrows */}
+            {/* Navigation arrows — inset on mobile (no room off-card), pushed outside from lg: up */}
             <button
               onClick={handlePrev}
-              className="absolute left-0 top-1/2 -translate-x-4 lg:-translate-x-6 -translate-y-1/2 p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
+              aria-label="Previous testimonial"
+              className="absolute left-2 lg:-left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
             >
-              <ChevronLeft className="w-5 h-5 text-muted group-hover:text-foreground transition-colors" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-muted group-hover:text-foreground transition-colors" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-0 top-1/2 translate-x-4 lg:translate-x-6 -translate-y-1/2 p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
+              aria-label="Next testimonial"
+              className="absolute right-2 lg:-right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
             >
-              <ChevronRight className="w-5 h-5 text-muted group-hover:text-foreground transition-colors" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted group-hover:text-foreground transition-colors" />
             </button>
           </div>
 
