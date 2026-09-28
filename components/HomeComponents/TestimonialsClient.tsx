@@ -10,33 +10,11 @@ import {
   Play,
   Pause,
   MessageSquare,
-  Building2,
-  Heart,
-  ThumbsUp,
-  TrendingUp,
   Sparkles,
+  Calendar,
+  ArrowRight,
 } from "lucide-react";
 import { getIcon } from "@/components/ui/IconRenderer";
-
-// Fallback Testimonials
-const fallbackTestimonials = [
-  {
-    id: 1,
-    quote:
-      "TBJ didn't just build us a website — they built us a revenue engine. Our online sales have completely transformed since partnering with them. The ROI has been incredible.",
-    author: "Sarah Mitchell",
-    role: "CEO",
-    company: "LuxeStyle Fashion",
-    industry: "E-Commerce",
-    rating: 5,
-    metrics: JSON.stringify([
-      { label: "Revenue Growth", value: "+320%", icon: "TrendingUp" },
-      { label: "Conversion Rate", value: "4.8%", icon: "Target" },
-    ]),
-    gradient: "from-brand-orange-deep to-brand-orange",
-    avatar: "SM",
-  },
-];
 
 // Global metrics
 const globalMetrics = [
@@ -235,7 +213,8 @@ function LogoCloud() {
 
 // Main Section
 export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?: any[] }) {
-  const testimonialsList = dbTestimonials && dbTestimonials.length > 0 ? dbTestimonials : fallbackTestimonials;
+  const testimonialsList = dbTestimonials || [];
+  const hasTestimonials = testimonialsList.length > 0;
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -244,12 +223,12 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
 
   // Auto-rotate testimonials
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || !hasTestimonials) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % testimonialsList.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, testimonialsList.length]);
+  }, [isAutoPlaying, hasTestimonials, testimonialsList.length]);
 
   const handlePrev = () => {
     setIsAutoPlaying(false);
@@ -279,167 +258,213 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16 lg:mb-20"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
-          >
-            <MessageSquare className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
-            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
-              Client Success Stories
-            </span>
-          </motion.div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Trusted by{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-              Growing Businesses
-            </span>
-          </h2>
-          <p className="text-lg text-muted max-w-2xl mx-auto">
-            Don't just take our word for it. Here's what our clients say about
-            working with TBJ Growth.
-          </p>
-        </motion.div>
-
-        {/* Testimonial Carousel */}
-        <div className="relative max-w-4xl mx-auto mb-16 lg:mb-20">
-          {/* Main testimonial */}
-          <div className="relative">
-            <AnimatePresence mode="wait">
-              <TestimonialCard
-                key={testimonialsList[activeIndex].id}
-                testimonial={testimonialsList[activeIndex]}
-                isActive={true}
-              />
-            </AnimatePresence>
-
-            {/* Navigation arrows — inset on mobile (no room off-card), pushed outside from lg: up */}
-            <button
-              onClick={handlePrev}
-              aria-label="Previous testimonial"
-              className="absolute left-2 lg:-left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
+        {hasTestimonials ? (
+          <>
+            {/* Section Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16 lg:mb-20"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-muted group-hover:text-foreground transition-colors" />
-            </button>
-            <button
-              onClick={handleNext}
-              aria-label="Next testimonial"
-              className="absolute right-2 lg:-right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
-            >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted group-hover:text-foreground transition-colors" />
-            </button>
-          </div>
-
-          {/* Dots & Auto-play */}
-          <div className="flex items-center justify-center gap-3 mt-8">
-            {testimonialsList.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setActiveIndex(index);
-                  setIsAutoPlaying(false);
-                }}
-                className={`transition-all duration-300 rounded-full ${
-                  index === activeIndex
-                    ? `w-8 h-2.5 bg-gradient-to-r ${testimonialsList[index].gradient}`
-                    : "w-2.5 h-2.5 bg-border hover:bg-accent-border"
-                }`}
-              />
-            ))}
-            <button
-              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="ml-2 p-1.5 rounded-full hover:bg-background transition-colors"
-            >
-              {isAutoPlaying ? (
-                <Pause className="w-4 h-4 text-caption" />
-              ) : (
-                <Play className="w-4 h-4 text-caption" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Logo Cloud */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="mb-16 lg:mb-20"
-        >
-          <p className="text-center text-sm text-caption mb-6 uppercase tracking-wider">
-            Trusted by innovative companies
-          </p>
-          <LogoCloud />
-        </motion.div>
-
-        {/* Global Metrics */}
-        <motion.div
-          ref={metricsRef}
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6"
-        >
-          {globalMetrics.map((metric, i) => {
-            const Icon = getIcon(metric.icon);
-            return (
               <motion.div
-                key={metric.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.5 + i * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="relative group cursor-default"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
               >
-                <div className="text-center p-6 rounded-2xl bg-card border border-border hover:border-accent-border shadow-lg group-hover:shadow-xl transition-all duration-300">
-                  <div className="flex justify-center mb-3">
-                    <div className="p-2.5 rounded-xl bg-stat group-hover:scale-110 transition-transform duration-300">
-                      <Icon className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
-                    </div>
-                  </div>
-                  <div className="text-2xl lg:text-3xl font-bold text-foreground mb-1">
-                    <AnimatedCounter
-                      value={metric.value}
-                      suffix={metric.suffix}
-                      isInView={isMetricsInView}
-                    />
-                  </div>
-                  <div className="text-xs lg:text-sm text-caption">
-                    {metric.label}
-                  </div>
-                </div>
+                <MessageSquare className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+                <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
+                  Client Success Stories
+                </span>
               </motion.div>
-            );
-          })}
-        </motion.div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+                Trusted by{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
+                  Growing Businesses
+                </span>
+              </h2>
+              <p className="text-lg text-muted max-w-2xl mx-auto">
+                Don't just take our word for it. Here's what our clients say about
+                working with TBJ Growth.
+              </p>
+            </motion.div>
 
-        {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6, duration: 0.6 }}
-          className="text-center mt-16 lg:mt-20"
-        >
-          <div className="inline-flex items-center gap-2 text-muted">
-            <Sparkles className="w-5 h-5 text-brand-orange" />
-            <span className="text-sm">
-              Join 50+ businesses already growing with TBJ
-            </span>
-          </div>
-        </motion.div>
+            {/* Testimonial Carousel */}
+            <div className="relative max-w-4xl mx-auto mb-16 lg:mb-20">
+              {/* Main testimonial */}
+              <div className="relative">
+                <AnimatePresence mode="wait">
+                  <TestimonialCard
+                    key={testimonialsList[activeIndex].id}
+                    testimonial={testimonialsList[activeIndex]}
+                    isActive={true}
+                  />
+                </AnimatePresence>
+
+                {/* Navigation arrows — inset on mobile (no room off-card), pushed outside from lg: up */}
+                <button
+                  onClick={handlePrev}
+                  aria-label="Previous testimonial"
+                  className="absolute left-2 lg:-left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
+                >
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-muted group-hover:text-foreground transition-colors" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  aria-label="Next testimonial"
+                  className="absolute right-2 lg:-right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-card border border-border hover:border-accent-border shadow-lg hover:shadow-xl transition-all z-10 group"
+                >
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted group-hover:text-foreground transition-colors" />
+                </button>
+              </div>
+
+              {/* Dots & Auto-play */}
+              <div className="flex items-center justify-center gap-3 mt-8">
+                {testimonialsList.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setActiveIndex(index);
+                      setIsAutoPlaying(false);
+                    }}
+                    className={`transition-all duration-300 rounded-full ${
+                      index === activeIndex
+                        ? `w-8 h-2.5 bg-gradient-to-r ${testimonialsList[index].gradient}`
+                        : "w-2.5 h-2.5 bg-border hover:bg-accent-border"
+                    }`}
+                  />
+                ))}
+                <button
+                  onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                  className="ml-2 p-1.5 rounded-full hover:bg-background transition-colors"
+                >
+                  {isAutoPlaying ? (
+                    <Pause className="w-4 h-4 text-caption" />
+                  ) : (
+                    <Play className="w-4 h-4 text-caption" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Logo Cloud */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="mb-16 lg:mb-20"
+            >
+              <p className="text-center text-sm text-caption mb-6 uppercase tracking-wider">
+                Trusted by innovative companies
+              </p>
+              <LogoCloud />
+            </motion.div>
+
+            {/* Global Metrics */}
+            <motion.div
+              ref={metricsRef}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6"
+            >
+              {globalMetrics.map((metric, i) => {
+                const Icon = getIcon(metric.icon);
+                return (
+                  <motion.div
+                    key={metric.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.5 + i * 0.1 }}
+                    whileHover={{ y: -5 }}
+                    className="relative group cursor-default"
+                  >
+                    <div className="text-center p-6 rounded-2xl bg-card border border-border hover:border-accent-border shadow-lg group-hover:shadow-xl transition-all duration-300">
+                      <div className="flex justify-center mb-3">
+                        <div className="p-2.5 rounded-xl bg-stat group-hover:scale-110 transition-transform duration-300">
+                          <Icon className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
+                        </div>
+                      </div>
+                      <div className="text-2xl lg:text-3xl font-bold text-foreground mb-1">
+                        <AnimatedCounter
+                          value={metric.value}
+                          suffix={metric.suffix}
+                          isInView={isMetricsInView}
+                        />
+                      </div>
+                      <div className="text-xs lg:text-sm text-caption">
+                        {metric.label}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Bottom CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+              className="text-center mt-16 lg:mt-20"
+            >
+              <div className="inline-flex items-center gap-2 text-muted">
+                <Sparkles className="w-5 h-5 text-brand-orange" />
+                <span className="text-sm">
+                  Join 50+ businesses already growing with TBJ
+                </span>
+              </div>
+            </motion.div>
+          </>
+        ) : (
+          /* Holding state — no real client testimonials yet, so we don't show
+             fabricated ones or the social-proof apparatus (logo wall, "Join
+             50+ businesses" stats) that would imply an established track
+             record we can't back up. This whole block is replaced by the
+             real thing automatically once a testimonial is added in the admin. */
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-xl mx-auto text-center bg-background border border-border rounded-3xl p-10 lg:p-14"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-6"
+            >
+              <MessageSquare className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
+              <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
+                Client Success Stories
+              </span>
+            </motion.div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              Client Results
+            </h2>
+            <p className="text-lg text-muted leading-relaxed mb-8">
+              We&apos;re a growing agency building our first client success stories —
+              book a call and be one of them.
+            </p>
+            <motion.a
+              href="/book-a-call"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-xl shadow-lg shadow-brand-orange/25 hover:shadow-xl hover:shadow-brand-orange/35 transition-shadow group"
+            >
+              <Calendar className="w-4 h-4" />
+              Book a Call
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </motion.a>
+          </motion.div>
+        )}
       </div>
     </section>
   );

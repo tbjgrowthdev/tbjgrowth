@@ -30,10 +30,10 @@ export default async function Home() {
       <Hero settings={settings} />
       <Services></Services>
       <BusinessJourney></BusinessJourney>
-      <CaseStudies caseStudies={featuredCaseStudies} />
+      {/* <CaseStudies caseStudies={featuredCaseStudies} /> */}
       <WhyChooseTBJ></WhyChooseTBJ>
       <TBJSystems></TBJSystems>
-      <Testimonials></Testimonials>
+      {/* <Testimonials></Testimonials> */}
       <FinalCTA></FinalCTA>
       <FloatingChatWidget phone={settings?.phone} />
     </main>
