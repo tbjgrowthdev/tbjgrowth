@@ -25,6 +25,17 @@ export async function getService(id: string) {
   }
 }
 
+export async function getServiceBySlug(slug: string) {
+  try {
+    return await prisma.agencyService.findUnique({
+      where: { slug },
+    });
+  } catch (error) {
+    console.error(`Failed to fetch service with slug ${slug}:`, error);
+    return null;
+  }
+}
+
 export async function createService(data: any) {
   try {
     const service = await prisma.agencyService.create({
@@ -32,6 +43,7 @@ export async function createService(data: any) {
     });
     revalidatePath("/");
     revalidatePath("/services");
+    revalidatePath("/services/[slug]", "page");
     revalidatePath("/admin/services");
     return { success: true, service };
   } catch (error: any) {
@@ -48,6 +60,7 @@ export async function updateService(id: string, data: any) {
     });
     revalidatePath("/");
     revalidatePath("/services");
+    revalidatePath("/services/[slug]", "page");
     revalidatePath("/admin/services");
     return { success: true, service };
   } catch (error: any) {

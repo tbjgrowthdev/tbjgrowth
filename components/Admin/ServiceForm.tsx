@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createService, updateService } from "@/app/(admin)/actions/services";
+import { createRedirect } from "@/app/(admin)/actions/redirects";
+import { slugify } from "@/lib/utils";
 import { Save, AlertCircle } from "lucide-react";
+
+const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 
 const GRADIENTS = [
   { label: "Blue to Cyan", value: "from-blue-500 to-cyan-500" },
@@ -18,11 +23,14 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const originalSlug = initialData?.slug || "";
 
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
+    slug: initialData?.slug || "",
     subtitle: initialData?.subtitle || "",
     description: initialData?.description || "",
+    content: initialData?.content || "",
     iconName: initialData?.iconName || "Globe",
     statValue: initialData?.statValue || "",
     statLabel: initialData?.statLabel || "",
@@ -59,11 +67,23 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
         features: JSON.stringify(formData.features),
       };
 
-      const result = initialData
+      const isExisting = Boolean(initialData?.id);
+      const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
+
+      const result = isExisting
         ? await updateService(initialData.id, dataToSave)
         : await createService(dataToSave);
 
       if (result.success) {
+        if (slugChanged && confirm(
+          `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
+        )) {
+          await createRedirect({
+            source: `/services/${originalSlug}`,
+            destination: `/services/${formData.slug}`,
+            permanent: true,
+          });
+        }
         router.push("/admin/services");
         router.refresh();
       } else {
@@ -113,7 +133,23 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
               />
             </div>
           </div>
-          
+
+          <div>
+            <label className="block text-sm font-medium text-muted mb-1">
+              URL Slug <span className="text-caption font-normal">(page: /services/{formData.slug || "..."})</span>
+            </label>
+            <input
+              type="text"
+              name="slug"
+              required
+              value={formData.slug}
+              onChange={handleChange}
+              onBlur={(e) => setFormData((prev) => ({ ...prev, slug: slugify(e.target.value) }))}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+              placeholder="e.g. web-design-development"
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-muted mb-1">Description</label>
             <textarea
@@ -219,6 +255,17 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <h2 className="text-xl font-bold text-foreground mb-2">Detail Page Content</h2>
+        <p className="text-sm text-caption mb-6">
+          Optional. Shown on this service&apos;s own page at /services/{formData.slug || "..."}, below the summary. Leave empty to show just the description and features above.
+        </p>
+        <RichTextEditor
+          content={formData.content}
+          onChange={(content: string) => setFormData((prev) => ({ ...prev, content }))}
+        />
       </div>
 
       <div className="flex justify-end pt-6 border-t border-border">

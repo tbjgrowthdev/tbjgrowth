@@ -29,6 +29,7 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
     results: initialData?.results || "",
     content: initialData?.content || "",
     excerpt: initialData?.excerpt || "",
+    websiteUrl: initialData?.websiteUrl || "",
     featuredImage: initialData?.featuredImage || "",
     featuredImageAlt: initialData?.featuredImageAlt || "",
     imageGallery: initialData?.imageGallery || [],
@@ -200,6 +201,19 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
               value={formData.results}
               onChange={(e) => setFormData({ ...formData, results: e.target.value })}
               className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-muted">
+              Website URL <span className="text-caption font-normal">(optional — shown as a button on the case study page)</span>
+            </label>
+            <input
+              type="url"
+              value={formData.websiteUrl}
+              onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
+              placeholder="https://clientwebsite.com"
             />
           </div>
         </div>

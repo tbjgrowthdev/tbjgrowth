@@ -450,7 +450,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.6 }}
-          className="mt-16 lg:mt-20 grid grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto"
+          className="mt-4 lg:mt-16 grid grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto"
         >
           {stats.map((stat, index) => (
             <motion.div

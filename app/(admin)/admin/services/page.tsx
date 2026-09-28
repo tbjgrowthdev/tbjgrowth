@@ -1,6 +1,6 @@
 import { getServices, deleteService } from "../../actions/services";
 import Link from "next/link";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, ExternalLink } from "lucide-react";
 import DeleteButton from "@/components/Admin/DeleteButton";
 
 export default async function ServicesList() {
@@ -41,6 +41,16 @@ export default async function ServicesList() {
                   <td className="px-6 py-4 font-medium text-foreground">{service.title}</td>
                   <td className="px-6 py-4 text-caption">{service.order}</td>
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
+                    {service.slug && (
+                      <Link
+                        href={`/services/${service.slug}`}
+                        target="_blank"
+                        title="View live page"
+                        className="text-caption hover:text-foreground"
+                      >
+                        <ExternalLink size={18} />
+                      </Link>
+                    )}
                     <Link href={`/admin/services/${service.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
                       <Edit size={18} />
                     </Link>

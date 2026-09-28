@@ -168,6 +168,7 @@ model CaseStudy {
   results          String?  @db.Text
   content          String   @db.Text
   excerpt          String?  @db.Text
+  websiteUrl       String?
   featuredImage    String?
   featuredImageAlt String?
   imageGallery     String[] // Array of image URLs
@@ -245,8 +246,10 @@ model NotFoundLog {
 model AgencyService {
   id          String   @id @default(cuid())
   title       String
+  slug        String?  @unique
   subtitle    String?
   description String   @db.Text
+  content     String?  @db.Text // Optional long-form body for the service detail page
   iconName    String   // String name to map to Lucide icon
   features    String?  @db.Text // JSON array of feature objects or strings
   statValue   String?

@@ -41,7 +41,7 @@ const stages = [
     color: "from-brand-orange-deep to-brand-orange",
     glowColor: "shadow-brand-orange/30",
     bgGradient: "from-brand-orange/10 to-brand-orange/5",
-    description: "We design and build your digital foundation — websites, brands, and user experiences that convert.",
+    description: "We design and launch your website, brand, and digital foundation first, because sending paid traffic to a weak site burns budget.",
     dashboardItems: [
       { icon: Monitor, label: "Website Design", value: "Responsive & Fast" },
       { icon: Palette, label: "Brand Identity", value: "Cohesive & Memorable" },
@@ -57,7 +57,7 @@ const stages = [
     color: "from-charcoal to-off-black",
     glowColor: "shadow-charcoal/30",
     bgGradient: "from-charcoal/10 to-off-black/5",
-    description: "Drive targeted traffic through SEO, paid ads, and social media strategies that bring qualified leads.",
+    description: "We drive qualified traffic through SEO, social content, and paid campaigns once there's somewhere good for that traffic to land.",
     dashboardItems: [
       { icon: Search, label: "SEO Strategy", value: "Top 3 Rankings" },
       { icon: Globe, label: "Paid Ads", value: "ROAS 4.5x" },
@@ -73,7 +73,7 @@ const stages = [
     color: "from-brand-orange-deep to-brand-orange",
     glowColor: "shadow-brand-orange/30",
     bgGradient: "from-brand-orange/10 to-brand-orange/5",
-    description: "Turn visitors into customers with high-converting landing pages, CRM integration, and smart lead capture.",
+    description: "We optimise the on-page and on-call experience so visitors and leads actually become customers, not just numbers in a dashboard.",
     dashboardItems: [
       { icon: MousePointerClick, label: "Landing Pages", value: "4.2% Conv. Rate" },
       { icon: BarChart3, label: "CRM Setup", value: "Automated Pipeline" },
@@ -89,7 +89,7 @@ const stages = [
     color: "from-charcoal to-off-black",
     glowColor: "shadow-charcoal/30",
     bgGradient: "from-charcoal/10 to-off-black/5",
-    description: "Set your growth on autopilot with AI workflows, email automation, and intelligent chatbots that work 24/7.",
+    description: "We connect CRM, follow-up sequences, and AI systems so no lead sits untouched for more than a few minutes.",
     dashboardItems: [
       { icon: BrainCircuit, label: "AI Workflows", value: "Smart Automation" },
       { icon: MessageSquare, label: "Chatbot", value: "24/7 Support" },
@@ -105,7 +105,7 @@ const stages = [
     color: "from-brand-orange-deep to-brand-orange",
     glowColor: "shadow-brand-orange/30",
     bgGradient: "from-brand-orange/10 to-brand-orange/5",
-    description: "Scale intelligently with advanced analytics, business intelligence, and AI-driven growth strategies.",
+    description: "We double down on what the data shows is working and cut what isn't, on a monthly reporting cycle.",
     dashboardItems: [
       { icon: LineChart, label: "Analytics Suite", value: "Real-time Data" },
       { icon: Shield, label: "BI Reports", value: "Monthly Insights" },
@@ -160,7 +160,7 @@ export default function BusinessJourney() {
     <section
       id="business-journey"
       ref={sectionRef}
-      className="relative min-h-screen bg-background py-20 lg:py-28 overflow-hidden transition-colors duration-500"
+      className="relative min-h-screen bg-background py-14 sm:py-20 lg:py-28 overflow-hidden transition-colors duration-500"
     >
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
@@ -193,7 +193,7 @@ export default function BusinessJourney() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16 lg:mb-20"
+          className="text-center mb-10 sm:mb-16 lg:mb-20"
         >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
             Your{" "}
@@ -202,8 +202,7 @@ export default function BusinessJourney() {
             </span>
           </h2>
           <p className="text-lg text-muted max-w-2xl mx-auto">
-            From foundation to scale — a proven framework that transforms your
-            digital presence into a growth engine.
+            This isn't a slogan — it's the actual sequence we run for every client, in this order, because skipping a step is the most common reason marketing spend gets wasted.
           </p>
         </motion.div>
 
@@ -213,11 +212,11 @@ export default function BusinessJourney() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="relative mb-16 lg:mb-24"
+          className="relative mb-10 sm:mb-16 lg:mb-24"
         >
           {/* Background Line */}
           <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-1/2 rounded-full" />
-          
+
           {/* Active Progress Line */}
           <motion.div
             className="hidden lg:block absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light -translate-y-1/2 rounded-full"
@@ -226,54 +225,55 @@ export default function BusinessJourney() {
           />
 
           {/* Stage Buttons */}
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 lg:gap-0">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-0 lg:gap-0">
             {stages.map((stage, index) => {
               const Icon = stage.icon;
               const isActive = index === activeStage;
               const isCompleted = index < activeStage;
 
               return (
-                <motion.button
-                  key={stage.id}
-                  onClick={() => setActiveStage(index)}
-                  className={`relative z-10 flex items-center gap-3 lg:flex-col lg:gap-2 px-6 py-4 lg:py-3 rounded-2xl transition-all duration-500 cursor-pointer ${
-                    isActive
-                      ? "bg-gradient-to-r " + stage.color + " text-white shadow-2xl " + stage.glowColor + " scale-105 lg:scale-110"
-                      : isCompleted
-                      ? "bg-card text-foreground"
-                      : "bg-background text-caption hover:bg-card"
-                  }`}
-                  whileHover={{ scale: isActive ? 1.1 : 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <motion.div
-                    animate={isActive ? { rotate: [0, 10, -10, 0] } : {}}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className={`p-2 rounded-xl ${
+                <div key={stage.id} className="w-full lg:contents">
+                  <motion.button
+                    onClick={() => setActiveStage(index)}
+                    className={`relative z-10 w-full lg:w-auto flex items-center gap-3 lg:flex-col lg:gap-2 px-5 py-3.5 lg:px-6 lg:py-3 rounded-2xl transition-all duration-500 cursor-pointer ${
                       isActive
-                        ? "bg-white/20"
+                        ? "bg-gradient-to-r " + stage.color + " text-white shadow-2xl " + stage.glowColor + " scale-[1.02] lg:scale-110"
                         : isCompleted
-                        ? "bg-gradient-to-r " + stage.color + " text-white"
-                        : "bg-card"
+                        ? "bg-card text-foreground"
+                        : "bg-background text-caption hover:bg-card"
                     }`}
+                    whileHover={{ scale: isActive ? 1.03 : 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      <Icon className="w-5 h-5" />
-                    )}
-                  </motion.div>
-                  <span className={`text-sm font-semibold whitespace-nowrap ${
-                    isActive ? "text-white" : ""
-                  }`}>
-                    {stage.label}
-                  </span>
+                    <motion.div
+                      animate={isActive ? { rotate: [0, 10, -10, 0] } : {}}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className={`flex-shrink-0 p-2 rounded-xl ${
+                        isActive
+                          ? "bg-white/20"
+                          : isCompleted
+                          ? "bg-gradient-to-r " + stage.color + " text-white"
+                          : "bg-card"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5" />
+                      ) : (
+                        <Icon className="w-5 h-5" />
+                      )}
+                    </motion.div>
+                    <span className={`text-sm font-semibold whitespace-nowrap ${
+                      isActive ? "text-white" : ""
+                    }`}>
+                      {stage.label}
+                    </span>
+                  </motion.button>
 
-                  {/* Connection dot on mobile */}
+                  {/* Connector between steps on mobile */}
                   {index < stages.length - 1 && (
-                    <div className="lg:hidden w-0.5 h-6 bg-border mx-auto" />
+                    <div className="lg:hidden w-0.5 h-4 bg-border mx-auto" />
                   )}
-                </motion.button>
+                </div>
               );
             })}
           </div>
@@ -300,20 +300,20 @@ export default function BusinessJourney() {
             <div className={`absolute inset-0 bg-gradient-to-br ${currentStage.bgGradient} opacity-50 dark:opacity-30`} />
 
             {/* Dashboard Content */}
-            <div className="relative p-6 lg:p-8">
+            <div className="relative p-4 sm:p-6 lg:p-8">
               {/* Dashboard Header */}
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-1.5">
+              <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="flex gap-1.5 flex-shrink-0">
                     <div className="w-3 h-3 rounded-full bg-red-400" />
                     <div className="w-3 h-3 rounded-full bg-yellow-400" />
                     <div className="w-3 h-3 rounded-full bg-green-400" />
                   </div>
-                  <span className="text-sm text-caption ml-2">
+                  <span className="text-xs sm:text-sm text-caption ml-1 sm:ml-2 truncate">
                     tbj-growth-dashboard
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-caption">
+                <div className="flex items-center gap-2 text-xs text-caption flex-shrink-0">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   Live
                 </div>
@@ -333,19 +333,19 @@ export default function BusinessJourney() {
                   }}
                 >
                   {/* Stage Title & Description */}
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-6 mb-8">
+                  <div className="flex flex-col items-start lg:flex-row lg:items-center gap-5 sm:gap-6 mb-8">
                     <motion.div
                       animate={{ rotate: [0, 5, -5, 0] }}
                       transition={{ duration: 3, repeat: Infinity }}
-                      className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${currentStage.color} text-white shadow-lg ${currentStage.glowColor}`}
+                      className={`inline-flex p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br ${currentStage.color} text-white shadow-lg ${currentStage.glowColor}`}
                     >
-                      <StageIcon className="w-8 h-8" />
+                      <StageIcon className="w-7 h-7 sm:w-8 sm:h-8" />
                     </motion.div>
-                    <div className="flex-1">
-                      <h3 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
+                    <div className="flex-1 w-full">
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2">
                         {currentStage.label} Phase
                       </h3>
-                      <p className="text-muted">
+                      <p className="text-sm sm:text-base text-muted">
                         {currentStage.description}
                       </p>
                     </div>
@@ -354,9 +354,9 @@ export default function BusinessJourney() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring" }}
-                      className="flex-shrink-0 bg-stat rounded-2xl p-6 text-center border border-border"
+                      className="w-full lg:w-auto flex-shrink-0 bg-stat rounded-2xl p-5 sm:p-6 text-center border border-border"
                     >
-                      <div className={`text-3xl font-bold bg-gradient-to-r ${currentStage.color} bg-clip-text text-transparent`}>
+                      <div className={`text-2xl sm:text-3xl font-bold bg-gradient-to-r ${currentStage.color} bg-clip-text text-transparent`}>
                         {currentStage.metrics.primary}
                       </div>
                       <div className="text-sm text-caption mt-1">
@@ -375,7 +375,7 @@ export default function BusinessJourney() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.1 * index, duration: 0.4 }}
-                          className="group relative bg-card/80 backdrop-blur-sm rounded-2xl p-5 border border-border hover:border-accent-border transition-all duration-300 cursor-pointer"
+                          className="group relative bg-card/80 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-border hover:border-accent-border transition-all duration-300 cursor-pointer"
                           whileHover={{ y: -4, scale: 1.02 }}
                         >
                           <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${currentStage.bgGradient} mb-3 group-hover:scale-110 transition-transform duration-300`}>
@@ -426,7 +426,7 @@ export default function BusinessJourney() {
               rotate: [0, 5, 0],
             }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-6 -right-6 lg:-top-8 lg:-right-8 bg-card rounded-xl shadow-lg border border-border p-3 flex items-center gap-3"
+            className="hidden sm:flex absolute -top-6 -right-6 lg:-top-8 lg:-right-8 bg-card rounded-xl shadow-lg border border-border p-3 items-center gap-3"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-brand-orange-deep to-brand-orange rounded-lg flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
@@ -443,7 +443,7 @@ export default function BusinessJourney() {
               rotate: [0, -3, 0],
             }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute -bottom-4 -left-6 lg:-bottom-6 lg:-left-8 bg-card rounded-xl shadow-lg border border-border p-3 flex items-center gap-3"
+            className="hidden sm:flex absolute -bottom-4 -left-6 lg:-bottom-6 lg:-left-8 bg-card rounded-xl shadow-lg border border-border p-3 items-center gap-3"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-charcoal to-off-black rounded-lg flex items-center justify-center">
               <ArrowUpRight className="w-4 h-4 text-white" />

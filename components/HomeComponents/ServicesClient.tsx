@@ -3,51 +3,9 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { ArrowRight, Settings } from "lucide-react";
+import Link from "next/link";
 import { getIcon } from "@/components/ui/IconRenderer";
-
-// Fallback Service definitions (used if dbServices is empty)
-const fallbackServices = [
-    {
-        id: "web-design",
-        iconName: "Globe",
-        title: "Web Design & Development",
-        subtitle: "Conversion-focused websites",
-        description:
-            "Custom-built, mobile-first websites designed to convert visitors into customers. Fast, SEO-optimized, and built with modern frameworks.",
-        features: [
-            { icon: "Monitor", text: "Responsive Design" },
-            { icon: "Palette", text: "UI/UX Excellence" },
-            { icon: "Code2", text: "Next.js & React" },
-            { icon: "Zap", text: "Performance Optimized" },
-        ],
-        gradient: "from-brand-orange-deep to-brand-orange",
-        bgGradient: "from-brand-orange/10 to-brand-orange/10",
-        shadowColor: "shadow-brand-orange/20",
-        stat: "98%",
-        statLabel: "PageSpeed Score",
-        color: "orange",
-    },
-    {
-        id: "smm",
-        iconName: "Share2",
-        title: "Social Media Marketing",
-        subtitle: "Build your community",
-        description:
-            "Strategic social media management across all major platforms. Content creation, community engagement, and paid social campaigns that drive real results.",
-        features: [
-            { icon: "Users", text: "Community Growth" },
-            { icon: "MessageSquare", text: "Content Strategy" },
-            { icon: "Megaphone", text: "Paid Social Ads" },
-            { icon: "TrendingUp", text: "Analytics & Insights" },
-        ],
-        gradient: "from-charcoal to-off-black",
-        bgGradient: "from-charcoal/10 to-off-black/10",
-        shadowColor: "shadow-charcoal/20",
-        stat: "2.5M+",
-        statLabel: "Monthly Reach",
-        color: "charcoal",
-    },
-];
+import { fallbackServices } from "@/lib/fallback-services";
 
 // Service Card Component
 function ServiceCard({
@@ -110,12 +68,12 @@ function ServiceCard({
                 </p>
 
                 {/* Stat Badge */}
-                {service.stat && (
+                {(service.statValue || service.stat) && (
                     <div className="flex items-center gap-3 mb-4">
                         <div
                             className={`text-2xl font-bold bg-gradient-to-r ${service.gradient} bg-clip-text text-transparent`}
                         >
-                            {service.stat}
+                            {service.statValue || service.stat}
                         </div>
                         <div className="text-xs text-caption">
                             {service.statLabel}
@@ -162,12 +120,14 @@ function ServiceCard({
                     transition={{ duration: 0.3, delay: 0.1 }}
                     className="overflow-hidden"
                 >
-                    <button
+                    <Link
+                        href={`/services/${service.slug || service.id}`}
+                        onClick={(e) => e.stopPropagation()}
                         className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold bg-gradient-to-r ${service.gradient} bg-clip-text text-transparent group/btn`}
                     >
                         <span>Learn More</span>
                         <ArrowRight className="w-4 h-4 text-transparent group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
+                    </Link>
                 </motion.div>
             </div>
 
@@ -271,14 +231,15 @@ function PreviewPanel({
                 </div>
 
                 {/* CTA */}
-                <motion.button
+                <motion.a
+                    href={`/services/${service.slug || service.id}`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className={`w-full py-4 bg-gradient-to-r ${service.gradient} text-white font-semibold rounded-2xl shadow-lg ${shadowColor} flex items-center justify-center gap-2`}
                 >
                     <span>Explore {service.title}</span>
                     <ArrowRight className="w-5 h-5" />
-                </motion.button>
+                </motion.a>
             </div>
         </motion.div>
     );
@@ -380,11 +341,11 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.4, duration: 0.6 }}
-                    className="mt-16 lg:mt-20 flex flex-wrap items-center justify-center gap-6 lg:gap-12 text-center"
+                    className="mt-8 lg:mt-16 flex flex-wrap items-center justify-center gap-6 lg:gap-12 text-center"
                 >
                     {[
-                        { value: "150+", label: "Projects Delivered" },
-                        { value: "50+", label: "Happy Clients" },
+                        { value: "50+", label: "Projects Delivered" },
+                        { value: "30+", label: "Happy Clients" },
                         { value: "6", label: "Core Services" },
                         { value: "24/7", label: "Support & Monitoring" },
                     ].map((stat, i) => (

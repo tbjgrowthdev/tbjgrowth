@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Building2, Briefcase, TrendingUp } from "lucide-react";
+import { ArrowLeft, Building2, Briefcase, TrendingUp, Globe, ArrowUpRight } from "lucide-react";
 import { isValidImageSrc } from "@/lib/utils";
 import ShareButton from "@/components/Blog/ShareButton";
 
@@ -115,6 +115,18 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
                 <TrendingUp size={16} className="text-brand-orange" />
                 <span>{study.results}</span>
               </div>
+            )}
+            {study.websiteUrl && (
+              <a
+                href={study.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-tint text-brand-orange-deep dark:text-brand-orange-light text-sm font-semibold hover:bg-brand-orange/20 transition-colors"
+              >
+                <Globe size={15} />
+                Visit Website
+                <ArrowUpRight size={14} />
+              </a>
             )}
             <div className="md:ml-auto">
               <ShareButton title={study.title} />
