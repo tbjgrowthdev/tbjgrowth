@@ -338,14 +338,14 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
             </motion.div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              TBJ{" "}
+              {/* TBJ{" "} */}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-                Systems
+                AI Tools{" "}
               </span>
+              We're Building
             </h2>
             <p className="text-lg text-muted max-w-2xl mx-auto">
-              We're building the next generation of AI-powered SaaS products.
-              These tools will redefine how businesses grow, automate, and scale.
+               We're building AI-powered tools for the businesses we already serve — an early look at what's coming.
             </p>
           </motion.div>
 
