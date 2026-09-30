@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Minus, Plus, Trash2, ShoppingBag, Heart, CheckCircle2, Send } from "lucide-react";
 import { submitContactForm } from "@/app/(admin)/actions/forms";
@@ -10,7 +10,7 @@ export interface CartItem {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image: string | StaticImageData;
   quantity: number;
 }
 
@@ -18,7 +18,7 @@ export interface FavoriteItem {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image: string | StaticImageData;
 }
 
 export default function CartDrawer({
