@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Service Not Found" };
   }
 
-  const title = `${service.title} | TBJ Growth`;
-  const description = service.subtitle || service.description;
+  const title = service.metaTitle || `${service.title} | TBJ Growth`;
+  const description = service.metaDescription || service.subtitle || service.description;
   const canonical = `${baseUrl}/services/${slug}`;
 
   return {

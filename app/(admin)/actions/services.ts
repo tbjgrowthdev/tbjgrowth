@@ -18,6 +18,7 @@ export async function getService(id: string) {
   try {
     return await prisma.agencyService.findUnique({
       where: { id },
+      include: { faqs: { orderBy: { order: "asc" } } },
     });
   } catch (error) {
     console.error(`Failed to fetch service ${id}:`, error);
@@ -29,6 +30,7 @@ export async function getServiceBySlug(slug: string) {
   try {
     return await prisma.agencyService.findUnique({
       where: { slug },
+      include: { faqs: { orderBy: { order: "asc" } } },
     });
   } catch (error) {
     console.error(`Failed to fetch service with slug ${slug}:`, error);

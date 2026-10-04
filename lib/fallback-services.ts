@@ -13,6 +13,8 @@ export const fallbackServices = [
     subtitle: "Conversion-focused websites",
     description:
       "Custom-built, mobile-first websites designed to convert visitors into customers. Fast, SEO-optimized, and built with modern frameworks.",
+    detailTitle: null as string | null,
+    detailIntro: null as string | null,
     content: null as string | null,
     features: JSON.stringify([
       { icon: "Monitor", text: "Responsive Design" },
@@ -20,11 +22,15 @@ export const fallbackServices = [
       { icon: "Code2", text: "Next.js & React" },
       { icon: "Zap", text: "Performance Optimized" },
     ]),
+    process: null as string | null,
     gradient: "from-brand-orange-deep to-brand-orange",
     bgGradient: "from-brand-orange/10 to-brand-orange/10",
     shadowColor: "shadow-brand-orange/20",
     statValue: "98%",
     statLabel: "PageSpeed Score",
+    metaTitle: null as string | null,
+    metaDescription: null as string | null,
+    faqs: [] as { id: string; question: string; answer: string; order: number }[],
   },
   {
     id: "smm",
@@ -34,6 +40,8 @@ export const fallbackServices = [
     subtitle: "Build your community",
     description:
       "Strategic social media management across all major platforms. Content creation, community engagement, and paid social campaigns that drive real results.",
+    detailTitle: null as string | null,
+    detailIntro: null as string | null,
     content: null as string | null,
     features: JSON.stringify([
       { icon: "Users", text: "Community Growth" },
@@ -41,10 +49,14 @@ export const fallbackServices = [
       { icon: "Megaphone", text: "Paid Social Ads" },
       { icon: "TrendingUp", text: "Analytics & Insights" },
     ]),
+    process: null as string | null,
     gradient: "from-charcoal to-off-black",
     bgGradient: "from-charcoal/10 to-off-black/10",
     shadowColor: "shadow-charcoal/20",
     statValue: "2.5M+",
     statLabel: "Monthly Reach",
+    metaTitle: null as string | null,
+    metaDescription: null as string | null,
+    faqs: [] as { id: string; question: string; answer: string; order: number }[],
   },
 ];

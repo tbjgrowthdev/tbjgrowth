@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import {
   Sparkles,
@@ -34,6 +35,8 @@ import {
   ThumbsUp,
   Timer,
   DollarSign,
+  UserCheck,
+  Cpu,
 } from "lucide-react";
 
 
@@ -42,37 +45,37 @@ const values = [
   {
     icon: Target,
     title: "Results First",
-    description: "Everything we do is measured by the results we deliver. No vanity metrics, just real business growth.",
+    description: "Every engagement is measured against leads, bookings, or revenue — not likes or impressions.",
     gradient: "from-brand-orange-deep to-brand-orange",
   },
   {
-    icon: Heart,
-    title: "True Partnership",
-    description: "We become an extension of your team. Your goals are our goals, and your success is our success.",
+    icon: UserCheck,
+    title: "Direct Access",
+    description: "You work with the person doing the work, not a rotating account manager.",
     gradient: "from-charcoal to-off-black",
   },
   {
     icon: Eye,
     title: "Radical Transparency",
-    description: "No black boxes. You get real-time dashboards, clear reporting, and full visibility into every campaign.",
+    description: "Real dashboards and monthly reports, no black-box 'trust us' reporting.",
     gradient: "from-brand-orange-deep to-brand-orange",
   },
   {
-    icon: Zap,
-    title: "AI-First Approach",
-    description: "We leverage cutting-edge AI to deliver faster, smarter, and more efficient solutions than traditional agencies.",
+    icon: Cpu,
+    title: "AI-Assisted, Human-Led",
+    description: "AI speeds up production and follow-up; strategy and judgment stay human.",
     gradient: "from-charcoal to-off-black",
   },
   {
-    icon: Shield,
-    title: "Reliability",
-    description: "When we say we'll deliver, we deliver. 98% client retention rate speaks for itself.",
+    icon: Clock,
+    title: "Honest Timelines",
+    description: "We tell you what's realistic before you sign, not after.",
     gradient: "from-brand-orange-deep to-brand-orange",
   },
   {
-    icon: Rocket,
-    title: "Continuous Innovation",
-    description: "We're always learning, testing, and implementing the latest technologies to keep you ahead of the curve.",
+    icon: Heart,
+    title: "Long-Term Partnership",
+    description: "We'd rather grow slowly with clients who stay than churn through short-term projects.",
     gradient: "from-charcoal to-off-black",
   },
 ];
@@ -80,51 +83,40 @@ const values = [
 // Team members
 const team = [
   {
-    name: "Alex Thompson",
-    role: "Co-Founder & CEO",
-    bio: "10+ years in digital growth. Previously scaled 3 startups to 7-figure exits.",
+    name: "Jabber Sharker",
+    role: "Founder & CEO",
+    bio: "Driving growth strategies and agency vision. Specializes in scaling digital businesses globally.",
     gradient: "from-brand-orange-deep to-brand-orange",
-    initials: "AT",
+    initials: "JS",
   },
   {
-    name: "Sarah Mitchell",
+    name: "Sabbin Islam Shojib",
     role: "Co-Founder & CTO",
-    bio: "Full-stack developer turned AI specialist. Built systems processing 10M+ data points daily.",
+    bio: "Leading tech architecture and web development. Focused on high-performance solutions and automation.",
     gradient: "from-charcoal to-off-black",
-    initials: "SM",
+    initials: "SS",
   },
   {
-    name: "James Cooper",
+    name: "Kazi Mozammel Hossen",
     role: "Head of Growth",
-    bio: "Former Google Ads strategist. Managed £5M+ in ad spend across 200+ accounts.",
+    bio: "Managing performance marketing and client acquisition strategies to ensure maximum ROI.",
     gradient: "from-brand-orange-deep to-brand-orange",
-    initials: "JC",
-  },
-  {
-    name: "Emma Richards",
-    role: "Creative Director",
-    bio: "Award-winning designer. Created brand identities for Fortune 500 companies.",
-    gradient: "from-charcoal to-off-black",
-    initials: "ER",
+    initials: "KH",
   },
 ];
 
 // Timeline milestones
 const milestones = [
-  { year: "2018", title: "Founded", description: "TBJ Growth started as a two-person team in London" },
-  { year: "2019", title: "First 50 Clients", description: "Reached 50 active clients through referrals alone" },
-  { year: "2020", title: "AI Integration", description: "Pioneered AI-powered marketing automation" },
-  { year: "2021", title: "100+ Projects", description: "Delivered 100+ successful digital projects" },
-  { year: "2022", title: "Team Growth", description: "Expanded to 15+ specialists across the UK" },
-  { year: "2023", title: "TBJ Systems", description: "Started developing proprietary AI SaaS products" },
-  { year: "2024", title: "Global Reach", description: "Serving clients across UK, Europe, and North America" },
+  { year: "2026", title: "Agency Founded", description: "Launched TBJ Growth Tech in Dhaka to serve global clients." },
+  { year: "2026", title: "Core Process Built", description: "Established our integrated Build → Attract → Convert engine." },
+  { year: "2026", title: "Global Reach", description: "Onboarded initial remote clients across the UK and US." },
 ];
 
 // Stats
 const stats = [
-  { value: "150+", label: "Projects Delivered", icon: Building2 },
-  { value: "50+", label: "Active Clients", icon: Users },
-  { value: "98%", label: "Client Retention", icon: ThumbsUp },
+  { value: "50+", label: "Projects Delivered", icon: Building2 },
+  { value: "06+", label: "Active Clients", icon: Users },
+  { value: "95%", label: "Client Retention", icon: ThumbsUp },
   { value: "4.9/5", label: "Client Rating", icon: Star },
 ];
 
@@ -161,11 +153,11 @@ export default function AboutPageClient() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 tracking-tight leading-tight"
+                className="text-4xl sm:text-5xl lg:text-5xl font-bold text-foreground mb-6 tracking-tight leading-tight"
               >
-                We Help Businesses{" "}
+                A Growth Team Built in Dhaka,{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-                  Grow Smarter
+                  Working for Clients Worldwide
                 </span>
               </motion.h1>
 
@@ -175,7 +167,8 @@ export default function AboutPageClient() {
                 transition={{ delay: 0.2 }}
                 className="text-lg text-muted leading-relaxed mb-6"
               >
-                TBJ Growth is a UK-based digital growth agency that combines proven marketing strategies with cutting-edge AI technology. We don't just build websites or run ads — we build complete growth ecosystems that scale your business.
+                TBJ Growth Tech was founded by Shojib to give UK and US small businesses access to the same website, advertising, and automation systems that larger companies pay agency-of-record rates for — built by a Dhaka-based team at a fraction of the cost, without cutting corners on quality.
+
               </motion.p>
 
               <motion.p
@@ -215,19 +208,23 @@ export default function AboutPageClient() {
               className="relative"
             >
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                <div className="aspect-[4/3] bg-gradient-to-br from-brand-orange-deep via-brand-orange to-brand-orange-light flex items-center justify-center">
-                  <div className="text-center text-white p-8">
-                    <Building2 className="w-16 h-16 mx-auto mb-4 opacity-80" />
-                    <p className="text-2xl font-bold">TBJ Growth</p>
-                    <p className="text-white/70">Building Since 2018</p>
-                  </div>
+                <div className="relative aspect-[4/3]">
+                  <Image
+                    src="/we.jpg"
+                    alt="The TBJ Growth Tech team"
+                    fill
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-black/10" />
                 </div>
                 {/* Decorative elements */}
-                <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 text-white text-sm font-medium">
+                <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 text-white text-sm font-medium">
                   UK Based
                 </div>
-                <div className="absolute bottom-4 left-4 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 text-white text-sm font-medium">
-                  50+ Happy Clients
+                <div className="absolute bottom-4 left-4 bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 text-white text-sm font-medium">
+                  06+ Happy Clients
                 </div>
               </div>
             </motion.div>
@@ -278,7 +275,7 @@ export default function AboutPageClient() {
       </section>
 
       {/* Team Section */}
-      <section className="relative py-20 lg:py-28 bg-background">
+      {/* <section className="relative py-20 lg:py-28 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -295,7 +292,7 @@ export default function AboutPageClient() {
             </p>
           </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-1 lg:grid-cols-3 gap-6">
             {team.map((member, index) => (
               <motion.div
                 key={member.name}
@@ -305,7 +302,7 @@ export default function AboutPageClient() {
                 transition={{ delay: index * 0.1 }}
                 className="group text-center p-6 rounded-2xl bg-card border border-border hover:border-accent-border hover:shadow-xl transition-all"
               >
-                {/* Avatar */}
+              
                 <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${member.gradient} flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 group-hover:scale-110 transition-transform`}>
                   {member.initials}
                 </div>
@@ -316,7 +313,7 @@ export default function AboutPageClient() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Timeline Section */}
       <section className="relative py-20 lg:py-28 bg-card">
@@ -332,7 +329,7 @@ export default function AboutPageClient() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">Journey</span>
             </h2>
             <p className="text-lg text-muted">
-              From a small London office to serving clients worldwide.
+              From a small office to serving clients worldwide.
             </p>
           </motion.div>
 

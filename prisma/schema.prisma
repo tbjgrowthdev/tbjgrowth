@@ -245,19 +245,41 @@ model NotFoundLog {
 
 model AgencyService {
   id          String   @id @default(cuid())
-  title       String
+  title       String   // Card title (homepage) — also the fallback detail page H1
   slug        String?  @unique
   subtitle    String?
-  description String   @db.Text
+  description String   @db.Text // Card description (homepage) — also the fallback detail page intro
+  detailTitle String?  // Detail page H1, if different from the card title
+  detailIntro String?  @db.Text // Detail page intro paragraph, if different from the card description
   content     String?  @db.Text // Optional long-form body for the service detail page
   iconName    String   // String name to map to Lucide icon
-  features    String?  @db.Text // JSON array of feature objects or strings
+  features    String?  @db.Text // "What's Included" — JSON array of strings (or legacy {icon,text} objects)
+  process     String?  @db.Text // "Our Process" — JSON array of {step, title, desc}
   statValue   String?
   statLabel   String?
   gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
   order       Int      @default(0) // For sorting on the frontend
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  // SEO Fields
+  metaTitle       String?
+  metaDescription String?
+
+  faqs      ServiceFaq[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model ServiceFaq {
+  id        String        @id @default(cuid())
+  serviceId String
+  service   AgencyService @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  question  String
+  answer    String        @db.Text
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([serviceId])
 }
 
 model Testimonial {
@@ -274,6 +296,15 @@ model Testimonial {
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TrustedPartner {

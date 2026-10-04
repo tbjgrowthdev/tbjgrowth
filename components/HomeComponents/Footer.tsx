@@ -54,7 +54,7 @@ const footerLinks = {
       { label: "Free Tools", href: "#" },
       { label: "Guides", href: "#" },
       { label: "Webinars", href: "#" },
-      { label: "FAQ", href: "#" },
+      { label: "FAQ", href: "#faq" },
       { label: "Support", href: "#" },
     ],
   },

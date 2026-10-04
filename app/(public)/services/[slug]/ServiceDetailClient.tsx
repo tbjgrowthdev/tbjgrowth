@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Calendar, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Sparkles, ChevronDown, HelpCircle } from "lucide-react";
 import { getIcon } from "@/components/ui/IconRenderer";
 
 type Feature = { icon?: string; text: string };
+type ProcessStep = { step: number; title: string; desc: string };
+type Faq = { id: string; question: string; answer: string };
 
 type Service = {
   id: string;
@@ -13,34 +16,46 @@ type Service = {
   title: string;
   subtitle?: string | null;
   description: string;
+  detailTitle?: string | null;
+  detailIntro?: string | null;
   content?: string | null;
   iconName: string;
   features?: string | Feature[] | null;
+  process?: string | ProcessStep[] | null;
   statValue?: string | null;
   statLabel?: string | null;
   gradient?: string | null;
+  faqs?: Faq[];
 };
+
+function parseJsonArray<T>(raw: string | T[] | null | undefined): T[] {
+  if (!raw) return [];
+  if (typeof raw !== "string") return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function ServiceDetailClient({ service }: { service: Service }) {
   const Icon = getIcon(service.iconName || "Circle");
   const gradient = service.gradient || "from-brand-orange-deep to-brand-orange";
   const bgGradient = gradient.replace(/-\d{3}/g, "$&/10");
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const heading = service.detailTitle || service.title;
+  const intro = service.detailIntro || service.description;
 
-  const featuresList: Feature[] = (() => {
-    if (!service.features) return [];
-    if (typeof service.features === "string") {
-      try {
-        return JSON.parse(service.features);
-      } catch {
-        return [];
-      }
-    }
-    return service.features;
-  })();
+  const featuresList = parseJsonArray<Feature>(service.features).filter((f) =>
+    typeof f === "string" ? f : f?.text
+  );
+  const processSteps = parseJsonArray<ProcessStep>(service.process);
+  const faqList = service.faqs || [];
 
   return (
     <main className="relative bg-background transition-colors duration-500">
-      {/* Hero */}
+      {/* Hero — H1 + Intro */}
       <section className="relative pt-32 lg:pt-40 pb-16 lg:pb-20 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
@@ -52,10 +67,7 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <Link
               href="/services"
               className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-foreground transition-colors mb-8"
@@ -80,7 +92,7 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
             transition={{ delay: 0.15 }}
             className="text-4xl sm:text-5xl font-bold text-foreground mb-4 tracking-tight"
           >
-            {service.title}
+            {heading}
           </motion.h1>
 
           {service.subtitle && (
@@ -100,7 +112,7 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
             transition={{ delay: 0.25 }}
             className="text-muted leading-relaxed max-w-2xl"
           >
-            {service.description}
+            {intro}
           </motion.p>
 
           {service.statValue && (
@@ -113,24 +125,25 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
               <div className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
                 {service.statValue}
               </div>
-              {service.statLabel && (
-                <div className="text-sm text-caption">{service.statLabel}</div>
-              )}
+              {service.statLabel && <div className="text-sm text-caption">{service.statLabel}</div>}
             </motion.div>
           )}
         </div>
       </section>
 
-      {/* Features */}
+      {/* What's Included */}
       {featuresList.length > 0 && (
         <section className="relative pb-16 lg:pb-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">What&apos;s Included</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {featuresList.map((feature, i) => {
-                const FeatureIcon = getIcon(feature.icon || "CheckCircle2");
+                const text = typeof feature === "string" ? feature : feature.text;
+                const iconName = typeof feature === "string" ? undefined : feature.icon;
+                const FeatureIcon = getIcon(iconName || "CheckCircle2");
                 return (
                   <motion.div
-                    key={feature.text}
+                    key={text}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -140,10 +153,39 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
                     <div className={`flex-shrink-0 p-2.5 rounded-xl bg-gradient-to-br ${bgGradient}`}>
                       <FeatureIcon className="w-5 h-5 text-muted" />
                     </div>
-                    <span className="font-medium text-foreground">{feature.text}</span>
+                    <span className="font-medium text-foreground">{text}</span>
                   </motion.div>
                 );
               })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Our Process */}
+      {processSteps.length > 0 && (
+        <section className="relative pb-16 lg:pb-20">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-10">Our Process</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {processSteps.map((step, i) => (
+                <motion.div
+                  key={step.step ?? i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                  className="relative"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center font-bold mb-4`}
+                  >
+                    {step.step ?? i + 1}
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
+                  <p className="text-sm text-muted leading-relaxed">{step.desc}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
@@ -157,6 +199,44 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
               className="prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl"
               dangerouslySetInnerHTML={{ __html: service.content }}
             />
+          </div>
+        </section>
+      )}
+
+      {/* FAQ */}
+      {faqList.length > 0 && (
+        <section className="relative pb-16 lg:pb-20">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2 mb-8">
+              <HelpCircle className="w-5 h-5 text-brand-orange-deep dark:text-brand-orange-light" />
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Frequently Asked Questions</h2>
+            </div>
+            <div className="divide-y divide-border">
+              {faqList.map((faq, i) => (
+                <div key={faq.id}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between gap-4 py-5 text-left"
+                  >
+                    <span className="font-medium text-foreground">{faq.question}</span>
+                    <ChevronDown
+                      className={`w-5 h-5 flex-shrink-0 text-brand-orange-deep dark:text-brand-orange-light transition-transform duration-300 ${
+                        openFaq === i ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  <motion.div
+                    initial={false}
+                    animate={{ height: openFaq === i ? "auto" : 0, opacity: openFaq === i ? 1 : 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <p className="pb-5 text-muted leading-relaxed whitespace-pre-line">{faq.answer}</p>
+                  </motion.div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}

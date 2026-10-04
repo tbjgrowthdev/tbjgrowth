@@ -5,6 +5,7 @@ import Services from "@/components/HomeComponents/Services";
 import WhyChooseTBJ from "@/components/HomeComponents/WhyChooseTBJ";
 import TBJSystems from "@/components/HomeComponents/TBJSystems";
 import Testimonials from "@/components/HomeComponents/Testimonials";
+import Faq from "@/components/HomeComponents/Faq";
 import FinalCTA from "@/components/HomeComponents/FinalCTA";
 import FloatingChatWidget from "@/components/HomeComponents/FloatingChatWidget";
 import { getPageMetadata } from "@/lib/seo-meta";
@@ -30,10 +31,11 @@ export default async function Home() {
       <Hero settings={settings} />
       <Services></Services>
       <BusinessJourney></BusinessJourney>
-      {/* <CaseStudies caseStudies={featuredCaseStudies} /> */}
+      <CaseStudies caseStudies={featuredCaseStudies} />
       <WhyChooseTBJ></WhyChooseTBJ>
       <TBJSystems></TBJSystems>
       {/* <Testimonials></Testimonials> */}
+      <Faq></Faq>
       <FinalCTA></FinalCTA>
       <FloatingChatWidget phone={settings?.phone} />
     </main>

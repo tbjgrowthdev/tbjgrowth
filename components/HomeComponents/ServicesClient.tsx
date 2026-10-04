@@ -7,6 +7,14 @@ import Link from "next/link";
 import { getIcon } from "@/components/ui/IconRenderer";
 import { fallbackServices } from "@/lib/fallback-services";
 
+// "What's Included" items are stored either as plain strings or, for older
+// rows, as { icon, text } objects — normalize to one shape before rendering.
+function normalizeFeature(feature: unknown): { icon?: string; text: string } {
+  if (typeof feature === "string") return { text: feature };
+  const obj = feature as { icon?: string; text?: string } | null | undefined;
+  return { icon: obj?.icon, text: obj?.text || "" };
+}
+
 // Service Card Component
 function ServiceCard({
     service,
@@ -82,7 +90,7 @@ function ServiceCard({
                 )}
 
                 {/* Expanded Features */}
-                <motion.div
+                {/* <motion.div
                     initial={false}
                     animate={{
                         height: isActive ? "auto" : 0,
@@ -92,7 +100,8 @@ function ServiceCard({
                     className="overflow-hidden"
                 >
                     <div className="space-y-2 pt-3 border-t border-border">
-                        {Array.isArray(featuresList) && featuresList.map((feature: any, i: number) => {
+                        {Array.isArray(featuresList) && featuresList.map((rawFeature: unknown, i: number) => {
+                            const feature = normalizeFeature(rawFeature);
                             const FeatureIcon = getIcon(feature.icon || "Check");
                             return (
                                 <motion.div
@@ -108,7 +117,7 @@ function ServiceCard({
                             );
                         })}
                     </div>
-                </motion.div>
+                </motion.div> */}
 
                 {/* CTA Link */}
                 <motion.div
@@ -205,8 +214,9 @@ function PreviewPanel({
                     </div>
 
                     {/* Feature Cards */}
-                    <div className="grid grid-cols-2 gap-3">
-                        {Array.isArray(featuresList) && featuresList.map((feature: any, i: number) => {
+                    <div className="flex flex-col gap-2">
+                        {Array.isArray(featuresList) && featuresList.map((rawFeature: unknown, i: number) => {
+                            const feature = normalizeFeature(rawFeature);
                             const FeatureIcon = getIcon(feature.icon || "Check");
                             return (
                                 <motion.div
@@ -235,7 +245,7 @@ function PreviewPanel({
                     href={`/services/${service.slug || service.id}`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`w-full py-4 bg-gradient-to-r ${service.gradient} text-white font-semibold rounded-2xl shadow-lg ${shadowColor} flex items-center justify-center gap-2`}
+                    className={`w-full px-3 py-4 bg-gradient-to-r ${service.gradient} text-white font-semibold rounded-2xl shadow-lg ${shadowColor} flex items-center justify-center gap-2`}
                 >
                     <span>Explore {service.title}</span>
                     <ArrowRight className="w-5 h-5" />
