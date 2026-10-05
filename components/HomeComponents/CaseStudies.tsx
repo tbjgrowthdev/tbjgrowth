@@ -61,11 +61,11 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-          <span
+          {/* <span
             className={`absolute top-4 left-4 text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${theme.gradient} text-white shadow-lg`}
           >
             {study.serviceType}
-          </span>
+          </span> */}
         </div>
 
         {/* Content */}
@@ -90,7 +90,11 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
                   <TrendingUp className="w-4 h-4 text-muted" />
                 </div>
                 <span
-                  className={`text-sm font-bold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`}
+                  className={
+                    theme.gradient === "from-charcoal to-off-black"
+                      ? "text-sm font-bold text-foreground"
+                      : `text-sm font-bold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`
+                  }
                 >
                   {study.results}
                 </span>
