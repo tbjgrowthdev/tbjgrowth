@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+import { logAudit } from "@/lib/audit-log";
 
 export async function getCurrentAdmin() {
   const session = await getServerSession(authOptions);
@@ -38,6 +39,8 @@ export async function updateProfile(data: {
       return { success: false, error: "A user with this email already exists" };
     }
 
+    const before = await prisma.user.findUnique({ where: { id: session.user.id } });
+
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data: {
@@ -50,6 +53,15 @@ export async function updateProfile(data: {
     });
 
     revalidatePath("/admin", "layout");
+    await logAudit({
+      action: "update",
+      category: "Users",
+      entityType: "User",
+      entityId: session.user.id,
+      entityLabel: updated.email,
+      before: before ? { name: before.name, email: before.email } : undefined,
+      after: { name: updated.name, email: updated.email },
+    });
     return { success: true, user: updated };
   } catch (error: any) {
     console.error("Failed to update profile:", error);
@@ -87,6 +99,13 @@ export async function changePassword(data: {
       data: { password: hashedPassword },
     });
 
+    await logAudit({
+      action: "changePassword",
+      category: "Users",
+      entityType: "User",
+      entityId: session.user.id,
+      entityLabel: user.email,
+    });
     return { success: true };
   } catch (error: any) {
     console.error("Failed to change password:", error);

@@ -12,6 +12,10 @@ import { getPageMetadata } from "@/lib/seo-meta";
 import { getFeaturedCaseStudies } from "@/app/(admin)/actions/cases";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 
+// Admin edits already call revalidatePath() for this route, so this TTL is
+// just a safety net — the page serves from cache until content changes.
+export const revalidate = 3600;
+
 export async function generateMetadata() {
   return getPageMetadata("home", {
     title: "TBJ Growth Tech | Website, Ads & AI Automation Agency",

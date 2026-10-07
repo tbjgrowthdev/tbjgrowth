@@ -1,21 +1,47 @@
+import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
+import { resolveSocialMeta } from "@/lib/seo-meta";
+import { getSiteSettings } from "@/app/(admin)/actions/settings";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
+export const revalidate = 3600;
+
+// generateMetadata and the page component both need this record for the same
+// request — cache() means the second call is served from memory, not the DB.
+const getPageBySlug = cache((slug: string) => prisma.page.findUnique({ where: { slug } }));
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = await prisma.page.findUnique({ where: { slug } });
+  const page = await getPageBySlug(slug);
 
   if (!page) {
     return { title: "Page Not Found" };
   }
 
   const canonical = page.canonicalUrl || `${baseUrl}/${page.slug}`;
+  const settings = await getSiteSettings();
+
+  const social = resolveSocialMeta({
+    baseTitle: `${page.title} | TBJ Growth`,
+    metaTitle: page.metaTitle,
+    metaDescription: page.metaDescription,
+    ogTitle: page.ogTitle,
+    ogDescription: page.ogDescription,
+    ogImage: page.ogImage,
+    twitterTitle: page.twitterTitle,
+    twitterDescription: page.twitterDescription,
+    twitterImage: page.twitterImage,
+    twitterCard: page.twitterCard,
+    siteDefaultImage: settings?.defaultOgImage,
+  });
 
   return {
-    title: page.metaTitle || `${page.title} | TBJ Growth`,
-    description: page.metaDescription || undefined,
+    title: social.title,
+    description: social.description,
     alternates: {
       canonical,
       languages: { "en-GB": canonical },
@@ -24,20 +50,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       index: page.isIndexable,
       follow: true,
     },
-    openGraph: {
-      title: page.metaTitle || page.title,
-      description: page.metaDescription || undefined,
-      images: page.ogImage ? [page.ogImage] : undefined,
-    },
-    twitter: {
-      card: (page.twitterCard as "summary" | "summary_large_image") || "summary_large_image",
-    },
+    openGraph: social.openGraph,
+    twitter: social.twitter,
   };
 }
 
 export default async function DynamicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = await prisma.page.findUnique({ where: { slug } });
+  const page = await getPageBySlug(slug);
 
   const isVisible =
     page &&
@@ -48,13 +68,17 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
-  const schemaMarkup = page.schemaJson || null;
+  const breadcrumb = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: page.title, path: `/${page.slug}` },
+  ]);
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-20">
-      {schemaMarkup && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaMarkup }} />
+      {page.schemaJson && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: page.schemaJson }} />
       )}
+      <JsonLd schema={breadcrumb} />
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-10 text-center">
           {page.title}

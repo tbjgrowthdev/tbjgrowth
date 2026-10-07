@@ -1,5 +1,5 @@
 import { Playfair_Display, Work_Sans } from "next/font/google";
-import { getPageMetadata } from "@/lib/seo-meta";
+import { getPageMetadata, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import IvoryLaneLandingClient from "./IvoryLaneLandingClient";
 
@@ -19,12 +19,14 @@ const workSans = Work_Sans({
 });
 
 export async function generateMetadata() {
-  return getPageMetadata("ivory-lane", {
+  const meta = await getPageMetadata("ivory-lane", {
     title: "Ivory Lane Photography | Timeless Wedding Photography",
     description:
       "Editorial, light-filled wedding photography that tells the real story of your day. Now booking a limited number of weddings each year.",
     path: "/landing-pages/ivory-lane",
   });
+  // Fictional demo brand for portfolio purposes, not a real business — never index.
+  return { ...meta, robots: buildRobotsMeta(false) };
 }
 
 export default async function IvoryLaneLandingPage() {

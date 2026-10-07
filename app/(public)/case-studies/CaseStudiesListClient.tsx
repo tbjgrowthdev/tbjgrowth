@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Building2 } from "lucide-react";
 import { isValidImageSrc } from "@/lib/utils";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 
 type CaseStudy = any;
 
@@ -83,7 +84,7 @@ export default function CaseStudiesListClient({ caseStudies }: { caseStudies: Ca
                   <div className="relative h-48 w-full overflow-hidden bg-background">
                     {isValidImageSrc(study.featuredImage) ? (
                       <Image
-                        src={study.featuredImage}
+                        src={cloudinaryUrl(study.featuredImage)}
                         alt={study.featuredImageAlt || study.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"

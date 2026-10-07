@@ -25,7 +25,7 @@ const navItems = [
   },
   {
     label: "Our Work",
-    href: "#case-studies",
+    href: "/case-studies",
     type: "section",
   },
   {

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendBookingNotification } from "@/lib/email";
+import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 
 // ------------------------------------------------------
 // Public
@@ -85,6 +86,7 @@ export async function createBooking(data: {
 
 export async function getAllSlots() {
   try {
+    await requireSession();
     return await prisma.availableSlot.findMany({
       orderBy: { startsAt: "asc" },
       include: { booking: true },
@@ -97,6 +99,7 @@ export async function getAllSlots() {
 
 export async function createSlot(data: { startsAt: string; duration: number }) {
   try {
+    await requirePermission("CREATE");
     await prisma.availableSlot.create({
       data: {
         startsAt: new Date(data.startsAt),
@@ -107,6 +110,9 @@ export async function createSlot(data: { startsAt: string; duration: number }) {
     revalidatePath("/book-a-call");
     return { success: true };
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     console.error("Failed to create slot:", error);
     return { success: false, error: error.message };
   }
@@ -120,6 +126,7 @@ export async function createSlotsBulk(data: {
   duration: number; // minutes per slot
 }) {
   try {
+    await requirePermission("CREATE");
     const [startH, startM] = data.startTime.split(":").map(Number);
     const [endH, endM] = data.endTime.split(":").map(Number);
 
@@ -148,6 +155,9 @@ export async function createSlotsBulk(data: {
     revalidatePath("/book-a-call");
     return { success: true, count: slots.length };
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     console.error("Failed to bulk-create slots:", error);
     return { success: false, error: error.message };
   }
@@ -155,6 +165,7 @@ export async function createSlotsBulk(data: {
 
 export async function deleteSlot(id: string) {
   try {
+    await requirePermission("DELETE");
     const slot = await prisma.availableSlot.findUnique({ where: { id } });
     if (slot?.isBooked) {
       return { success: false, error: "Can't delete a slot that already has a booking. Cancel the booking first." };
@@ -164,6 +175,9 @@ export async function deleteSlot(id: string) {
     revalidatePath("/book-a-call");
     return { success: true };
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     console.error(`Failed to delete slot ${id}:`, error);
     return { success: false, error: error.message };
   }
@@ -171,6 +185,7 @@ export async function deleteSlot(id: string) {
 
 export async function getBookings() {
   try {
+    await requireSession();
     return await prisma.booking.findMany({
       orderBy: { createdAt: "desc" },
       include: { slot: true },
@@ -183,6 +198,7 @@ export async function getBookings() {
 
 export async function cancelBooking(id: string) {
   try {
+    await requirePermission("EDIT");
     const booking = await prisma.booking.update({
       where: { id },
       data: { status: "CANCELLED" },
@@ -195,6 +211,9 @@ export async function cancelBooking(id: string) {
     revalidatePath("/book-a-call");
     return { success: true };
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     console.error(`Failed to cancel booking ${id}:`, error);
     return { success: false, error: error.message };
   }

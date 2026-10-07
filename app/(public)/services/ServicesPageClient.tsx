@@ -1,218 +1,34 @@
 // app/services/page.tsx
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
+import Link from "next/link";
 import {
-  Globe,
-  Search,
-  Share2,
-  Megaphone,
-  Settings,
-  Workflow,
   ArrowRight,
   Sparkles,
   CheckCircle2,
-  Monitor,
-  Smartphone,
-  Palette,
-  Code2,
-  Target,
-  Users,
-  TrendingUp,
-  Mail,
-  MessageSquare,
-  Zap,
-  BarChart3,
-  MousePointerClick,
-  Eye,
-  Network,
-  BrainCircuit,
-  Cpu,
-  LineChart,
-  Activity,
-  Layers,
   Calendar,
-  Shield,
   Star,
 } from "lucide-react";
-import Navbar from "@/components/HomeComponents/Navbar";
-import Footer from "@/components/HomeComponents/Footer";
+import { getIcon } from "@/components/ui/IconRenderer";
+import { parseFeatures, parseProcess, parseDeliverables } from "@/lib/service-content";
 
-// Services data
-const services = [
-  {
-    id: "web-development",
-    icon: Globe,
-    title: "Web Design & Development",
-    subtitle: "Conversion-focused websites that perform",
-    description:
-      "Custom-built, high-performance websites designed to convert visitors into customers. Every pixel engineered for speed, accessibility, and conversion rate optimization.",
-    features: [
-      "Responsive mobile-first design",
-      "Next.js & React development",
-      "UI/UX design & prototyping",
-      "Performance optimization (98+ PageSpeed)",
-      "SEO-friendly architecture",
-      "CMS integration (WordPress, Headless CMS)",
-    ],
-    process: [
-      { step: "01", title: "Discovery", desc: "Understand your brand, audience & goals" },
-      { step: "02", title: "Design", desc: "Create wireframes & visual designs" },
-      { step: "03", title: "Build", desc: "Develop with modern frameworks" },
-      { step: "04", title: "Launch", desc: "Test, optimize & deploy" },
-    ],
-    gradient: "from-brand-orange-deep to-brand-orange",
-    bgGradient: "from-brand-orange/10 to-brand-orange-light/10",
-    shadowGlow: "shadow-brand-orange/25",
-    textGradient: "from-brand-orange-deep to-brand-orange",
-    deliverables: ["Figma Design Files", "Source Code", "Documentation", "30 Days Support"],
-  },
-  {
-    id: "seo",
-    icon: Search,
-    title: "SEO & Content Strategy",
-    subtitle: "Dominate search rankings organically",
-    description:
-      "Data-driven SEO strategies that put you at the top of Google. From technical optimization to content that ranks and converts, we cover every aspect of search.",
-    features: [
-      "Technical SEO audits & fixes",
-      "Keyword research & mapping",
-      "On-page & off-page optimization",
-      "Content strategy & creation",
-      "Local SEO & Google Business Profile",
-      "Monthly ranking reports",
-    ],
-    process: [
-      { step: "01", title: "Audit", desc: "Analyze current SEO performance" },
-      { step: "02", title: "Strategy", desc: "Build keyword & content plan" },
-      { step: "03", title: "Optimize", desc: "Implement on-page & technical SEO" },
-      { step: "04", title: "Track", desc: "Monitor rankings & traffic" },
-    ],
-    gradient: "from-charcoal to-off-black",
-    bgGradient: "from-charcoal/10 to-off-black/10",
-    shadowGlow: "shadow-graphite/25",
-    textGradient: "from-graphite to-off-black",
-    deliverables: ["SEO Audit Report", "Keyword Strategy", "Content Calendar", "Monthly Reports"],
-  },
-  {
-    id: "social-media",
-    icon: Share2,
-    title: "Social Media Marketing",
-    subtitle: "Build an engaged community around your brand",
-    description:
-      "Strategic social media management across all major platforms. Content creation, community engagement, and paid social campaigns that drive real business results.",
-    features: [
-      "Platform strategy & management",
-      "Content creation (Reels, Posts, Stories)",
-      "Community engagement & growth",
-      "Influencer partnerships",
-      "Paid social advertising",
-      "Analytics & performance reports",
-    ],
-    process: [
-      { step: "01", title: "Strategy", desc: "Define audience & platform mix" },
-      { step: "02", title: "Create", desc: "Design content calendar & assets" },
-      { step: "03", title: "Engage", desc: "Post, respond & grow community" },
-      { step: "04", title: "Optimize", desc: "Analyze & refine strategy" },
-    ],
-    gradient: "from-brand-orange-deep to-brand-orange",
-    bgGradient: "from-brand-orange/10 to-brand-orange-light/10",
-    shadowGlow: "shadow-brand-orange/25",
-    textGradient: "from-brand-orange-deep to-brand-orange",
-    deliverables: ["Content Calendar", "Brand Assets", "Monthly Analytics", "Growth Strategy"],
-  },
-  {
-    id: "paid-ads",
-    icon: Megaphone,
-    title: "Google & Meta Ads",
-    subtitle: "ROI-driven paid advertising campaigns",
-    description:
-      "High-performing paid campaigns managed by certified specialists. Every pound tracked, optimized, and maximized for ROI across Google, Meta, LinkedIn, and more.",
-    features: [
-      "Google Ads (Search, Display, Shopping)",
-      "Meta Ads (Facebook & Instagram)",
-      "LinkedIn Advertising",
-      "Advanced audience targeting",
-      "A/B testing & optimization",
-      "Conversion tracking & attribution",
-    ],
-    process: [
-      { step: "01", title: "Research", desc: "Analyze market & competitors" },
-      { step: "02", title: "Campaign", desc: "Set up targeted ad campaigns" },
-      { step: "03", title: "Optimize", desc: "Test creatives & audiences" },
-      { step: "04", title: "Scale", desc: "Increase budget on winners" },
-    ],
-    gradient: "from-charcoal to-off-black",
-    bgGradient: "from-charcoal/10 to-off-black/10",
-    shadowGlow: "shadow-graphite/25",
-    textGradient: "from-graphite to-off-black",
-    deliverables: ["Ad Strategy Doc", "Creative Assets", "Weekly Reports", "ROI Dashboard"],
-  },
-  {
-    id: "crm",
-    icon: Settings,
-    title: "CRM & Pipeline Management",
-    subtitle: "Streamline operations & close more deals",
-    description:
-      "Custom CRM implementation that centralizes customer data, automates workflows, and helps your team work smarter. Integration with 50+ tools.",
-    features: [
-      "CRM setup & customization",
-      "Pipeline & deal management",
-      "Lead scoring & routing",
-      "Email automation sequences",
-      "Team training & onboarding",
-      "Integration with existing tools",
-    ],
-    process: [
-      { step: "01", title: "Assess", desc: "Map current sales process" },
-      { step: "02", title: "Configure", desc: "Customize CRM to your needs" },
-      { step: "03", title: "Automate", desc: "Build workflows & sequences" },
-      { step: "04", title: "Train", desc: "Onboard team & go live" },
-    ],
-    gradient: "from-brand-orange-deep to-brand-orange",
-    bgGradient: "from-brand-orange/10 to-brand-orange-light/10",
-    shadowGlow: "shadow-brand-orange/25",
-    textGradient: "from-brand-orange-deep to-brand-orange",
-    deliverables: ["CRM Setup", "Workflow Automation", "Training Docs", "30 Days Support"],
-  },
-  {
-    id: "automation",
-    icon: Workflow,
-    title: "Business Automation",
-    subtitle: "AI-powered systems that scale your business",
-    description:
-      "Intelligent automation systems that work 24/7. From email sequences to AI chatbots, we build systems that scale your business while reducing manual work.",
-    features: [
-      "Workflow automation (Zapier, Make)",
-      "AI chatbot development",
-      "Email marketing automation",
-      "Custom dashboard & BI reports",
-      "API integrations",
-      "Process documentation",
-    ],
-    process: [
-      { step: "01", title: "Identify", desc: "Find automation opportunities" },
-      { step: "02", title: "Design", desc: "Map automated workflows" },
-      { step: "03", title: "Build", desc: "Implement & test automation" },
-      { step: "04", title: "Monitor", desc: "Track performance & optimize" },
-    ],
-    gradient: "from-charcoal to-off-black",
-    bgGradient: "from-charcoal/10 to-off-black/10",
-    shadowGlow: "shadow-graphite/25",
-    textGradient: "from-graphite to-off-black",
-    deliverables: ["Automation Map", "Workflow Setup", "Dashboard Access", "Ongoing Support"],
-  },
-];
+type Service = {
+  id: string;
+  slug?: string | null;
+  iconName: string;
+  title: string;
+  subtitle?: string | null;
+  description: string;
+  features?: string | null;
+  process?: string | null;
+  deliverables?: string | null;
+  gradient?: string | null;
+};
 
-export default function ServicesPageClient() {
-  const [activeService, setActiveService] = useState<number | null>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
-
+export default function ServicesPageClient({ services }: { services: Service[] }) {
   return (
     <main className="relative bg-background transition-colors duration-500">
-      {/* <Navbar /> */}
-
       {/* Hero Section */}
       <section className="relative pt-32 lg:pt-40 pb-16 lg:pb-20 overflow-hidden">
         {/* Background */}
@@ -261,19 +77,30 @@ export default function ServicesPageClient() {
       {/* Services Detail Sections */}
       {services.map((service, index) => {
         const isEven = index % 2 === 0;
-        const Icon = service.icon;
+        const Icon = getIcon(service.iconName || "Globe");
+        const gradient = service.gradient || "from-brand-orange-deep to-brand-orange";
+        const bgGradient = gradient.replace(/-\d{3}/g, "$&/10");
+        const anchor = service.slug || service.id;
+
+        const featuresList = parseFeatures(service.features);
+        const processSteps = parseProcess(service.process);
+        const deliverablesList = parseDeliverables(service.deliverables);
+        const hasVisualColumn = processSteps.length > 0 || deliverablesList.length > 0;
 
         return (
           <section
             key={service.id}
-            id={service.id}
-            className={`relative py-20 lg:py-24 ${isEven ? "bg-background" : "bg-card"
+            id={anchor}
+            className={`relative py-20 lg:py-24 scroll-mt-20 ${isEven ? "bg-background" : "bg-card"
               } transition-colors duration-500`}
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${!isEven ? "lg:grid-flow-dense" : ""}`}>
+              <div
+                className={`grid gap-12 lg:gap-16 items-center ${hasVisualColumn ? "lg:grid-cols-2" : ""} ${!isEven && hasVisualColumn ? "lg:grid-flow-dense" : ""
+                  }`}
+              >
                 {/* Content */}
-                <div className={!isEven ? "lg:col-start-2" : ""}>
+                <div className={!isEven && hasVisualColumn ? "lg:col-start-2" : ""}>
                   <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -281,83 +108,99 @@ export default function ServicesPageClient() {
                     transition={{ duration: 0.5 }}
                   >
                     {/* Icon */}
-                    <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${service.gradient} text-white shadow-lg ${service.shadowGlow} mb-6`}>
+                    <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg mb-6`}>
                       <Icon className="w-8 h-8" />
                     </div>
 
                     <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-3">
                       {service.title}
                     </h2>
-                    <p className="text-lg text-muted mb-2">{service.subtitle}</p>
+                    {service.subtitle && <p className="text-lg text-muted mb-2">{service.subtitle}</p>}
                     <p className="text-muted leading-relaxed mb-8">{service.description}</p>
 
                     {/* Features */}
-                    <div className="space-y-3 mb-8">
-                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Key Features</h4>
-                      {service.features.map((feature) => (
-                        <div key={feature} className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${service.gradient} flex items-center justify-center flex-shrink-0`}>
-                            <CheckCircle2 className="w-3 h-3 text-white" />
+                    {featuresList.length > 0 && (
+                      <div className="space-y-3 mb-8">
+                        <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">Key Features</h4>
+                        {featuresList.map((feature) => (
+                          <div key={feature.text} className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0`}>
+                              <CheckCircle2 className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-sm text-muted">{feature.text}</span>
                           </div>
-                          <span className="text-sm text-muted">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
 
-                    {/* CTA */}
-                    <motion.a
-                      href="/contact"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${service.gradient} text-white font-semibold rounded-xl shadow-lg ${service.shadowGlow} group`}
-                    >
-                      <span>Get Started with {service.title.split("&")[0].trim()}</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </motion.a>
+                    {/* CTAs */}
+                    <div className="flex flex-wrap items-center gap-4">
+                      <motion.a
+                        href="/contact"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r ${gradient} text-white font-semibold rounded-xl shadow-lg group`}
+                      >
+                        <span>Get Started with {service.title.split("&")[0].trim()}</span>
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </motion.a>
+                      <Link
+                        href={`/services/${anchor}`}
+                        className="text-sm font-semibold text-muted hover:text-foreground transition-colors"
+                      >
+                        View Full Details →
+                      </Link>
+                    </div>
                   </motion.div>
                 </div>
 
                 {/* Visual - Process + Deliverables */}
-                <div className={!isEven ? "lg:col-start-1" : ""}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
-                    className="space-y-6"
-                  >
-                    {/* Process */}
-                    <div className={`p-6 lg:p-8 rounded-2xl bg-gradient-to-br ${service.bgGradient} border border-border`}>
-                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Our Process</h4>
-                      <div className="space-y-4">
-                        {service.process.map((step, i) => (
-                          <div key={step.step} className="flex items-start gap-4">
-                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${service.gradient} text-white flex items-center justify-center text-xs font-bold flex-shrink-0`}>
-                              {step.step}
-                            </div>
-                            <div>
-                              <h5 className="font-semibold text-foreground text-sm">{step.title}</h5>
-                              <p className="text-sm text-muted">{step.desc}</p>
-                            </div>
+                {hasVisualColumn && (
+                  <div className={!isEven ? "lg:col-start-1" : ""}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                      className="space-y-6"
+                    >
+                      {/* Process */}
+                      {processSteps.length > 0 && (
+                        <div className={`p-6 lg:p-8 rounded-2xl bg-gradient-to-br ${bgGradient} border border-border`}>
+                          <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Our Process</h4>
+                          <div className="space-y-4">
+                            {processSteps.map((step) => (
+                              <div key={step.step} className="flex items-start gap-4">
+                                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} text-white flex items-center justify-center text-xs font-bold flex-shrink-0`}>
+                                  {String(step.step).padStart(2, "0")}
+                                </div>
+                                <div>
+                                  <h5 className="font-semibold text-foreground text-sm">{step.title}</h5>
+                                  <p className="text-sm text-muted">{step.desc}</p>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
+                      )}
 
-                    {/* Deliverables */}
-                    <div className="p-6 lg:p-8 rounded-2xl bg-card border border-border hover:border-accent-border transition-colors shadow-sm">
-                      <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">What You Get</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        {service.deliverables.map((item) => (
-                          <div key={item} className="flex items-center gap-2">
-                            <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-                            <span className="text-sm text-muted">{item}</span>
+                      {/* Deliverables */}
+                      {deliverablesList.length > 0 && (
+                        <div className="p-6 lg:p-8 rounded-2xl bg-card border border-border hover:border-accent-border transition-colors shadow-sm">
+                          <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">What You Get</h4>
+                          <div className="grid grid-cols-2 gap-3">
+                            {deliverablesList.map((item) => (
+                              <div key={item} className="flex items-center gap-2">
+                                <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                                <span className="text-sm text-muted">{item}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -378,7 +221,7 @@ export default function ServicesPageClient() {
               Ready to Grow Your Business?
             </h2>
             <p className="text-lg text-muted mb-8 max-w-lg mx-auto">
-              Book a free strategy call and we'll create a custom growth plan tailored to your business goals.
+              Book a free strategy call and we&apos;ll create a custom growth plan tailored to your business goals.
             </p>
             <motion.a
               href="/contact"
@@ -393,8 +236,6 @@ export default function ServicesPageClient() {
           </motion.div>
         </div>
       </section>
-
-      {/* <Footer /> */}
     </main>
   );
 }

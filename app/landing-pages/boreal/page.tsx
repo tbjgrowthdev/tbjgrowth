@@ -1,5 +1,5 @@
 import { Anton, Manrope } from "next/font/google";
-import { getPageMetadata } from "@/lib/seo-meta";
+import { getPageMetadata, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import BorealLandingClient from "./BorealLandingClient";
 
@@ -19,12 +19,14 @@ const manrope = Manrope({
 });
 
 export async function generateMetadata() {
-  return getPageMetadata("boreal", {
+  const meta = await getPageMetadata("boreal", {
     title: "Boreal | Winter Outerwear Engineered for the Cold",
     description:
       "Technical winter jackets and layers built for real cold — windproof shells, thermal insulation, and honest, no-nonsense design. Join the Winter 2026 drop.",
     path: "/landing-pages/boreal",
   });
+  // Fictional demo brand for portfolio purposes, not a real business — never index.
+  return { ...meta, robots: buildRobotsMeta(false) };
 }
 
 export default async function BorealLandingPage() {

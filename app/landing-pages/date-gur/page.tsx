@@ -1,5 +1,5 @@
 import { Tiro_Bangla, Hind_Siliguri } from "next/font/google";
-import { getPageMetadata } from "@/lib/seo-meta";
+import { getPageMetadata, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import DateGurLandingClient from "./DateGurLandingClient";
 
@@ -20,12 +20,14 @@ const hindSiliguri = Hind_Siliguri({
 });
 
 export async function generateMetadata() {
-  return getPageMetadata("date-gur", {
+  const meta = await getPageMetadata("date-gur", {
     title: "নলেন — খাঁটি খেজুরের গুড়, মোলাসেস ও খেজুর চিনি",
     description:
       "বাংলাদেশে ঐতিহ্যবাহী গাছি পরিবারের হাতে সংগ্রহ করা ১০০% প্রাকৃতিক, ভেজালমুক্ত খেজুরের গুড়। পাটালি গুড়, ঝোলা গুড় ও খেজুর চিনি অর্ডার করুন।",
     path: "/landing-pages/date-gur",
   });
+  // Fictional demo brand for portfolio purposes, not a real business — never index.
+  return { ...meta, robots: buildRobotsMeta(false) };
 }
 
 export default async function DateGurLandingPage() {

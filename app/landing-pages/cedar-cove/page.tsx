@@ -1,5 +1,5 @@
 import { Cormorant_Garamond, Jost } from "next/font/google";
-import { getPageMetadata } from "@/lib/seo-meta";
+import { getPageMetadata, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import CedarCoveLandingClient from "./CedarCoveLandingClient";
 
@@ -19,12 +19,14 @@ const jost = Jost({
 });
 
 export async function generateMetadata() {
-  return getPageMetadata("cedar-cove", {
+  const meta = await getPageMetadata("cedar-cove", {
     title: "Cedar Cove Resort & Cottages | A Quiet Escape by the Water",
     description:
       "Private lakeside cottages, forest trails, and a slower pace of life. Book your stay at Cedar Cove Resort & Cottages.",
     path: "/landing-pages/cedar-cove",
   });
+  // Fictional demo brand for portfolio purposes, not a real business — never index.
+  return { ...meta, robots: buildRobotsMeta(false) };
 }
 
 export default async function CedarCoveLandingPage() {

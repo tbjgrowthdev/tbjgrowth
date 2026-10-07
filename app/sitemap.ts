@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/blog',
     '/case-studies',
     '/pricing',
+    '/book-a-call',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
@@ -61,5 +62,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  return [...staticRoutes, ...pageRoutes, ...postRoutes, ...caseStudyRoutes]
+  // Dynamic Services — only real DB-backed, indexable services; the
+  // placeholder fallback services shown before any are added are never
+  // real routes meant for indexing, so they're deliberately excluded.
+  const services = await prisma.agencyService.findMany({
+    where: { isIndexable: true, slug: { not: null } },
+    select: { slug: true, updatedAt: true },
+  });
+
+  const serviceRoutes = services.map((service) => ({
+    url: `${baseUrl}/services/${service.slug}`,
+    lastModified: service.updatedAt,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }))
+
+  return [...staticRoutes, ...pageRoutes, ...postRoutes, ...caseStudyRoutes, ...serviceRoutes]
 }

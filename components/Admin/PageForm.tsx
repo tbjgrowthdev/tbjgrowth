@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPage, updatePage } from "@/app/(admin)/actions/pages";
+import { createPage, updatePage, transitionPage } from "@/app/(admin)/actions/pages";
 import { createRedirect } from "@/app/(admin)/actions/redirects";
 import dynamic from "next/dynamic";
 import { slugify } from "@/lib/utils";
@@ -10,6 +10,10 @@ import { AlertCircle } from "lucide-react";
 import SERPPreview from "./SERPPreview";
 import SEOScorePanel from "./SEOScorePanel";
 import SchemaBuilder from "./SchemaBuilder";
+import SocialSeoFields from "./SocialSeoFields";
+import WorkflowPanel from "./WorkflowPanel";
+import AssignmentPanel from "./AssignmentPanel";
+import VersionHistoryPanel from "./VersionHistoryPanel";
 
 // Dynamically import TipTap so it doesn't cause SSR issues
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
@@ -29,13 +33,16 @@ export default function PageForm({ initialData }: { initialData?: any }) {
     canonicalUrl: initialData?.canonicalUrl || "",
     twitterCard: initialData?.twitterCard || "",
     ogImage: initialData?.ogImage || "",
+    ogTitle: initialData?.ogTitle || "",
+    ogDescription: initialData?.ogDescription || "",
+    twitterTitle: initialData?.twitterTitle || "",
+    twitterDescription: initialData?.twitterDescription || "",
+    twitterImage: initialData?.twitterImage || "",
     schemaJson: initialData?.schemaJson || "",
-    status: initialData?.status || "DRAFT",
-    publishedAt: initialData?.publishedAt
-      ? new Date(initialData.publishedAt).toISOString().slice(0, 16)
-      : "",
     isIndexable: initialData?.isIndexable ?? true,
   });
+  const [status, setStatus] = useState(initialData?.status || "DRAFT");
+  const [changeSummary, setChangeSummary] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +54,8 @@ export default function PageForm({ initialData }: { initialData?: any }) {
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
 
       const result = isExisting
-        ? await updatePage(initialData.id, formData)
-        : await createPage(formData);
+        ? await updatePage(initialData.id, { ...formData, changeSummary })
+        : await createPage({ ...formData, changeSummary });
 
       if (result.success) {
         if (slugChanged && confirm(
@@ -111,31 +118,10 @@ export default function PageForm({ initialData }: { initialData?: any }) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-muted">Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-          >
-            <option value="DRAFT">Draft</option>
-            <option value="SCHEDULED">Scheduled</option>
-            <option value="PUBLISHED">Published</option>
-            <option value="ARCHIVED">Archived</option>
-          </select>
-        </div>
-
-        {formData.status === "SCHEDULED" && (
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-muted">Publish Date & Time</label>
-            <input
-              type="datetime-local"
-              required
-              value={formData.publishedAt}
-              onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-            />
-          </div>
+        {!initialData?.id && (
+          <p className="text-sm text-caption bg-background border border-border rounded-lg px-4 py-2">
+            New pages are always created as a <strong>Draft</strong>. Submit it for review and publish from the workflow panel after saving.
+          </p>
         )}
 
         <div className="flex items-center gap-2 pt-2">
@@ -152,10 +138,32 @@ export default function PageForm({ initialData }: { initialData?: any }) {
         </div>
       </div>
 
+      {initialData?.id && (
+        <>
+          <WorkflowPanel
+            contentType="PAGE"
+            contentId={initialData.id}
+            status={status}
+            onTransition={transitionPage}
+            onStatusChange={setStatus}
+          />
+          <AssignmentPanel
+            contentType="PAGE"
+            contentId={initialData.id}
+            authorId={initialData.authorId}
+            reviewerId={initialData.reviewerId}
+            seoReviewerId={initialData.seoReviewerId}
+            approverId={initialData.approverId}
+            reviewDeadline={initialData.reviewDeadline}
+          />
+          <VersionHistoryPanel contentType="PAGE" contentId={initialData.id} />
+        </>
+      )}
+
       {/* Editor */}
       <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
         <h2 className="text-xl font-semibold text-foreground mb-4">Content</h2>
-        <RichTextEditor 
+        <RichTextEditor
           content={formData.content} 
           onChange={(content) => setFormData({ ...formData, content })} 
         />
@@ -208,28 +216,6 @@ export default function PageForm({ initialData }: { initialData?: any }) {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Open Graph Image URL</label>
-              <input
-                type="text"
-                value={formData.ogImage}
-                onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Twitter Card Type</label>
-              <select
-                value={formData.twitterCard}
-                onChange={(e) => setFormData({ ...formData, twitterCard: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              >
-                <option value="">Default</option>
-                <option value="summary">Summary</option>
-                <option value="summary_large_image">Summary Large Image</option>
-              </select>
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -251,6 +237,15 @@ export default function PageForm({ initialData }: { initialData?: any }) {
           </div>
         </div>
 
+        {/* Social SEO */}
+        <div className="mt-8 pt-6 border-t border-border">
+          <h3 className="text-lg font-medium text-foreground mb-4">Social Sharing (OpenGraph &amp; Twitter)</h3>
+          <SocialSeoFields
+            data={formData}
+            onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          />
+        </div>
+
         {/* Schema Builder Section */}
         <div className="mt-8 pt-6 border-t border-border">
           <h3 className="text-lg font-medium text-foreground mb-4">Schema Markup (JSON-LD)</h3>
@@ -259,6 +254,17 @@ export default function PageForm({ initialData }: { initialData?: any }) {
             onChange={(schemaJson) => setFormData({ ...formData, schemaJson })} 
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-muted">Change Summary (optional)</label>
+        <input
+          type="text"
+          value={changeSummary}
+          onChange={(e) => setChangeSummary(e.target.value)}
+          placeholder="What changed in this save?"
+          className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
+        />
       </div>
 
       <div className="flex justify-end gap-4">

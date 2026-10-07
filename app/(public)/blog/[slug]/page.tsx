@@ -1,58 +1,73 @@
+import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, User, Tag, Clock, Globe, Twitter, Linkedin } from "lucide-react";
 import { isValidImageSrc, parseSocialLinks, estimateReadingTime } from "@/lib/utils";
-import { publiclyVisible } from "@/lib/seo-meta";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
+import { publiclyVisible, resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import ShareButton from "@/components/Blog/ShareButton";
+import JsonLd from "@/components/JsonLd";
+import { articleSchema, breadcrumbSchema } from "@/lib/schema";
+import { getSiteSettings } from "@/app/(admin)/actions/settings";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
+export const revalidate = 3600;
+
+// generateMetadata and the page component both need this post for the same
+// request — cache() + one shared query shape means a single DB round trip.
+const getPostBySlug = cache((slug: string) =>
+  prisma.post.findUnique({
+    where: { slug },
+    include: { author: true, categories: true, tags: true },
+  })
+);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await prisma.post.findUnique({
-    where: { slug },
-  });
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return { title: "Post Not Found" };
   }
 
   const canonical = post.canonicalUrl || `${baseUrl}/blog/${post.slug}`;
+  const settings = await getSiteSettings();
+
+  const social = resolveSocialMeta({
+    baseTitle: `${post.title} | TBJ Growth`,
+    baseDescription: post.excerpt,
+    metaTitle: post.metaTitle,
+    metaDescription: post.metaDescription,
+    ogTitle: post.ogTitle,
+    ogDescription: post.ogDescription,
+    ogImage: post.ogImage,
+    twitterTitle: post.twitterTitle,
+    twitterDescription: post.twitterDescription,
+    twitterImage: post.twitterImage,
+    twitterCard: post.twitterCard,
+    fallbackImage: post.featuredImage,
+    siteDefaultImage: settings?.defaultOgImage,
+  });
 
   return {
-    title: post.metaTitle || `${post.title} | TBJ Growth`,
-    description: post.metaDescription || post.excerpt,
+    title: social.title,
+    description: social.description,
     alternates: {
       canonical,
       languages: { "en-GB": canonical },
     },
-    robots: {
-      index: post.isIndexable,
-      follow: true,
-    },
-    openGraph: {
-      title: post.metaTitle || post.title,
-      description: post.metaDescription || post.excerpt,
-      images: [post.ogImage || post.featuredImage || "/default-og.png"],
-    },
-    twitter: {
-      card: post.twitterCard || "summary_large_image",
-    },
+    robots: buildRobotsMeta(post.isIndexable),
+    openGraph: social.openGraph,
+    twitter: social.twitter,
   };
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await prisma.post.findUnique({
-    where: { slug },
-    include: {
-      author: true,
-      categories: true,
-      tags: true,
-    },
-  });
+  const post = await getPostBySlug(slug);
 
   const isVisible =
     post &&
@@ -89,29 +104,30 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const readingTime = estimateReadingTime(post.content);
   const authorSocial = parseSocialLinks(post.author?.socialLinks);
 
-  // Schema generation
-  const schemaMarkup = post.schemaJson
-    ? post.schemaJson
-    : JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        headline: post.title,
-        description: post.excerpt,
-        image: post.featuredImage,
-        datePublished: post.publishedAt || post.createdAt,
-        dateModified: post.updatedAt,
-        author: {
-          "@type": "Person",
-          name: post.author?.name || "TBJ Partners",
-        },
-      });
+  const breadcrumb = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ]);
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-20">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: schemaMarkup }}
-      />
+      {post.schemaJson ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: post.schemaJson }} />
+      ) : (
+        <JsonLd
+          schema={articleSchema({
+            title: post.title,
+            path: `/blog/${post.slug}`,
+            excerpt: post.excerpt,
+            featuredImage: post.featuredImage,
+            authorName: post.author?.name,
+            createdAt: post.publishedAt || post.createdAt,
+            updatedAt: post.updatedAt,
+          })}
+        />
+      )}
+      <JsonLd schema={breadcrumb} />
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Link */}
@@ -185,7 +201,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {isValidImageSrc(post.featuredImage) && (
           <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden mb-16 shadow-2xl">
             <Image
-              src={post.featuredImage}
+              src={cloudinaryUrl(post.featuredImage)}
               alt={post.featuredImageAlt || post.title}
               fill
               className="object-cover"
@@ -287,7 +303,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 <div className="relative h-44 w-full overflow-hidden bg-background">
                   {isValidImageSrc(related.featuredImage) ? (
                     <Image
-                      src={related.featuredImage}
+                      src={cloudinaryUrl(related.featuredImage)}
                       alt={related.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Calendar, Sparkles, ChevronDown, HelpCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Sparkles, ChevronDown, HelpCircle, Star } from "lucide-react";
 import { getIcon } from "@/components/ui/IconRenderer";
+import { parseFeatures, parseProcess, parseDeliverables } from "@/lib/service-content";
 
-type Feature = { icon?: string; text: string };
-type ProcessStep = { step: number; title: string; desc: string };
 type Faq = { id: string; question: string; answer: string };
 
 type Service = {
@@ -20,24 +19,14 @@ type Service = {
   detailIntro?: string | null;
   content?: string | null;
   iconName: string;
-  features?: string | Feature[] | null;
-  process?: string | ProcessStep[] | null;
+  features?: string | null;
+  process?: string | null;
+  deliverables?: string | null;
   statValue?: string | null;
   statLabel?: string | null;
   gradient?: string | null;
   faqs?: Faq[];
 };
-
-function parseJsonArray<T>(raw: string | T[] | null | undefined): T[] {
-  if (!raw) return [];
-  if (typeof raw !== "string") return raw;
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 export default function ServiceDetailClient({ service }: { service: Service }) {
   const Icon = getIcon(service.iconName || "Circle");
@@ -47,10 +36,9 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
   const heading = service.detailTitle || service.title;
   const intro = service.detailIntro || service.description;
 
-  const featuresList = parseJsonArray<Feature>(service.features).filter((f) =>
-    typeof f === "string" ? f : f?.text
-  );
-  const processSteps = parseJsonArray<ProcessStep>(service.process);
+  const featuresList = parseFeatures(service.features);
+  const processSteps = parseProcess(service.process);
+  const deliverablesList = parseDeliverables(service.deliverables);
   const faqList = service.faqs || [];
 
   return (
@@ -184,6 +172,30 @@ export default function ServiceDetailClient({ service }: { service: Service }) {
                   </div>
                   <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
                   <p className="text-sm text-muted leading-relaxed">{step.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* What You Get */}
+      {deliverablesList.length > 0 && (
+        <section className="relative pb-16 lg:pb-20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-8">What You Get</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 p-6 lg:p-8 rounded-2xl bg-card border border-border">
+              {deliverablesList.map((item, i) => (
+                <motion.div
+                  key={item}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-2.5"
+                >
+                  <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                  <span className="text-sm text-muted">{item}</span>
                 </motion.div>
               ))}
             </div>

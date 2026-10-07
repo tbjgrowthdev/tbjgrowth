@@ -2,15 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createCaseStudy, updateCaseStudy } from "@/app/(admin)/actions/cases";
+import { createCaseStudy, updateCaseStudy, transitionCaseStudy } from "@/app/(admin)/actions/cases";
 import { createRedirect } from "@/app/(admin)/actions/redirects";
+import WorkflowPanel from "./WorkflowPanel";
+import AssignmentPanel from "./AssignmentPanel";
+import VersionHistoryPanel from "./VersionHistoryPanel";
 import dynamic from "next/dynamic";
-import { uploadImage } from "@/lib/cloudinary";
+import { uploadMediaAsset } from "@/app/(admin)/actions/media";
 import { slugify } from "@/lib/utils";
-import { AlertCircle, X } from "lucide-react";
+import { AlertCircle, X, Upload, FolderOpen } from "lucide-react";
 import SERPPreview from "./SERPPreview";
 import SEOScorePanel from "./SEOScorePanel";
 import SchemaBuilder from "./SchemaBuilder";
+import SocialSeoFields from "./SocialSeoFields";
+import MediaAssetPicker from "./Media/MediaAssetPicker";
 
 // Dynamically import TipTap so it doesn't cause SSR issues
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
@@ -39,48 +44,97 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
     canonicalUrl: initialData?.canonicalUrl || "",
     twitterCard: initialData?.twitterCard || "",
     ogImage: initialData?.ogImage || "",
+    ogTitle: initialData?.ogTitle || "",
+    ogDescription: initialData?.ogDescription || "",
+    twitterTitle: initialData?.twitterTitle || "",
+    twitterDescription: initialData?.twitterDescription || "",
+    twitterImage: initialData?.twitterImage || "",
     schemaJson: initialData?.schemaJson || "",
-    status: initialData?.status || "DRAFT",
-    publishedAt: initialData?.publishedAt
-      ? new Date(initialData.publishedAt).toISOString().slice(0, 16)
-      : "",
     isIndexable: initialData?.isIndexable ?? true,
     isFeatured: initialData?.isFeatured ?? false,
   });
 
+  const [status, setStatus] = useState(initialData?.status || "DRAFT");
+  const [changeSummary, setChangeSummary] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [pendingAltText, setPendingAltText] = useState("");
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [pendingGallery, setPendingGallery] = useState<{ file: File; previewUrl: string; altText: string }[]>([]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadingImage(true);
-      setUploadError("");
-      try {
-        const url = await uploadImage(e.target.files[0]);
-        setFormData({ ...formData, featuredImage: url });
-      } catch (error) {
-        setUploadError(error instanceof Error ? error.message : "Image upload failed");
-      } finally {
-        setUploadingImage(false);
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingFile(file);
+    setPendingPreviewUrl(URL.createObjectURL(file));
+    setPendingAltText(formData.featuredImageAlt || "");
+    setUploadError("");
+  };
+
+  const handleCancelPending = () => {
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    setPendingAltText("");
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!pendingFile || !pendingAltText.trim()) return;
+    setUploadingImage(true);
+    setUploadError("");
+    try {
+      const result = await uploadMediaAsset(pendingFile, { altText: pendingAltText, folder: "Case Studies" });
+      if (result.success && result.url) {
+        setFormData({ ...formData, featuredImage: result.url, featuredImageAlt: pendingAltText });
+        handleCancelPending();
+      } else {
+        setUploadError(result.error || "Image upload failed");
       }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Image upload failed");
+    } finally {
+      setUploadingImage(false);
     }
   };
 
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    const newEntries = Array.from(files).map((file) => ({ file, previewUrl: URL.createObjectURL(file), altText: "" }));
+    setPendingGallery((prev) => [...prev, ...newEntries]);
+    e.target.value = "";
+  };
 
+  const updatePendingGalleryAlt = (index: number, altText: string) => {
+    setPendingGallery((prev) => prev.map((entry, i) => (i === index ? { ...entry, altText } : entry)));
+  };
+
+  const removePendingGalleryEntry = (index: number) => {
+    setPendingGallery((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConfirmGalleryUpload = async () => {
+    if (pendingGallery.length === 0 || pendingGallery.some((entry) => !entry.altText.trim())) return;
     setUploadingGallery(true);
     setUploadError("");
     try {
-      const urls = await Promise.all(Array.from(files).map((file) => uploadImage(file)));
+      const results = await Promise.all(
+        pendingGallery.map((entry) => uploadMediaAsset(entry.file, { altText: entry.altText, folder: "Case Studies" }))
+      );
+      const failed = results.find((r) => !r.success);
+      if (failed) {
+        setUploadError(failed.error || "Gallery upload failed");
+        return;
+      }
+      const urls = results.map((r) => r.url!);
       setFormData((prev) => ({ ...prev, imageGallery: [...prev.imageGallery, ...urls] }));
+      setPendingGallery([]);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Gallery upload failed");
     } finally {
       setUploadingGallery(false);
-      e.target.value = "";
     }
   };
 
@@ -98,8 +152,8 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
 
       const result = isExisting
-        ? await updateCaseStudy(initialData.id, formData)
-        : await createCaseStudy(formData);
+        ? await updateCaseStudy(initialData.id, { ...formData, changeSummary })
+        : await createCaseStudy({ ...formData, changeSummary });
 
       if (result.success) {
         if (slugChanged && confirm(
@@ -230,27 +284,76 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-muted">Featured Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            disabled={uploadingImage}
-            className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
-          />
-          {uploadingImage && (
-            <div className="mt-2 text-sm text-caption">Uploading...</div>
-          )}
+          <div className="flex items-center gap-3">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelected}
+              disabled={uploadingImage}
+              className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={() => setShowMediaPicker(true)}
+              className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm hover:bg-background whitespace-nowrap"
+            >
+              <FolderOpen size={16} />
+              Choose from Library
+            </button>
+          </div>
           {uploadError && (
             <div className="mt-2 text-sm text-red-600">{uploadError}</div>
           )}
-          {formData.featuredImage && !uploadingImage && (
+
+          {pendingPreviewUrl && (
+            <div className="mt-2 space-y-2 p-4 border border-border rounded-lg bg-background">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={pendingPreviewUrl} alt="Preview" className="h-32 object-contain" />
+              <label className="block text-sm font-medium text-muted">
+                Alt Text <span className="text-red-500">(required to upload)</span>
+              </label>
+              <input
+                type="text"
+                value={pendingAltText}
+                onChange={(e) => setPendingAltText(e.target.value)}
+                placeholder="Describe the image for accessibility & image SEO"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-brand-orange"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={uploadingImage || !pendingAltText.trim()}
+                  onClick={handleConfirmUpload}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm"
+                >
+                  <Upload size={16} />
+                  {uploadingImage ? "Uploading..." : "Upload image"}
+                </button>
+                <button type="button" onClick={handleCancelPending} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-tint">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {formData.featuredImage && !pendingPreviewUrl && (
             <div className="mt-2 text-sm text-caption">
-              Image uploaded (URL: {formData.featuredImage})
+              Image set (URL: {formData.featuredImage})
             </div>
           )}
         </div>
 
-        {formData.featuredImage && (
+        {showMediaPicker && (
+          <MediaAssetPicker
+            onClose={() => setShowMediaPicker(false)}
+            onSelect={({ url, altText }) => {
+              setFormData({ ...formData, featuredImage: url, featuredImageAlt: altText });
+              setShowMediaPicker(false);
+            }}
+          />
+        )}
+
+        {formData.featuredImage && !pendingPreviewUrl && (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-muted">Featured Image Alt Text</label>
             <input
@@ -269,13 +372,43 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
             type="file"
             accept="image/*"
             multiple
-            onChange={handleGalleryUpload}
+            onChange={handleGalleryFilesSelected}
             disabled={uploadingGallery}
             className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
           />
-          {uploadingGallery && (
-            <div className="mt-2 text-sm text-caption">Uploading gallery images...</div>
+
+          {pendingGallery.length > 0 && (
+            <div className="space-y-3 mt-3 p-4 border border-border rounded-lg bg-background">
+              {pendingGallery.map((entry, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={entry.previewUrl} alt="Pending gallery item" className="w-20 h-20 object-cover rounded-lg flex-shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="text"
+                      value={entry.altText}
+                      onChange={(e) => updatePendingGalleryAlt(index, e.target.value)}
+                      placeholder="Alt text (required)"
+                      className="w-full px-3 py-1.5 border border-border rounded-lg bg-card text-foreground text-sm"
+                    />
+                  </div>
+                  <button type="button" onClick={() => removePendingGalleryEntry(index)} className="text-caption hover:text-red-600 flex-shrink-0">
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                disabled={uploadingGallery || pendingGallery.some((e) => !e.altText.trim())}
+                onClick={handleConfirmGalleryUpload}
+                className="flex items-center gap-1.5 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm"
+              >
+                <Upload size={16} />
+                {uploadingGallery ? "Uploading..." : `Upload ${pendingGallery.length} image${pendingGallery.length > 1 ? "s" : ""}`}
+              </button>
+            </div>
           )}
+
           {formData.imageGallery.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-3">
               {formData.imageGallery.map((url: string) => (
@@ -295,34 +428,11 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-muted">Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
-          </div>
-
-          {formData.status === "SCHEDULED" && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Publish Date & Time</label>
-              <input
-                type="datetime-local"
-                required
-                value={formData.publishedAt}
-                onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-            </div>
-          )}
-        </div>
+        {!initialData?.id && (
+          <p className="text-sm text-caption bg-background border border-border rounded-lg px-4 py-2">
+            New case studies are always created as a <strong>Draft</strong>. Submit it for review and publish from the workflow panel after saving.
+          </p>
+        )}
 
         <div className="flex items-center gap-2 pt-2">
           <input
@@ -364,6 +474,28 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
           </button>
         </div>
       </div>
+
+      {initialData?.id && (
+        <>
+          <WorkflowPanel
+            contentType="CASE_STUDY"
+            contentId={initialData.id}
+            status={status}
+            onTransition={transitionCaseStudy}
+            onStatusChange={setStatus}
+          />
+          <AssignmentPanel
+            contentType="CASE_STUDY"
+            contentId={initialData.id}
+            authorId={initialData.authorId}
+            reviewerId={initialData.reviewerId}
+            seoReviewerId={initialData.seoReviewerId}
+            approverId={initialData.approverId}
+            reviewDeadline={initialData.reviewDeadline}
+          />
+          <VersionHistoryPanel contentType="CASE_STUDY" contentId={initialData.id} />
+        </>
+      )}
 
       {/* Editor */}
       <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
@@ -421,28 +553,6 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Open Graph Image URL</label>
-              <input
-                type="text"
-                value={formData.ogImage}
-                onChange={(e) => setFormData({ ...formData, ogImage: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Twitter Card Type</label>
-              <select
-                value={formData.twitterCard}
-                onChange={(e) => setFormData({ ...formData, twitterCard: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              >
-                <option value="">Default</option>
-                <option value="summary">Summary</option>
-                <option value="summary_large_image">Summary Large Image</option>
-              </select>
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -464,6 +574,15 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
           </div>
         </div>
 
+        {/* Social SEO */}
+        <div className="mt-8 pt-6 border-t border-border">
+          <h3 className="text-lg font-medium text-foreground mb-4">Social Sharing (OpenGraph &amp; Twitter)</h3>
+          <SocialSeoFields
+            data={formData}
+            onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          />
+        </div>
+
         {/* Schema Builder Section */}
         <div className="mt-8 pt-6 border-t border-border">
           <h3 className="text-lg font-medium text-foreground mb-4">Schema Markup (JSON-LD)</h3>
@@ -472,6 +591,17 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
             onChange={(schemaJson) => setFormData({ ...formData, schemaJson })}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-muted">Change Summary (optional)</label>
+        <input
+          type="text"
+          value={changeSummary}
+          onChange={(e) => setChangeSummary(e.target.value)}
+          placeholder="What changed in this save?"
+          className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
+        />
       </div>
 
       <div className="flex justify-end gap-4">

@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle } from "lucide-react";
+import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import { isValidImageSrc } from "@/lib/utils";
+import { hasPermission } from "@/lib/permissions";
+
+// Applies to every /admin/* route via metadata inheritance — the whole admin
+// dashboard is behind auth and must never appear in search results.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({
   children,
@@ -13,7 +21,14 @@ export default async function AdminLayout({
   const currentAdmin = await getCurrentAdmin();
   const userName = currentAdmin?.name || "Admin";
   const userImage = currentAdmin?.image;
-  const isAdmin = currentAdmin?.role === "ADMIN";
+  const role = currentAdmin?.role;
+  // Was a literal role === "ADMIN" check before SUPER_ADMIN/SEO_MANAGER
+  // existed — that excluded Super Admins from this whole nav section and
+  // SEO Managers from the SEO tools that are actually their domain.
+  const canManageUsers = hasPermission(role, "USER_MANAGEMENT");
+  const canManageSeo = hasPermission(role, "SEO_MANAGEMENT");
+  const canManageSettings = hasPermission(role, "SETTINGS_MANAGEMENT");
+  const canManageMedia = hasPermission(role, "MEDIA_MANAGEMENT");
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -63,6 +78,12 @@ export default async function AdminLayout({
             <Users size={20} />
             Partners
           </Link>
+          {canManageMedia && (
+            <Link href="/admin/media" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Images size={20} />
+              Media Library
+            </Link>
+          )}
           <Link href="/admin/faqs" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <HelpCircle size={20} />
             FAQ
@@ -75,12 +96,14 @@ export default async function AdminLayout({
             <CalendarClock size={20} />
             Booking
           </Link>
-          {isAdmin && (
+          {canManageUsers && (
+            <Link href="/admin/leads" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <FileText size={20} />
+              Leads
+            </Link>
+          )}
+          {canManageSeo && (
             <>
-              <Link href="/admin/leads" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <FileText size={20} />
-                Leads
-              </Link>
               <Link href="/admin/seo" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
                 <LineChart size={20} />
                 SEO & Analytics
@@ -93,22 +116,30 @@ export default async function AdminLayout({
                 <Target size={20} />
                 Keyword Tracking
               </Link>
-              <Link href="/admin/settings" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Settings size={20} />
-                Settings
-              </Link>
             </>
+          )}
+          {canManageSettings && (
+            <Link href="/admin/settings" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Settings size={20} />
+              Settings
+            </Link>
           )}
           <div className="pt-4 mt-4 border-t border-border space-y-1">
             <Link href="/admin/profile" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
               <UserCircle size={20} />
               My Profile
             </Link>
-            {isAdmin && (
-              <Link href="/admin/admins" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <ShieldAlert size={20} />
-                Team Members
-              </Link>
+            {canManageUsers && (
+              <>
+                <Link href="/admin/admins" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                  <ShieldAlert size={20} />
+                  Team Members
+                </Link>
+                <Link href="/admin/audit-log" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                  <History size={20} />
+                  Audit Log
+                </Link>
+              </>
             )}
             <LogoutButton />
           </div>

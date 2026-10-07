@@ -27,6 +27,7 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
     gbpPhone: initialData?.gbpPhone || "",
     gbpWebsite: initialData?.gbpWebsite || "",
     robotsTxt: initialData?.robotsTxt || "",
+    defaultOgImage: initialData?.defaultOgImage || "",
     usdPerGbp: initialData?.usdPerGbp?.toString() || "1.27",
     bdtPerGbp: initialData?.bdtPerGbp?.toString() || "148.0",
   });
@@ -232,6 +233,24 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
                 className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
               />
             </div>
+          </div>
+        </div>
+
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border md:col-span-2">
+          <h2 className="text-xl font-bold text-foreground mb-2">Default Social Share Image</h2>
+          <p className="text-sm text-caption mb-4">
+            Used for OpenGraph/Twitter previews when a page, post, case study, or service has no image of its own set.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-muted mb-1">Default OG Image URL</label>
+            <input
+              type="text"
+              name="defaultOgImage"
+              value={formData.defaultOgImage}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+              placeholder="https://example.com/default-share-image.png"
+            />
           </div>
         </div>
 

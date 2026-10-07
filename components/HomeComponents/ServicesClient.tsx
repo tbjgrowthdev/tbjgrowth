@@ -6,14 +6,7 @@ import { ArrowRight, Settings } from "lucide-react";
 import Link from "next/link";
 import { getIcon } from "@/components/ui/IconRenderer";
 import { fallbackServices } from "@/lib/fallback-services";
-
-// "What's Included" items are stored either as plain strings or, for older
-// rows, as { icon, text } objects — normalize to one shape before rendering.
-function normalizeFeature(feature: unknown): { icon?: string; text: string } {
-  if (typeof feature === "string") return { text: feature };
-  const obj = feature as { icon?: string; text?: string } | null | undefined;
-  return { icon: obj?.icon, text: obj?.text || "" };
-}
+import { parseFeatures } from "@/lib/service-content";
 
 // Service Card Component
 function ServiceCard({
@@ -29,9 +22,8 @@ function ServiceCard({
 }) {
     const Icon = getIcon(service.iconName || "Circle");
 
-    // parse features if it's a string from DB
-    const featuresList = typeof service.features === 'string' ? JSON.parse(service.features) : service.features;
-    
+    const featuresList = parseFeatures(service.features);
+
     // derive fields that might not be in DB but are needed
     const bgGradient = service.bgGradient || (service.gradient ? service.gradient.replace(/-\d{3}/g, '$&/10') : "from-brand-orange/10 to-brand-orange/10");
     const shadowColor = service.shadowColor || (service.gradient ? `shadow-${service.gradient.split('-')[1]}-500/20` : "shadow-brand-orange/20");
@@ -100,8 +92,7 @@ function ServiceCard({
                     className="overflow-hidden"
                 >
                     <div className="space-y-2 pt-3 border-t border-border">
-                        {Array.isArray(featuresList) && featuresList.map((rawFeature: unknown, i: number) => {
-                            const feature = normalizeFeature(rawFeature);
+                        {featuresList.map((feature, i) => {
                             const FeatureIcon = getIcon(feature.icon || "Check");
                             return (
                                 <motion.div
@@ -157,7 +148,7 @@ function PreviewPanel({
     if (!service) return null;
 
     const Icon = getIcon(service.iconName || "Circle");
-    const featuresList = typeof service.features === 'string' ? JSON.parse(service.features) : service.features;
+    const featuresList = parseFeatures(service.features);
     const bgGradient = service.bgGradient || (service.gradient ? service.gradient.replace(/-\d{3}/g, '$&/10') : "from-brand-orange/10 to-brand-orange/10");
     const shadowColor = service.shadowColor || (service.gradient ? `shadow-${service.gradient.split('-')[1]}-500/20` : "shadow-brand-orange/20");
 
@@ -215,8 +206,7 @@ function PreviewPanel({
 
                     {/* Feature Cards */}
                     <div className="flex flex-col gap-2">
-                        {Array.isArray(featuresList) && featuresList.map((rawFeature: unknown, i: number) => {
-                            const feature = normalizeFeature(rawFeature);
+                        {featuresList.map((feature, i) => {
                             const FeatureIcon = getIcon(feature.icon || "Check");
                             return (
                                 <motion.div

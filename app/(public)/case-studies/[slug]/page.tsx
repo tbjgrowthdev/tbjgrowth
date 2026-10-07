@@ -1,51 +1,70 @@
+import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Building2, Briefcase, TrendingUp, Globe, ArrowUpRight } from "lucide-react";
 import { isValidImageSrc } from "@/lib/utils";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 import ShareButton from "@/components/Blog/ShareButton";
+import JsonLd from "@/components/JsonLd";
+import { articleSchema, breadcrumbSchema } from "@/lib/schema";
+import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
+import { getSiteSettings } from "@/app/(admin)/actions/settings";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
+export const revalidate = 3600;
+
+// generateMetadata and the page component both need this record for the same
+// request — cache() + one shared query shape means a single DB round trip.
+const getCaseStudyBySlug = cache((slug: string) =>
+  prisma.caseStudy.findUnique({ where: { slug }, include: { author: true } })
+);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const study = await prisma.caseStudy.findUnique({ where: { slug } });
+  const study = await getCaseStudyBySlug(slug);
 
   if (!study) {
     return { title: "Case Study Not Found" };
   }
 
   const canonical = study.canonicalUrl || `${baseUrl}/case-studies/${study.slug}`;
+  const settings = await getSiteSettings();
+
+  const social = resolveSocialMeta({
+    baseTitle: `${study.title} | TBJ Growth`,
+    baseDescription: study.excerpt,
+    metaTitle: study.metaTitle,
+    metaDescription: study.metaDescription,
+    ogTitle: study.ogTitle,
+    ogDescription: study.ogDescription,
+    ogImage: study.ogImage,
+    twitterTitle: study.twitterTitle,
+    twitterDescription: study.twitterDescription,
+    twitterImage: study.twitterImage,
+    twitterCard: study.twitterCard,
+    fallbackImage: study.featuredImage,
+    siteDefaultImage: settings?.defaultOgImage,
+  });
 
   return {
-    title: study.metaTitle || `${study.title} | TBJ Growth`,
-    description: study.metaDescription || study.excerpt,
+    title: social.title,
+    description: social.description,
     alternates: {
       canonical,
       languages: { "en-GB": canonical },
     },
-    robots: {
-      index: study.isIndexable,
-      follow: true,
-    },
-    openGraph: {
-      title: study.metaTitle || study.title,
-      description: study.metaDescription || study.excerpt,
-      images: [study.ogImage || study.featuredImage || "/default-og.png"],
-    },
-    twitter: {
-      card: study.twitterCard || "summary_large_image",
-    },
+    robots: buildRobotsMeta(study.isIndexable),
+    openGraph: social.openGraph,
+    twitter: social.twitter,
   };
 }
 
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const study = await prisma.caseStudy.findUnique({
-    where: { slug },
-    include: { author: true },
-  });
+  const study = await getCaseStudyBySlug(slug);
 
   const isVisible =
     study &&
@@ -56,25 +75,30 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
     notFound();
   }
 
-  const schemaMarkup = study.schemaJson
-    ? study.schemaJson
-    : JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Article",
-        headline: study.title,
-        description: study.excerpt,
-        image: study.featuredImage,
-        datePublished: study.publishedAt || study.createdAt,
-        dateModified: study.updatedAt,
-        author: {
-          "@type": "Person",
-          name: study.author?.name || "TBJ Growth",
-        },
-      });
+  const breadcrumb = breadcrumbSchema([
+    { name: "Home", path: "/" },
+    { name: "Case Studies", path: "/case-studies" },
+    { name: study.title, path: `/case-studies/${study.slug}` },
+  ]);
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-20">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaMarkup }} />
+      {study.schemaJson ? (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: study.schemaJson }} />
+      ) : (
+        <JsonLd
+          schema={articleSchema({
+            title: study.title,
+            path: `/case-studies/${study.slug}`,
+            excerpt: study.excerpt,
+            featuredImage: study.featuredImage,
+            authorName: study.author?.name,
+            createdAt: study.publishedAt || study.createdAt,
+            updatedAt: study.updatedAt,
+          })}
+        />
+      )}
+      <JsonLd schema={breadcrumb} />
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link
@@ -137,7 +161,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         {isValidImageSrc(study.featuredImage) && (
           <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden mb-12 shadow-2xl">
             <Image
-              src={study.featuredImage}
+              src={cloudinaryUrl(study.featuredImage)}
               alt={study.featuredImageAlt || study.title}
               fill
               className="object-cover"
@@ -159,7 +183,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {study.imageGallery.map((url: string, i: number) => (
                 <div key={url} className="relative aspect-video rounded-xl overflow-hidden border border-border">
-                  <Image src={url} alt={`${study.title} gallery image ${i + 1}`} fill className="object-cover" />
+                  <Image src={cloudinaryUrl(url)} alt={`${study.title} gallery image ${i + 1}`} fill className="object-cover" />
                 </div>
               ))}
             </div>

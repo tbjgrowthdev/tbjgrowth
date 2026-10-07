@@ -2,6 +2,8 @@ import { getPageMetadata } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import ContactPageClient from "./ContactPageClient";
 
+export const revalidate = 3600;
+
 export async function generateMetadata() {
   return getPageMetadata("contact", {
     title: "Contact Us | TBJ Growth",

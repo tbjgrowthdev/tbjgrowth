@@ -2,6 +2,10 @@ import { getPricingPlans } from "@/app/(admin)/actions/pricing";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { getPageMetadata } from "@/lib/seo-meta";
 import PricingClient from "./PricingClient";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema, productSchema } from "@/lib/schema";
+
+export const revalidate = 3600;
 
 export async function generateMetadata() {
   return getPageMetadata("pricing", {
@@ -20,10 +24,21 @@ export default async function PricingPage() {
   }));
 
   return (
-    <PricingClient
-      plans={parsedPlans}
-      usdPerGbp={settings?.usdPerGbp ?? 1.27}
-      bdtPerGbp={settings?.bdtPerGbp ?? 148.0}
-    />
+    <>
+      <JsonLd
+        schema={[
+          breadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Pricing", path: "/pricing" },
+          ]),
+          ...parsedPlans.map((plan) => productSchema(plan)),
+        ]}
+      />
+      <PricingClient
+        plans={parsedPlans}
+        usdPerGbp={settings?.usdPerGbp ?? 1.27}
+        bdtPerGbp={settings?.bdtPerGbp ?? 148.0}
+      />
+    </>
   );
 }

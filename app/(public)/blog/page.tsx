@@ -1,6 +1,10 @@
 import prisma from "@/lib/prisma";
 import BlogListClient from "./BlogListClient";
 import { getPageMetadata, publiclyVisible } from "@/lib/seo-meta";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
+
+export const revalidate = 3600;
 
 export async function generateMetadata() {
   return getPageMetadata("blog", {
@@ -31,6 +35,7 @@ export default async function BlogPage() {
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-20">
+      <JsonLd schema={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Blog", path: "/blog" }])} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">

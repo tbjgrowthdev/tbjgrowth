@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createAdmin } from "@/app/(admin)/actions/admins";
 import { Save, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import type { Role } from "@prisma/client";
 
 export default function AdminForm() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function AdminForm() {
     name: "",
     email: "",
     password: "",
-    role: "EDITOR" as "ADMIN" | "EDITOR",
+    role: "CONTRIBUTOR" as Role,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -107,8 +108,11 @@ export default function AdminForm() {
               onChange={handleChange}
               className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             >
-              <option value="EDITOR">Editor — content management only</option>
-              <option value="ADMIN">Admin — full access</option>
+              <option value="CONTRIBUTOR">Contributor — create & edit own drafts only</option>
+              <option value="SEO_MANAGER">SEO Manager — SEO tools & content edits, no publish</option>
+              <option value="EDITOR">Editor — full content workflow, no SEO tools/settings</option>
+              <option value="ADMIN">Admin — full access except integrations</option>
+              <option value="SUPER_ADMIN">Super Admin — unrestricted</option>
             </select>
           </div>
         </div>

@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Building2, Star, TrendingUp } from "lucide-react";
 import { isValidImageSrc } from "@/lib/utils";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 
 const CARD_THEMES = [
   { gradient: "from-brand-orange-deep to-brand-orange", bgGradient: "from-brand-orange/10 to-brand-orange/10", shadowGlow: "shadow-brand-orange/25" },
@@ -50,7 +51,7 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
         <div className="relative h-48 w-full overflow-hidden bg-background">
           {isValidImageSrc(study.featuredImage) ? (
             <Image
-              src={study.featuredImage}
+              src={cloudinaryUrl(study.featuredImage)}
               alt={study.featuredImageAlt || study.title}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"

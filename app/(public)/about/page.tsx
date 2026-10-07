@@ -1,6 +1,8 @@
 import { getPageMetadata } from "@/lib/seo-meta";
 import AboutPageClient from "./AboutPageClient";
 
+export const revalidate = 3600;
+
 export async function generateMetadata() {
   return getPageMetadata("about", {
     title: "About Us | TBJ Growth",

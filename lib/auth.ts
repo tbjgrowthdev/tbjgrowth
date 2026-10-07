@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { ALL_ROLES } from "@/lib/permissions";
 
 async function logAttempt(email: string, success: boolean) {
   try {
@@ -24,18 +25,18 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Missing email or password");
         }
 
-        // Check if ANY admin exists. If not, create the first one automatically
-        const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+        // Check if ANY user exists at all. If not, bootstrap the very first
+        // login as Super Admin — there's no other way to grant that role yet.
+        const userCount = await prisma.user.count();
 
-        if (adminCount === 0) {
-          // This is the very first login - create the admin!
+        if (userCount === 0) {
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
           const newAdmin = await prisma.user.create({
             data: {
               email: credentials.email,
               password: hashedPassword,
               name: "System Admin",
-              role: "ADMIN",
+              role: "SUPER_ADMIN",
             }
           });
           await logAttempt(credentials.email, true);
@@ -57,7 +58,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        if (user.role !== "ADMIN" && user.role !== "EDITOR") {
+        if (!ALL_ROLES.includes(user.role)) {
           await logAttempt(credentials.email, false);
           throw new Error("Access denied: You must be a team member.");
         }

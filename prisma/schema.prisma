@@ -11,28 +11,35 @@ generator client {
 // User & Authentication (NextAuth)
 // ------------------------------------------------------
 model User {
-  id            String      @id @default(cuid())
-  name          String?
-  email         String?     @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          Role        @default(EDITOR)
-  slug          String?     @unique
-  bio           String?     @db.Text
-  socialLinks   String?     @db.Text // JSON string for social links
-  accounts      Account[]
-  sessions      Session[]
-  posts         Post[]
-  caseStudies   CaseStudy[]
+  id              String            @id @default(cuid())
+  name            String?
+  email           String?           @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  role            Role              @default(CONTRIBUTOR)
+  slug            String?           @unique
+  bio             String?           @db.Text
+  socialLinks     String?           @db.Text // JSON string for social links
+  accounts        Account[]
+  sessions        Session[]
+  posts           Post[]
+  pages           Page[]
+  caseStudies     CaseStudy[]
+  approvalHistory ApprovalHistory[]
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
+// Fixed, backend-enforced role set — see lib/permissions.ts for what each
+// role can do. Not a dynamic/admin-editable permission system by design.
 enum Role {
+  SUPER_ADMIN
   ADMIN
   EDITOR
+  SEO_MANAGER
+  CONTRIBUTOR
 }
 
 model Account {
@@ -80,6 +87,20 @@ model Page {
   slug    String  @unique
   content String? @db.Text
 
+  // Relations
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id])
+
+  // Approval assignment — reviewer/seoReviewer/approver are plain user-id
+  // pointers (no Prisma relation/FK), same lightweight-reference pattern as
+  // ApprovalHistory.contentId, so assigning one more role doesn't need a new
+  // back-relation array on User each time. Resolved to a name via a manual
+  // lookup where displayed, not Prisma's `include`.
+  reviewerId     String?
+  seoReviewerId  String?
+  approverId     String?
+  reviewDeadline DateTime?
+
   // SEO Fields
   metaTitle       String?
   metaDescription String?
@@ -89,6 +110,14 @@ model Page {
   canonicalUrl    String?
   schemaJson      String? @db.Text
   isIndexable     Boolean @default(true)
+
+  // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
+  // metaDescription/ogImage, then to SiteSetting.defaultOgImage, when empty.
+  ogTitle            String?
+  ogDescription      String? @db.Text
+  twitterTitle       String?
+  twitterDescription String? @db.Text
+  twitterImage       String?
 
   // Settings
   status      PostStatus @default(DRAFT)
@@ -112,6 +141,13 @@ model Post {
   categories Category[]
   tags       Tag[]
 
+  // Approval assignment — see the matching comment on Page for why these
+  // are plain id pointers rather than Prisma relations.
+  reviewerId     String?
+  seoReviewerId  String?
+  approverId     String?
+  reviewDeadline DateTime?
+
   // SEO Fields
   metaTitle        String?
   metaDescription  String?
@@ -124,6 +160,14 @@ model Post {
   readabilityScore Int?
   keywordDensity   Float?
   isIndexable      Boolean @default(true)
+
+  // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
+  // metaDescription/ogImage/featuredImage, then SiteSetting.defaultOgImage.
+  ogTitle            String?
+  ogDescription      String? @db.Text
+  twitterTitle       String?
+  twitterDescription String? @db.Text
+  twitterImage       String?
 
   // Settings
   status      PostStatus @default(DRAFT)
@@ -151,11 +195,132 @@ model Tag {
   caseStudyId String?
 }
 
+// Content workflow: DRAFT -> REVIEW -> (CHANGES_REQUESTED -> REVIEW)* -> APPROVED
+// -> SCHEDULED|PUBLISHED -> ARCHIVED. See lib/workflow.ts for the transition
+// graph and which permission each move requires.
 enum PostStatus {
   DRAFT
+  REVIEW
+  CHANGES_REQUESTED
+  APPROVED
   SCHEDULED
   PUBLISHED
   ARCHIVED
+}
+
+enum ContentType {
+  POST
+  PAGE
+  CASE_STUDY
+}
+
+model ApprovalHistory {
+  id          String      @id @default(cuid())
+  contentType ContentType
+  contentId   String
+  fromStatus  PostStatus?
+  toStatus    PostStatus
+  action      String // submit | approve | requestChanges | reject | resubmit | schedule | publish | unpublish | archive | restore
+  comment     String?     @db.Text
+  actorId     String
+  actor       User        @relation(fields: [actorId], references: [id])
+  createdAt   DateTime    @default(now())
+
+  @@index([contentType, contentId])
+}
+
+// Full-content snapshots for history/compare/restore — separate from
+// ApprovalHistory (workflow status transitions) and AuditLog (lean
+// system-wide mutation metadata). This is the only one of the three that
+// stores the complete editable content, since it's the only one that needs
+// to actually reconstruct a past version.
+//
+// Append-only: restoring an old version never deletes or overwrites any row
+// here. It applies that version's snapshot to the live record and then
+// writes a BRAND NEW version on top (see lib/versioning.ts), so the full
+// linear history — including every restore — is always preserved.
+model ContentVersion {
+  id            String      @id @default(cuid())
+  contentType   ContentType
+  contentId     String
+  versionNumber Int
+  snapshot      String      @db.Text // JSON of the content's editable fields at this point — never status/workflow fields, those belong to ApprovalHistory
+  changeSummary String?     @db.Text
+  authorId      String?
+  authorName    String?
+  authorEmail   String?
+  createdAt     DateTime    @default(now())
+
+  @@unique([contentType, contentId, versionNumber])
+  @@index([contentType, contentId])
+}
+
+// Central media library — parallel to, not a foreign key from, the scattered
+// String URL fields on Post/CaseStudy/etc. Picking or uploading an asset here
+// just hands back a URL to use, same as pasting one today; this table exists
+// so uploads can be searched/browsed/replaced/deleted from one place with
+// enforced alt text, not to replace those existing fields.
+model MediaAsset {
+  id       String @id @default(cuid())
+  publicId String @unique // Cloudinary public_id — needed for destroy/replace
+  url      String // secure_url, canonical, untransformed — f_auto/q_auto applied at render time via lib/cloudinary-url.ts
+  filename String
+  format   String
+  width    Int
+  height   Int
+  bytes    Int
+  folder   String // logical category, decoupled from Cloudinary's real storage path
+  altText  String // required — enforced before upload even reaches Cloudinary
+  title    String // defaults to filename if not supplied
+
+  uploadedById    String?
+  uploadedByName  String?
+  uploadedByEmail String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([folder])
+  @@index([createdAt])
+}
+
+// System-wide, append-only mutation log — separate from ApprovalHistory,
+// which is purpose-built for the content workflow timeline UI. This covers
+// every admin mutation (content, SEO, settings, users, roles, publishing,
+// approval, media, redirects, integrations), not just content status.
+//
+// User fields are a denormalized snapshot (name/email/role at the time of
+// the action), not a Prisma relation to User — an audit entry must survive
+// the acting user being deleted later, and must keep showing the role they
+// held *then* even if their role changes afterward. userId is kept as a
+// plain reference for filtering, same lightweight-reference pattern used
+// elsewhere in this schema (e.g. ApprovalHistory.contentId).
+//
+// No update path exists anywhere in the app for this model — entries are
+// immutable once written. Deletion is restricted to SUPER_ADMIN only (see
+// lib/auth-guard.ts / app/(admin)/actions/audit.ts); ADMIN and below can
+// read but never alter or remove entries.
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  userName    String?
+  userEmail   String?
+  userRole    Role?
+  action      String // create | update | delete | publish | approve | login | etc — free-form, always past-tense-free verb
+  category    String // Content | SEO | Settings | Users | Roles | Publishing | Approval | Media | Redirects | Integrations
+  entityType  String // "Post", "Page", "User", "Redirect", "SiteSetting", ...
+  entityId    String?
+  entityLabel String? // human-readable label (title/name/email) snapshotted at write time, for a readable log without extra joins
+  before      String?  @db.Text // JSON snapshot, null on create
+  after       String?  @db.Text // JSON snapshot, null on delete
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model CaseStudy {
@@ -180,6 +345,13 @@ model CaseStudy {
   categories Category[]
   tags       Tag[]
 
+  // Approval assignment — see the matching comment on Page for why these
+  // are plain id pointers rather than Prisma relations.
+  reviewerId     String?
+  seoReviewerId  String?
+  approverId     String?
+  reviewDeadline DateTime?
+
   // SEO Fields
   metaTitle        String?
   metaDescription  String?
@@ -192,6 +364,14 @@ model CaseStudy {
   readabilityScore Int?
   keywordDensity   Float?
   isIndexable      Boolean @default(true)
+
+  // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
+  // metaDescription/ogImage/featuredImage, then SiteSetting.defaultOgImage.
+  ogTitle            String?
+  ogDescription      String? @db.Text
+  twitterTitle       String?
+  twitterDescription String? @db.Text
+  twitterImage       String?
 
   // Settings
   status      PostStatus @default(DRAFT)
@@ -244,25 +424,37 @@ model NotFoundLog {
 // ------------------------------------------------------
 
 model AgencyService {
-  id          String   @id @default(cuid())
-  title       String   // Card title (homepage) — also the fallback detail page H1
-  slug        String?  @unique
-  subtitle    String?
-  description String   @db.Text // Card description (homepage) — also the fallback detail page intro
-  detailTitle String?  // Detail page H1, if different from the card title
-  detailIntro String?  @db.Text // Detail page intro paragraph, if different from the card description
-  content     String?  @db.Text // Optional long-form body for the service detail page
-  iconName    String   // String name to map to Lucide icon
-  features    String?  @db.Text // "What's Included" — JSON array of strings (or legacy {icon,text} objects)
-  process     String?  @db.Text // "Our Process" — JSON array of {step, title, desc}
-  statValue   String?
-  statLabel   String?
-  gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
-  order       Int      @default(0) // For sorting on the frontend
+  id           String  @id @default(cuid())
+  title        String // Card title (homepage) — also the fallback detail page H1
+  slug         String? @unique
+  subtitle     String?
+  description  String  @db.Text // Card description (homepage) — also the fallback detail page intro
+  detailTitle  String? // Detail page H1, if different from the card title
+  detailIntro  String? @db.Text // Detail page intro paragraph, if different from the card description
+  content      String? @db.Text // Optional long-form body for the service detail page
+  iconName     String // String name to map to Lucide icon
+  features     String? @db.Text // "What's Included" — JSON array of strings (or legacy {icon,text} objects)
+  process      String? @db.Text // "Our Process" — JSON array of {step, title, desc}
+  deliverables String? @db.Text // "What You Get" — JSON array of strings
+  statValue    String?
+  statLabel    String?
+  gradient     String? // Tailwind class, e.g., "from-blue-500 to-cyan-500"
+  order        Int     @default(0) // For sorting on the frontend
 
   // SEO Fields
   metaTitle       String?
   metaDescription String?
+  ogImage         String?
+  twitterCard     String?
+  isIndexable     Boolean @default(true)
+
+  // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
+  // metaDescription/ogImage, then SiteSetting.defaultOgImage.
+  ogTitle            String?
+  ogDescription      String? @db.Text
+  twitterTitle       String?
+  twitterDescription String? @db.Text
+  twitterImage       String?
 
   faqs      ServiceFaq[]
   createdAt DateTime     @default(now())
@@ -283,19 +475,19 @@ model ServiceFaq {
 }
 
 model Testimonial {
-  id          String   @id @default(cuid())
-  clientName  String
-  role        String?
-  company     String?
-  industry    String?
-  avatar      String?  // Image URL or Initials string
-  rating      Int      @default(5)
-  quote       String   @db.Text
-  metrics     String?  @db.Text // JSON array for metrics e.g., [{label: "Revenue Growth", value: "+320%", icon: "TrendingUp"}]
-  gradient    String?  // Tailwind class, e.g., "from-blue-500 to-cyan-500"
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  clientName String
+  role       String?
+  company    String?
+  industry   String?
+  avatar     String? // Image URL or Initials string
+  rating     Int      @default(5)
+  quote      String   @db.Text
+  metrics    String?  @db.Text // JSON array for metrics e.g., [{label: "Revenue Growth", value: "+320%", icon: "TrendingUp"}]
+  gradient   String? // Tailwind class, e.g., "from-blue-500 to-cyan-500"
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Faq {
@@ -308,36 +500,37 @@ model Faq {
 }
 
 model TrustedPartner {
-  id          String   @id @default(cuid())
-  name        String
-  logoUrl     String?
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  logoUrl   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SiteSetting {
-  id          String   @id @default(cuid())
+  id             String   @id @default(cuid())
   // Singleton record, can enforce with id = "global"
-  phone       String?
-  email       String?
-  address     String?
-  facebookUrl String?
-  twitterUrl  String?
-  linkedinUrl String?
-  instagramUrl String?
-  youtubeUrl  String?
-  behanceUrl  String?
-  dribbbleUrl String?
-  gbpName     String?
-  gbpAddress  String?
-  gbpPhone    String?
-  gbpWebsite  String?
-  robotsTxt   String?  @db.Text
-  usdPerGbp   Float?   @default(1.27) // exchange rate for pricing display
-  bdtPerGbp   Float?   @default(148.0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  phone          String?
+  email          String?
+  address        String?
+  facebookUrl    String?
+  twitterUrl     String?
+  linkedinUrl    String?
+  instagramUrl   String?
+  youtubeUrl     String?
+  behanceUrl     String?
+  dribbbleUrl    String?
+  gbpName        String?
+  gbpAddress     String?
+  gbpPhone       String?
+  gbpWebsite     String?
+  robotsTxt      String?  @db.Text
+  defaultOgImage String? // Site-wide social share image fallback, used when a piece of content has none set
+  usdPerGbp      Float?   @default(1.27) // exchange rate for pricing display
+  bdtPerGbp      Float?   @default(148.0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // ------------------------------------------------------
@@ -345,12 +538,12 @@ model SiteSetting {
 // ------------------------------------------------------
 
 model TrackedKeyword {
-  id         String       @id @default(cuid())
+  id         String      @id @default(cuid())
   term       String
   targetUrl  String? // page path this keyword is meant to rank for, e.g. "/services"
-  country    String       @default("GB")
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  country    String      @default("GB")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   rankChecks RankCheck[]
 
   @@unique([term, targetUrl])
@@ -433,13 +626,13 @@ model PricingPlan {
 // ------------------------------------------------------
 
 model AvailableSlot {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   startsAt  DateTime
-  duration  Int       @default(30) // minutes
-  isBooked  Boolean   @default(false)
+  duration  Int      @default(30) // minutes
+  isBooked  Boolean  @default(false)
   booking   Booking?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([startsAt])
 }
@@ -466,21 +659,21 @@ enum BookingStatus {
 }
 
 model TBJSystem {
-  id          String   @id @default(cuid())
-  title       String
-  subtitle    String?
-  description String   @db.Text
-  iconName    String
-  previewIcon String?
-  features    String?  @db.Text // JSON array of features
-  status      String?
-  progress    Int      @default(0)
-  tagline     String?
-  gradient    String?
-  quarterly   String?
+  id           String   @id @default(cuid())
+  title        String
+  subtitle     String?
+  description  String   @db.Text
+  iconName     String
+  previewIcon  String?
+  features     String?  @db.Text // JSON array of features
+  status       String?
+  progress     Int      @default(0)
+  tagline      String?
+  gradient     String?
+  quarterly    String?
   availability String?
-  shapeName   String?
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  shapeName    String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

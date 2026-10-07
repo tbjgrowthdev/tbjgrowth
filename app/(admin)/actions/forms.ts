@@ -3,7 +3,9 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendContactNotification } from "@/lib/email";
+import { requirePermission, AuthError } from "@/lib/auth-guard";
 
+// Public contact form — stays unguarded.
 export async function submitContactForm(data: any) {
   try {
     const submission = await prisma.formSubmission.create({
@@ -28,8 +30,13 @@ export async function submitContactForm(data: any) {
   }
 }
 
+// Leads carry customer PII (name, email, phone, message) — gated behind
+// USER_MANAGEMENT since that's the one permission scoped to exactly
+// ADMIN/SUPER_ADMIN in lib/permissions.ts, matching middleware's existing
+// grouping of /admin/leads with /admin/settings and /admin/admins.
 export async function getLeads() {
   try {
+    await requirePermission("USER_MANAGEMENT");
     return await prisma.formSubmission.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -41,6 +48,7 @@ export async function getLeads() {
 
 export async function markLeadAsRead(id: string) {
   try {
+    await requirePermission("USER_MANAGEMENT");
     await prisma.formSubmission.update({
       where: { id },
       data: { isRead: true },
@@ -48,6 +56,9 @@ export async function markLeadAsRead(id: string) {
     revalidatePath("/admin/leads");
     return { success: true };
   } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     return { success: false };
   }
 }

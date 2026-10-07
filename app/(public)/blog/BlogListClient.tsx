@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Calendar, User, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { isValidImageSrc } from "@/lib/utils";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 
 type Post = any;
 type Category = any;
@@ -128,7 +129,7 @@ export default function BlogListClient({
                 <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-background">
                   {isValidImageSrc(featuredPost.featuredImage) ? (
                     <Image
-                      src={featuredPost.featuredImage}
+                      src={cloudinaryUrl(featuredPost.featuredImage)}
                       alt={featuredPost.featuredImageAlt || featuredPost.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -189,7 +190,7 @@ export default function BlogListClient({
                     <div className="relative w-full sm:w-52 h-40 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-background">
                       {isValidImageSrc(post.featuredImage) ? (
                         <Image
-                          src={post.featuredImage}
+                          src={cloudinaryUrl(post.featuredImage)}
                           alt={post.featuredImageAlt || post.title}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"

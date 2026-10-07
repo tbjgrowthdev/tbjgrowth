@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requirePermission } from "@/lib/auth-guard";
 
 type Content = {
   id: string;
@@ -51,6 +52,7 @@ function findDuplicates(items: (Content & { path: string })[], field: "metaTitle
 }
 
 export async function getSeoAudit() {
+  await requirePermission("SEO_MANAGEMENT");
   const items = await getAllContent();
 
   const duplicateMetaTitles = findDuplicates(items, "metaTitle");
@@ -96,6 +98,7 @@ function normalize(value: string | null | undefined) {
  * engines and Google Business Profile penalize inconsistent NAP (Name/Address/Phone).
  */
 export async function getNapConsistency() {
+  await requirePermission("SEO_MANAGEMENT");
   const settings = await prisma.siteSetting.findFirst();
   if (!settings) {
     return { checked: false, issues: [] as string[] };
@@ -122,6 +125,7 @@ export async function getNapConsistency() {
  * it makes real HTTP requests — not something to do on every page load.
  */
 export async function checkBrokenLinks() {
+  await requirePermission("SEO_MANAGEMENT");
   const items = await getAllContent();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 

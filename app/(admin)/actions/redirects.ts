@@ -3,9 +3,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { invalidateRedirectCache } from "@/lib/redirect-cache";
+import { requirePermission, AuthError } from "@/lib/auth-guard";
+import { logAudit } from "@/lib/audit-log";
 
 export async function getRedirects() {
   try {
+    await requirePermission("SEO_MANAGEMENT");
     return await prisma.redirect.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -23,6 +26,7 @@ function normalizePath(path: string): string {
 
 export async function createRedirect(data: { source: string; destination: string; permanent?: boolean }) {
   try {
+    await requirePermission("SEO_MANAGEMENT");
     const source = normalizePath(data.source);
     const destination = normalizePath(data.destination);
 
@@ -38,8 +42,19 @@ export async function createRedirect(data: { source: string; destination: string
     });
     invalidateRedirectCache();
     revalidatePath("/admin/redirects");
+    await logAudit({
+      action: "create",
+      category: "Redirects",
+      entityType: "Redirect",
+      entityId: redirect.id,
+      entityLabel: `${redirect.source} → ${redirect.destination}`,
+      after: { source: redirect.source, destination: redirect.destination, permanent: redirect.permanent },
+    });
     return { success: true, redirect };
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     console.error("Failed to create redirect:", error);
     if (error.code === "P2002") {
       return { success: false, error: "A redirect from this source path already exists" };
@@ -50,11 +65,26 @@ export async function createRedirect(data: { source: string; destination: string
 
 export async function deleteRedirect(id: string) {
   try {
+    await requirePermission("SEO_MANAGEMENT");
+    const before = await prisma.redirect.findUnique({ where: { id } });
     await prisma.redirect.delete({ where: { id } });
     invalidateRedirectCache();
     revalidatePath("/admin/redirects");
+    if (before) {
+      await logAudit({
+        action: "delete",
+        category: "Redirects",
+        entityType: "Redirect",
+        entityId: id,
+        entityLabel: `${before.source} → ${before.destination}`,
+        before: { source: before.source, destination: before.destination, permanent: before.permanent },
+      });
+    }
     return { success: true };
   } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
     console.error(`Failed to delete redirect ${id}:`, error);
     return { success: false, error: error.message };
   }
@@ -65,6 +95,12 @@ export async function deleteRedirect(id: string) {
  * (permanent is optional, defaults to true). Skips blank lines and a header row.
  */
 export async function bulkImportRedirects(csvText: string) {
+  try {
+    await requirePermission("SEO_MANAGEMENT");
+  } catch (error: any) {
+    return { success: false, created: 0, skipped: 0, errors: [error.message] };
+  }
+
   const lines = csvText
     .split("\n")
     .map((l) => l.trim())
@@ -109,5 +145,12 @@ export async function bulkImportRedirects(csvText: string) {
 
   invalidateRedirectCache();
   revalidatePath("/admin/redirects");
+  await logAudit({
+    action: "bulkImport",
+    category: "Redirects",
+    entityType: "Redirect",
+    entityLabel: `${created} created, ${skipped} skipped`,
+    after: { created, skipped, errorCount: errors.length },
+  });
   return { success: true, created, skipped, errors };
 }

@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import tls from "tls";
+import { requirePermission } from "@/lib/auth-guard";
 
 const THRESHOLDS: Record<string, { good: number; poor: number }> = {
   LCP: { good: 2500, poor: 4000 },
@@ -28,6 +29,7 @@ function rate(metric: string, value: number) {
 /** p75 (Google's official Core Web Vitals threshold basis) per metric over the last 7 days of real visitor samples. */
 export async function getWebVitalsSummary() {
   try {
+    await requirePermission("SETTINGS_MANAGEMENT");
     const since = new Date();
     since.setDate(since.getDate() - 7);
 
@@ -57,6 +59,7 @@ export async function getWebVitalsSummary() {
 /** Recent failed login attempts — a lightweight security-visibility signal. */
 export async function getRecentFailedLogins(hours = 24) {
   try {
+    await requirePermission("SETTINGS_MANAGEMENT");
     const since = new Date();
     since.setHours(since.getHours() - hours);
 
@@ -73,6 +76,7 @@ export async function getRecentFailedLogins(hours = 24) {
 
 /** Live check of the site's own TLS certificate expiry (connects to its own hostname on port 443). */
 export async function checkTlsCertificate(): Promise<{ valid: boolean; expiresAt: string | null; daysRemaining: number | null; error?: string }> {
+  await requirePermission("SETTINGS_MANAGEMENT");
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
   let hostname: string;
   try {

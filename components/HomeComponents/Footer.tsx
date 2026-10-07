@@ -39,7 +39,7 @@ const footerLinks = {
   company: {
     title: "Company",
     links: [
-      { label: "About Us", href: "#" },
+      { label: "About Us", href: "/about" },
       { label: "Case Studies", href: "#case-studies" },
       { label: "Our Process", href: "#why-tbj" },
       { label: "TBJ Systems", href: "#tbj-systems" },
@@ -50,7 +50,7 @@ const footerLinks = {
   resources: {
     title: "Resources",
     links: [
-      { label: "Blog", href: "#" },
+      { label: "Blog", href: "/blog" },
       { label: "Free Tools", href: "#" },
       { label: "Guides", href: "#" },
       { label: "Webinars", href: "#" },
@@ -119,7 +119,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               viewport={{ once: true }}
               className="mb-6"
             >
-              <Link href="#" className="flex items-center group">
+              <Link href="/" className="flex items-center group">
                 <div className="relative">
                   <Image
                     src="/primarylogo.png"

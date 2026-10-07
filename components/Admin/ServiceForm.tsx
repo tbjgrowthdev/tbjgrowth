@@ -8,6 +8,7 @@ import { replaceServiceFaqs } from "@/app/(admin)/actions/serviceFaqs";
 import { createRedirect } from "@/app/(admin)/actions/redirects";
 import { slugify } from "@/lib/utils";
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
+import SocialSeoFields from "./SocialSeoFields";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 
@@ -66,8 +67,16 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
     statLabel: initialData?.statLabel || "",
     gradient: initialData?.gradient || "from-blue-500 to-cyan-500",
     order: initialData?.order || 0,
+    isIndexable: initialData?.isIndexable ?? true,
     metaTitle: initialData?.metaTitle || "",
     metaDescription: initialData?.metaDescription || "",
+    ogTitle: initialData?.ogTitle || "",
+    ogDescription: initialData?.ogDescription || "",
+    ogImage: initialData?.ogImage || "",
+    twitterCard: initialData?.twitterCard || "",
+    twitterTitle: initialData?.twitterTitle || "",
+    twitterDescription: initialData?.twitterDescription || "",
+    twitterImage: initialData?.twitterImage || "",
   });
 
   const [features, setFeatures] = useState<string[]>(
@@ -75,6 +84,9 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
   );
   const [processSteps, setProcessSteps] = useState<ProcessStep[]>(
     initialData?.process ? normalizeProcess(initialData.process) : [{ title: "", desc: "" }]
+  );
+  const [deliverables, setDeliverables] = useState<string[]>(
+    initialData?.deliverables ? normalizeFeatures(initialData.deliverables) : [""]
   );
   const [faqs, setFaqs] = useState<FaqItem[]>(
     initialData?.faqs?.length
@@ -102,6 +114,7 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
             .filter((s) => s.title.trim() || s.desc.trim())
             .map((s, i) => ({ step: i + 1, title: s.title.trim(), desc: s.desc.trim() }))
         ),
+        deliverables: JSON.stringify(deliverables.map((d) => d.trim()).filter(Boolean)),
       };
 
       const isExisting = Boolean(initialData?.id);
@@ -278,6 +291,18 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
         <p className="text-sm text-caption mb-6">
           Optional. Falls back to the title and intro above when left empty.
         </p>
+        <div className="flex items-center gap-2 mb-6">
+          <input
+            type="checkbox"
+            id="isIndexable"
+            checked={formData.isIndexable}
+            onChange={(e) => setFormData({ ...formData, isIndexable: e.target.checked })}
+            className="w-4 h-4 rounded border-border"
+          />
+          <label htmlFor="isIndexable" className="text-sm text-muted">
+            Allow search engines to index this page (unchecking sets meta robots to noindex)
+          </label>
+        </div>
         <div className="space-y-4 max-w-2xl">
           <div>
             <label className={labelClass}>Meta Title</label>
@@ -301,6 +326,14 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
               placeholder="A short summary for search results (~150-160 characters)."
             />
           </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-border max-w-2xl">
+          <h3 className="text-lg font-medium text-foreground mb-4">Social Sharing (OpenGraph &amp; Twitter)</h3>
+          <SocialSeoFields
+            data={formData}
+            onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+          />
         </div>
       </div>
 
@@ -367,6 +400,45 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-bold text-foreground">Deliverables</h2>
+          <button
+            type="button"
+            onClick={() => setDeliverables((prev) => [...prev, ""])}
+            className="flex items-center gap-1.5 text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light hover:text-brand-orange"
+          >
+            <Plus size={16} /> Add Item
+          </button>
+        </div>
+        <p className="text-sm text-caption mb-6">
+          Optional. Shown as a &quot;What You Get&quot; list on the services page and this service&apos;s detail page.
+        </p>
+        <div className="space-y-3">
+          {deliverables.map((item, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={item}
+                onChange={(e) =>
+                  setDeliverables((prev) => prev.map((d, i) => (i === index ? e.target.value : d)))
+                }
+                className="flex-1 px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                placeholder="e.g. Source Code"
+              />
+              <button
+                type="button"
+                onClick={() => setDeliverables((prev) => prev.filter((_, i) => i !== index))}
+                className="text-red-500 hover:text-red-700 px-1"
+                aria-label="Remove item"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
