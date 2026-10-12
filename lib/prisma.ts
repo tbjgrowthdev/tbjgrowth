@@ -1,15 +1,14 @@
 import { PrismaClient } from '@/lib/generated/prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { PrismaNeon } from '@prisma/adapter-neon'
 
 const connectionString = process.env.DATABASE_URL
 
+// Neon's serverless driver talks over WebSockets/HTTP instead of a raw
+// Postgres TCP connection — raw TCP via Cloudflare Workers' connect() sockets
+// hangs on Neon's TLS handshake (sslmode=verify-full), so this is required
+// for the deployed Worker, not just a preference.
 const prismaClientSingleton = () => {
-  const pool = new Pool({ connectionString })
-  pool.on('error', (err) => {
-    console.error('Unexpected error on idle Postgres client', err)
-  })
-  const adapter = new PrismaPg(pool)
+  const adapter = new PrismaNeon({ connectionString })
   return new PrismaClient({ adapter })
 }
 
