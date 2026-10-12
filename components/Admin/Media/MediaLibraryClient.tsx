@@ -6,7 +6,7 @@ import MediaToolbar, { type SortOption } from "./MediaToolbar";
 import MediaGrid from "./MediaGrid";
 import MediaUploadModal from "./MediaUploadModal";
 import MediaDetailModal from "./MediaDetailModal";
-import type { MediaAsset } from "@prisma/client";
+import type { MediaAsset } from "@/lib/generated/prisma/client";
 
 const SORT_MAP: Record<SortOption, { sortBy: "createdAt" | "title" | "bytes"; sortOrder: "asc" | "desc" }> = {
   newest: { sortBy: "createdAt", sortOrder: "desc" },

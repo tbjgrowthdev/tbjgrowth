@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { ALL_ROLES } from "@/lib/permissions";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/generated/prisma/client";
 
 // The ten tracked categories — kept as a closed set so every call site
 // commits to one of the named buckets rather than drifting into free text.

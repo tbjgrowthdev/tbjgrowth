@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/generated/prisma/client";
 
 const ROLE_LABELS: Record<Role, string> = {
   SUPER_ADMIN: "Super Admin",

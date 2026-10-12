@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, Upload } from "lucide-react";
 import { uploadMediaAsset } from "@/app/(admin)/actions/media";
-import type { MediaAsset } from "@prisma/client";
+import type { MediaAsset } from "@/lib/generated/prisma/client";
 
 interface MediaUploadModalProps {
   folders: string[];

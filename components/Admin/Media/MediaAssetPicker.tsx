@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { X, Search } from "lucide-react";
 import { getMediaAssets } from "@/app/(admin)/actions/media";
 import MediaGrid from "./MediaGrid";
-import type { MediaAsset } from "@prisma/client";
+import type { MediaAsset } from "@/lib/generated/prisma/client";
 
 interface MediaAssetPickerProps {
   onClose: () => void;

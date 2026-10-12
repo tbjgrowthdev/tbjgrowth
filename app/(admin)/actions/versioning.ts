@@ -1,7 +1,7 @@
 "use server";
 
 import { getVersionHistory, compareVersions, restoreVersion } from "@/lib/versioning";
-import type { ContentType } from "@prisma/client";
+import type { ContentType } from "@/lib/generated/prisma/client";
 
 export async function getContentVersionHistory(contentType: ContentType, contentId: string) {
   return getVersionHistory(contentType, contentId);

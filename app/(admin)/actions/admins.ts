@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { requireSession, requirePermission, AuthError } from "@/lib/auth-guard";
 import { canManageUserWithRole, getPermissions, ALL_ROLES, type Permission } from "@/lib/permissions";
 import { logAudit } from "@/lib/audit-log";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/generated/prisma/client";
 
 // Lighter-weight than getAdmins — any authenticated team member can see who's
 // eligible for a given role in the approval workflow (assigning a reviewer

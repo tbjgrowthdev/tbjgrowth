@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { cloudinaryUrl } from "@/lib/cloudinary-url";
-import type { MediaAsset } from "@prisma/client";
+import type { MediaAsset } from "@/lib/generated/prisma/client";
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;

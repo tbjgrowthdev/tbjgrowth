@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
-import type { ContentType } from "@prisma/client";
+import type { ContentType } from "@/lib/generated/prisma/client";
 
 // Only the actual editable content — never status, publishedAt, or the
 // approval-assignment fields (reviewerId/seoReviewerId/approverId/

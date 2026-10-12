@@ -1,7 +1,7 @@
 "use server";
 
 import { getApprovalHistory, assignUser, setReviewDeadline, recordSeoReview, type AssignmentRole } from "@/lib/workflow";
-import type { ContentType } from "@prisma/client";
+import type { ContentType } from "@/lib/generated/prisma/client";
 
 export async function getContentApprovalHistory(contentType: ContentType, contentId: string) {
   return getApprovalHistory(contentType, contentId);

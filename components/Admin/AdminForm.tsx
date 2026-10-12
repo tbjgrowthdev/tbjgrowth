@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createAdmin } from "@/app/(admin)/actions/admins";
 import { Save, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/generated/prisma/client";
 
 export default function AdminForm() {
   const router = useRouter();

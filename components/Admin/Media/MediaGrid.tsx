@@ -1,6 +1,6 @@
 "use client";
 
-import type { MediaAsset } from "@prisma/client";
+import type { MediaAsset } from "@/lib/generated/prisma/client";
 import MediaCard from "./MediaCard";
 
 export default function MediaGrid({ assets, onSelect }: { assets: MediaAsset[]; onSelect: (asset: MediaAsset) => void }) {

@@ -2,7 +2,7 @@
 
 import { createScheduledJob, cancelScheduledJob, getScheduledJobs } from "@/lib/scheduled-jobs";
 import { zonedTimeToUtc } from "@/lib/scheduling";
-import type { ContentType, ScheduledJobType } from "@prisma/client";
+import type { ContentType, ScheduledJobType } from "@/lib/generated/prisma/client";
 
 export async function scheduleContentJob(
   contentType: ContentType,

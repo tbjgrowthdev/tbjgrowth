@@ -4,7 +4,7 @@ import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { sendScheduledJobFailureNotification } from "@/lib/email";
 import { revalidatePath } from "next/cache";
-import type { ContentType, ScheduledJobType, PostStatus, Prisma } from "@prisma/client";
+import type { ContentType, ScheduledJobType, PostStatus, Prisma } from "@/lib/generated/prisma/client";
 
 const MAX_ATTEMPTS = 5;
 

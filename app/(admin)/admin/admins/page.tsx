@@ -8,7 +8,7 @@ import { Plus, ShieldAlert, ShieldCheck, Search, PenLine, UserCog } from "lucide
 import DeleteButton from "@/components/Admin/DeleteButton";
 import RoleSelect from "@/components/Admin/RoleSelect";
 import { isValidImageSrc } from "@/lib/utils";
-import type { Role } from "@prisma/client";
+import type { Role } from "@/lib/generated/prisma/client";
 
 const ROLE_BADGE: Record<Role, { label: string; className: string; icon: typeof ShieldAlert }> = {
   SUPER_ADMIN: { label: "Super Admin", className: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400", icon: ShieldAlert },
