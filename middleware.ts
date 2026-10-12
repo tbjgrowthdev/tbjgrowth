@@ -142,10 +142,12 @@ export const config = {
   // — so those are served directly instead of being locale-rewritten to
   // "/en-gb/<file>", which doesn't exist and 404s.
   //
-  // No `runtime: "nodejs"` here deliberately — Cloudflare's OpenNext
-  // adapter only supports Edge middleware, not Node.js middleware, so this
-  // must stay on the default Edge runtime (see lib/redirect-cache.ts for
-  // how the Prisma-backed redirect lookup is kept out of this file as a
-  // result).
+  // `runtime: "edge"` is required explicitly — Next 16 compiles the
+  // deprecated "middleware.ts" convention as a Node.js function by default
+  // now (omitting `runtime` does NOT fall back to Edge), and Cloudflare's
+  // OpenNext adapter only supports Edge middleware (see
+  // lib/redirect-cache.ts for how the Prisma-backed redirect lookup is kept
+  // out of this file as a result).
+  runtime: "experimental-edge",
   matcher: ["/((?!_next/static|_next/image|favicon.ico|api/|.*\\..*).*)"],
 };
