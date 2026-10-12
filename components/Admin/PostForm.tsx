@@ -7,7 +7,7 @@ import { createRedirect } from "@/app/(admin)/actions/redirects";
 import dynamic from "next/dynamic";
 import { uploadMediaAsset } from "@/app/(admin)/actions/media";
 import { slugify } from "@/lib/utils";
-import { AlertCircle, Upload, FolderOpen } from "lucide-react";
+import { AlertCircle, Upload, FolderOpen, CalendarClock } from "lucide-react";
 import MediaAssetPicker from "./Media/MediaAssetPicker";
 import SERPPreview from "./SERPPreview";
 import SEOScorePanel from "./SEOScorePanel";
@@ -16,6 +16,13 @@ import SocialSeoFields from "./SocialSeoFields";
 import WorkflowPanel from "./WorkflowPanel";
 import AssignmentPanel from "./AssignmentPanel";
 import VersionHistoryPanel from "./VersionHistoryPanel";
+import SchedulingPanel from "./SchedulingPanel";
+import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
+import { listTimezones } from "@/lib/scheduling";
+import ContentLockBanner from "./ContentLockBanner";
+
+const TIMEZONES = listTimezones();
+const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
 
 // Dynamically import TipTap so it doesn't cause SSR issues
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
@@ -33,6 +40,7 @@ export default function PostForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [lockedByOther, setLockedByOther] = useState(false);
   const originalSlug = initialData?.slug || "";
   const [formData, setFormData] = useState({
     title: initialData?.title || "",
@@ -63,6 +71,10 @@ export default function PostForm({
   // A per-save note, not persisted content — cleared after each successful
   // save since it describes THAT save, not a standing field.
   const [changeSummary, setChangeSummary] = useState("");
+  const [scheduleUpdate, setScheduleUpdate] = useState(false);
+  const [scheduleUpdateDate, setScheduleUpdateDate] = useState("");
+  const [scheduleUpdateTime, setScheduleUpdateTime] = useState("09:00");
+  const [scheduleUpdateTimezone, setScheduleUpdateTimezone] = useState(BROWSER_TIMEZONE);
 
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -124,8 +136,33 @@ export default function PostForm({
       const isExisting = Boolean(initialData?.id);
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
 
+      if (isExisting && scheduleUpdate) {
+        if (!scheduleUpdateDate || !scheduleUpdateTime) {
+          setError("Pick a date and time for the scheduled update");
+          setLoading(false);
+          return;
+        }
+        const jobResult = await scheduleContentJob(
+          "POST",
+          initialData.id,
+          "UPDATE",
+          scheduleUpdateDate,
+          scheduleUpdateTime,
+          scheduleUpdateTimezone,
+          formData
+        );
+        if (jobResult.success) {
+          router.push("/admin/posts");
+          router.refresh();
+        } else {
+          setError(jobResult.error || "Failed to schedule update");
+        }
+        setLoading(false);
+        return;
+      }
+
       const result = isExisting
-        ? await updatePost(initialData.id, { ...formData, changeSummary })
+        ? await updatePost(initialData.id, { ...formData, changeSummary, expectedUpdatedAt: initialData.updatedAt })
         : await createPost({ ...formData, changeSummary });
 
       if (result.success) {
@@ -135,7 +172,7 @@ export default function PostForm({
           await createRedirect({
             source: `/blog/${originalSlug}`,
             destination: `/blog/${formData.slug}`,
-            permanent: true,
+            statusCode: 301,
           });
         }
         router.push("/admin/posts");
@@ -153,6 +190,10 @@ export default function PostForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {initialData?.id && (
+        <ContentLockBanner contentType="POST" contentId={initialData.id} onLockStateChange={setLockedByOther} />
+      )}
+
       {error && (
         <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-2">
           <AlertCircle size={20} />
@@ -364,6 +405,7 @@ export default function PostForm({
             approverId={initialData.approverId}
             reviewDeadline={initialData.reviewDeadline}
           />
+          <SchedulingPanel contentType="POST" contentId={initialData.id} />
           <VersionHistoryPanel contentType="POST" contentId={initialData.id} />
         </>
       )}
@@ -475,6 +517,56 @@ export default function PostForm({
         />
       </div>
 
+      {initialData?.id && (
+        <div className="space-y-3 p-4 rounded-lg border border-border bg-card">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <input
+              type="checkbox"
+              checked={scheduleUpdate}
+              onChange={(e) => setScheduleUpdate(e.target.checked)}
+              className="w-4 h-4 rounded border-border"
+            />
+            <CalendarClock size={16} />
+            Schedule this update for later instead of saving now
+          </label>
+          {scheduleUpdate && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Date</label>
+                <input
+                  type="date"
+                  value={scheduleUpdateDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setScheduleUpdateDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Time</label>
+                <input
+                  type="time"
+                  value={scheduleUpdateTime}
+                  onChange={(e) => setScheduleUpdateTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Timezone</label>
+                <select
+                  value={scheduleUpdateTimezone}
+                  onChange={(e) => setScheduleUpdateTimezone(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex justify-end gap-4">
         <button
           type="button"
@@ -485,10 +577,17 @@ export default function PostForm({
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || lockedByOther}
+          title={lockedByOther ? "Someone else is currently editing this — take over editing to save" : undefined}
           className="px-6 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50"
         >
-          {loading ? "Saving..." : initialData ? "Update Post" : "Create Post"}
+          {loading
+            ? "Saving..."
+            : scheduleUpdate
+            ? "Schedule Update"
+            : initialData
+            ? "Update Post"
+            : "Create Post"}
         </button>
       </div>
     </form>

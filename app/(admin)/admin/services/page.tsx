@@ -1,7 +1,7 @@
 import { getServices, deleteService } from "../../actions/services";
 import Link from "next/link";
 import { Plus, Edit, ExternalLink } from "lucide-react";
-import DeleteButton from "@/components/Admin/DeleteButton";
+import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
 
 export default async function ServicesList() {
   const services = await getServices();
@@ -54,7 +54,7 @@ export default async function ServicesList() {
                     <Link href={`/admin/services/${service.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
                       <Edit size={18} />
                     </Link>
-                    <DeleteButton id={service.id} onDelete={deleteService} entityName="service" />
+                    <ContentDeleteButton id={service.id} kind="SERVICE" onDelete={deleteService} entityName="service" />
                   </td>
                 </tr>
               ))

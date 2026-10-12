@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
+import { checkStale } from "@/lib/stale-check";
 
 function serviceSnapshot(service: any) {
   return {
@@ -86,9 +87,18 @@ export async function updateService(id: string, data: any) {
   try {
     await requirePermission("EDIT");
     const before = await prisma.agencyService.findUnique({ where: { id } });
+    if (!before) {
+      return { success: false, error: "Service not found" };
+    }
+    const { expectedUpdatedAt, ...updateData } = data;
+    const staleError = checkStale(expectedUpdatedAt, before.updatedAt);
+    if (staleError) {
+      return { success: false, error: staleError, stale: true };
+    }
+
     const service = await prisma.agencyService.update({
       where: { id },
-      data,
+      data: updateData,
     });
     revalidatePath("/");
     revalidatePath("/services");

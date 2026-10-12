@@ -7,6 +7,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { transitionContent, type WorkflowAction } from "@/lib/workflow";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
+import { checkStale } from "@/lib/stale-check";
 
 function caseStudySnapshot(cs: any) {
   return {
@@ -147,6 +148,13 @@ export async function updateCaseStudy(id: string, data: any) {
     }
 
     const before = await prisma.caseStudy.findUnique({ where: { id } });
+    if (!before) {
+      return { success: false, error: "Case study not found" };
+    }
+    const staleError = checkStale(data.expectedUpdatedAt, before.updatedAt);
+    if (staleError) {
+      return { success: false, error: staleError, stale: true };
+    }
 
     const caseStudy = await prisma.caseStudy.update({
       where: { id },

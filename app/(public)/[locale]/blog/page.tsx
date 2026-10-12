@@ -1,0 +1,65 @@
+import prisma from "@/lib/prisma";
+import BlogListClient from "./BlogListClient";
+import { getPageMetadata, publiclyVisible } from "@/lib/seo-meta";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbSchema } from "@/lib/schema";
+import { resolveRouteLocale } from "@/lib/i18n";
+import { localizeList } from "@/lib/translation";
+
+export const revalidate = 3600;
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: localeParam } = await params;
+  const locale = resolveRouteLocale(localeParam);
+  return getPageMetadata("blog", {
+    title: "Blog & Insights | TBJ Growth",
+    description: "Read the latest insights, strategies, and case studies on scaling B2B SaaS revenue.",
+    path: "/blog",
+  }, locale?.code);
+}
+
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: localeParam } = await params;
+  const locale = resolveRouteLocale(localeParam);
+  if (!locale) return null; // layout already notFound()s on an unknown locale
+
+  const allPosts = await prisma.post.findMany({
+    where: publiclyVisible,
+    include: {
+      author: true,
+      categories: true,
+      tags: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  const posts = await localizeList("POST", allPosts, locale.code);
+
+  const categories = await prisma.category.findMany({
+    orderBy: { name: "asc" },
+  });
+
+  const tags = await prisma.tag.findMany({
+    orderBy: { name: "asc" },
+  });
+
+  return (
+    <main className="min-h-screen bg-background pt-24 pb-20">
+      <JsonLd schema={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Blog", path: "/blog" }])} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Latest{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
+              Insights & Strategies
+            </span>
+          </h1>
+          <p className="text-lg text-muted">
+            Discover actionable, data-driven SEO techniques designed to boost search rankings, drive high-intent organic traffic, and lower customer acquisition costs.
+          </p>
+        </div>
+
+        <BlogListClient dbPosts={posts} dbCategories={categories} dbTags={tags} localePrefix={locale.prefix} />
+      </div>
+    </main>
+  );
+}

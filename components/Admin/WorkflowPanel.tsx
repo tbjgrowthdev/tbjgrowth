@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { getContentApprovalHistory } from "@/app/(admin)/actions/workflow";
+import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
+import { listTimezones } from "@/lib/scheduling";
 import type { WorkflowAction } from "@/lib/workflow";
 import { History, Send, CheckCircle2, XCircle, MessageSquareWarning, CalendarClock, Rocket, Archive, RotateCcw, EyeOff } from "lucide-react";
+
+const TIMEZONES = listTimezones();
+const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
 
 type Status = "DRAFT" | "REVIEW" | "CHANGES_REQUESTED" | "APPROVED" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
 
@@ -89,6 +94,10 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("09:00");
+  const [scheduleTimezone, setScheduleTimezone] = useState(BROWSER_TIMEZONE);
 
   const currentStatus = STATUS_LABEL[status];
   const actions = ACTIONS_BY_STATUS[status] || [];
@@ -122,6 +131,11 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
   };
 
   const handleClick = (def: ActionDef) => {
+    if (def.action === "schedule") {
+      setShowSchedulePicker(true);
+      setError(null);
+      return;
+    }
     if (def.needsComment) {
       setPendingAction(def);
       setComment("");
@@ -129,6 +143,26 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
       return;
     }
     runAction(def);
+  };
+
+  const confirmSchedule = async () => {
+    if (!scheduleDate || !scheduleTime) return;
+    setIsRunning(true);
+    setError(null);
+    try {
+      const jobResult = await scheduleContentJob(contentType, contentId, "PUBLISH", scheduleDate, scheduleTime, scheduleTimezone);
+      if (!jobResult.success) {
+        setError(jobResult.error || "Failed to schedule");
+        return;
+      }
+      const scheduleDef = ACTIONS_BY_STATUS[status].find((a) => a.action === "schedule");
+      if (scheduleDef) {
+        await runAction(scheduleDef);
+      }
+      setShowSchedulePicker(false);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -193,6 +227,61 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
             <button
               type="button"
               onClick={() => setPendingAction(null)}
+              className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-tint"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showSchedulePicker && (
+        <div className="space-y-3 p-4 rounded-lg border border-border bg-background">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">Date</label>
+              <input
+                type="date"
+                value={scheduleDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">Time</label>
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted mb-1">Timezone</label>
+              <select
+                value={scheduleTimezone}
+                onChange={(e) => setScheduleTimezone(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground text-sm"
+              >
+                {TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>{tz}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={isRunning || !scheduleDate || !scheduleTime}
+              onClick={confirmSchedule}
+              className="px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm"
+            >
+              Confirm Schedule
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSchedulePicker(false)}
               className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-tint"
             >
               Cancel

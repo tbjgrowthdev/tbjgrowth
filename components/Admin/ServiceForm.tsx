@@ -9,6 +9,7 @@ import { createRedirect } from "@/app/(admin)/actions/redirects";
 import { slugify } from "@/lib/utils";
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
 import SocialSeoFields from "./SocialSeoFields";
+import ContentLockBanner from "./ContentLockBanner";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 
@@ -52,6 +53,7 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lockedByOther, setLockedByOther] = useState(false);
   const originalSlug = initialData?.slug || "";
 
   const [formData, setFormData] = useState({
@@ -115,6 +117,7 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
             .map((s, i) => ({ step: i + 1, title: s.title.trim(), desc: s.desc.trim() }))
         ),
         deliverables: JSON.stringify(deliverables.map((d) => d.trim()).filter(Boolean)),
+        expectedUpdatedAt: initialData?.updatedAt,
       };
 
       const isExisting = Boolean(initialData?.id);
@@ -139,7 +142,7 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
           await createRedirect({
             source: `/services/${originalSlug}`,
             destination: `/services/${formData.slug}`,
-            permanent: true,
+            statusCode: 301,
           });
         }
         router.push("/admin/services");
@@ -158,6 +161,10 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {initialData?.id && (
+        <ContentLockBanner contentType="SERVICE" contentId={initialData.id} onLockStateChange={setLockedByOther} />
+      )}
+
       {error && (
         <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-2">
           <AlertCircle size={20} />
@@ -559,7 +566,8 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
       <div className="flex justify-end pt-6 border-t border-border">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || lockedByOther}
+          title={lockedByOther ? "Someone else is currently editing this — take over editing to save" : undefined}
           className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
         >
           <Save size={20} />

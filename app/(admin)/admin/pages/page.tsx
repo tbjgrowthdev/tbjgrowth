@@ -1,7 +1,7 @@
 import { getPages, deletePage } from "../../actions/pages";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
-import DeleteButton from "@/components/Admin/DeleteButton";
+import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
 
 export default async function PagesList() {
   const pages = await getPages();
@@ -55,7 +55,7 @@ export default async function PagesList() {
                       <Edit size={18} />
                     </Link>
                     {/* Note: In a real app, delete should be a form action with confirmation */}
-                    <DeleteButton id={page.id} onDelete={deletePage} entityName="page" />
+                    <ContentDeleteButton id={page.id} kind="PAGE" onDelete={deletePage} entityName="page" />
                   </td>
                 </tr>
               ))

@@ -1,7 +1,7 @@
 import { getPosts, deletePost } from "../../actions/posts";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
-import DeleteButton from "@/components/Admin/DeleteButton";
+import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
 
 export default async function PostsList() {
   const posts = await getPosts();
@@ -56,7 +56,7 @@ export default async function PostsList() {
                     <Link href={`/admin/posts/${post.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
                       <Edit size={18} />
                     </Link>
-                    <DeleteButton id={post.id} onDelete={deletePost} entityName="post" />
+                    <ContentDeleteButton id={post.id} kind="POST" onDelete={deletePost} entityName="post" />
                   </td>
                 </tr>
               ))

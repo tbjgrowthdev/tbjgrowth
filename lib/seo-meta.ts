@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
+import { buildHreflangAlternates, getTranslation } from "@/lib/translation";
+import { getLocaleByCode } from "@/lib/i18n";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -87,7 +89,8 @@ export function resolveSocialMeta(input: {
  */
 export async function getPageMetadata(
   slug: string,
-  fallback: { title: string; description: string; path: string }
+  fallback: { title: string; description: string; path: string },
+  localeCode: string = "en-GB"
 ): Promise<Metadata> {
   const canonicalPath = fallback.path;
   const canonical = `${baseUrl}${canonicalPath === "/" ? "" : canonicalPath}`;
@@ -99,14 +102,18 @@ export async function getPageMetadata(
     console.error(`Failed to fetch SEO override page for slug "${slug}":`, error);
   }
 
+  // These are fixed marketing routes, not slug-driven detail pages, so a
+  // translation's own `slug` override never applies here — the path is
+  // always `fallback.path` regardless of locale. If no Page override row
+  // exists at all, the lookup below naturally finds zero translations and
+  // falls back to the generic always-available locale set.
+  const { languages } = await buildHreflangAlternates("PAGE", page?.id ?? `reserved:${slug}`, slug, () => canonicalPath);
+
   if (!page || page.status !== "PUBLISHED") {
     return {
       title: fallback.title,
       description: fallback.description,
-      alternates: {
-        canonical,
-        languages: { "en-GB": canonical },
-      },
+      alternates: { canonical, languages },
       robots: buildRobotsMeta(true),
     };
   }
@@ -116,16 +123,25 @@ export async function getPageMetadata(
   const settings = await getSiteSettings();
   const defaultOgImage = settings?.defaultOgImage || null;
 
+  // The page BODY for these reserved routes is a hardcoded client
+  // component, not this Page row — so a missing translation here only
+  // ever means "metadata stays in English," never notFound(). The visible
+  // <title>/meta description is the only thing a bn-BD/ar-AE translation
+  // of this override row can change.
+  const locale = getLocaleByCode(localeCode);
+  const translation = locale && !locale.isDefault ? await getTranslation("PAGE", page.id, locale.code) : null;
+  const t = translation?.status === "PUBLISHED" ? translation : null;
+
   const social = resolveSocialMeta({
     baseTitle: fallback.title,
     baseDescription: fallback.description,
-    metaTitle: page.metaTitle,
-    metaDescription: page.metaDescription,
-    ogTitle: page.ogTitle,
-    ogDescription: page.ogDescription,
+    metaTitle: t?.metaTitle ?? page.metaTitle,
+    metaDescription: t?.metaDescription ?? page.metaDescription,
+    ogTitle: t?.ogTitle ?? page.ogTitle,
+    ogDescription: t?.ogDescription ?? page.ogDescription,
     ogImage: page.ogImage,
-    twitterTitle: page.twitterTitle,
-    twitterDescription: page.twitterDescription,
+    twitterTitle: t?.twitterTitle ?? page.twitterTitle,
+    twitterDescription: t?.twitterDescription ?? page.twitterDescription,
     twitterImage: page.twitterImage,
     twitterCard: page.twitterCard,
     siteDefaultImage: defaultOgImage,
@@ -134,10 +150,7 @@ export async function getPageMetadata(
   return {
     title: social.title,
     description: social.description,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: { "en-GB": canonicalUrl },
-    },
+    alternates: { canonical: canonicalUrl, languages },
     robots: buildRobotsMeta(page.isIndexable),
     openGraph: social.openGraph,
     twitter: social.twitter,

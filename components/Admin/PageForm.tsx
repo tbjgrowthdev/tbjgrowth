@@ -6,7 +6,7 @@ import { createPage, updatePage, transitionPage } from "@/app/(admin)/actions/pa
 import { createRedirect } from "@/app/(admin)/actions/redirects";
 import dynamic from "next/dynamic";
 import { slugify } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CalendarClock } from "lucide-react";
 import SERPPreview from "./SERPPreview";
 import SEOScorePanel from "./SEOScorePanel";
 import SchemaBuilder from "./SchemaBuilder";
@@ -14,6 +14,13 @@ import SocialSeoFields from "./SocialSeoFields";
 import WorkflowPanel from "./WorkflowPanel";
 import AssignmentPanel from "./AssignmentPanel";
 import VersionHistoryPanel from "./VersionHistoryPanel";
+import SchedulingPanel from "./SchedulingPanel";
+import ContentLockBanner from "./ContentLockBanner";
+import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
+import { listTimezones } from "@/lib/scheduling";
+
+const TIMEZONES = listTimezones();
+const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
 
 // Dynamically import TipTap so it doesn't cause SSR issues
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
@@ -21,6 +28,7 @@ const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 export default function PageForm({ initialData }: { initialData?: any }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [lockedByOther, setLockedByOther] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const originalSlug = initialData?.slug || "";
   const [formData, setFormData] = useState({
@@ -43,6 +51,10 @@ export default function PageForm({ initialData }: { initialData?: any }) {
   });
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
   const [changeSummary, setChangeSummary] = useState("");
+  const [scheduleUpdate, setScheduleUpdate] = useState(false);
+  const [scheduleUpdateDate, setScheduleUpdateDate] = useState("");
+  const [scheduleUpdateTime, setScheduleUpdateTime] = useState("09:00");
+  const [scheduleUpdateTimezone, setScheduleUpdateTimezone] = useState(BROWSER_TIMEZONE);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +65,33 @@ export default function PageForm({ initialData }: { initialData?: any }) {
       const isExisting = Boolean(initialData?.id);
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
 
+      if (isExisting && scheduleUpdate) {
+        if (!scheduleUpdateDate || !scheduleUpdateTime) {
+          setError("Pick a date and time for the scheduled update");
+          setLoading(false);
+          return;
+        }
+        const jobResult = await scheduleContentJob(
+          "PAGE",
+          initialData.id,
+          "UPDATE",
+          scheduleUpdateDate,
+          scheduleUpdateTime,
+          scheduleUpdateTimezone,
+          formData
+        );
+        if (jobResult.success) {
+          router.push("/admin/pages");
+          router.refresh();
+        } else {
+          setError(jobResult.error || "Failed to schedule update");
+        }
+        setLoading(false);
+        return;
+      }
+
       const result = isExisting
-        ? await updatePage(initialData.id, { ...formData, changeSummary })
+        ? await updatePage(initialData.id, { ...formData, changeSummary, expectedUpdatedAt: initialData.updatedAt })
         : await createPage({ ...formData, changeSummary });
 
       if (result.success) {
@@ -64,7 +101,7 @@ export default function PageForm({ initialData }: { initialData?: any }) {
           await createRedirect({
             source: `/${originalSlug}`,
             destination: `/${formData.slug}`,
-            permanent: true,
+            statusCode: 301,
           });
         }
         router.push("/admin/pages");
@@ -82,6 +119,10 @@ export default function PageForm({ initialData }: { initialData?: any }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {initialData?.id && (
+        <ContentLockBanner contentType="PAGE" contentId={initialData.id} onLockStateChange={setLockedByOther} />
+      )}
+
       {error && (
         <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-2">
           <AlertCircle size={20} />
@@ -156,6 +197,7 @@ export default function PageForm({ initialData }: { initialData?: any }) {
             approverId={initialData.approverId}
             reviewDeadline={initialData.reviewDeadline}
           />
+          <SchedulingPanel contentType="PAGE" contentId={initialData.id} />
           <VersionHistoryPanel contentType="PAGE" contentId={initialData.id} />
         </>
       )}
@@ -267,6 +309,56 @@ export default function PageForm({ initialData }: { initialData?: any }) {
         />
       </div>
 
+      {initialData?.id && (
+        <div className="space-y-3 p-4 rounded-lg border border-border bg-card">
+          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <input
+              type="checkbox"
+              checked={scheduleUpdate}
+              onChange={(e) => setScheduleUpdate(e.target.checked)}
+              className="w-4 h-4 rounded border-border"
+            />
+            <CalendarClock size={16} />
+            Schedule this update for later instead of saving now
+          </label>
+          {scheduleUpdate && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Date</label>
+                <input
+                  type="date"
+                  value={scheduleUpdateDate}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setScheduleUpdateDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Time</label>
+                <input
+                  type="time"
+                  value={scheduleUpdateTime}
+                  onChange={(e) => setScheduleUpdateTime(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted mb-1">Timezone</label>
+                <select
+                  value={scheduleUpdateTimezone}
+                  onChange={(e) => setScheduleUpdateTimezone(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm"
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex justify-end gap-4">
         <button
           type="button"
@@ -277,10 +369,17 @@ export default function PageForm({ initialData }: { initialData?: any }) {
         </button>
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || lockedByOther}
+          title={lockedByOther ? "Someone else is currently editing this — take over editing to save" : undefined}
           className="px-6 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50"
         >
-          {loading ? "Saving..." : initialData ? "Update Page" : "Create Page"}
+          {loading
+            ? "Saving..."
+            : scheduleUpdate
+            ? "Schedule Update"
+            : initialData
+            ? "Update Page"
+            : "Create Page"}
         </button>
       </div>
     </form>

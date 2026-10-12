@@ -22,6 +22,7 @@ import {
 import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 import Link from "next/link";
 import Image from "next/image";
+import { withLocalePrefix, type LocaleConfig } from "@/lib/i18n";
 
 // Footer data
 const footerLinks = {
@@ -73,9 +74,10 @@ type SiteSettings = {
   dribbbleUrl?: string | null;
 } | null;
 
-export default function Footer({ settings }: { settings?: SiteSettings }) {
+export default function Footer({ settings, locale }: { settings?: SiteSettings; locale: LocaleConfig }) {
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const localizedHref = (href: string) => (href.startsWith("#") ? href : withLocalePrefix(locale.prefix, href));
 
   const contactEmail = settings?.email || "hello@tbjgrowth.co.uk";
   const contactPhone = settings?.phone || "+44 (0) 123 456 7890";
@@ -119,7 +121,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               viewport={{ once: true }}
               className="mb-6"
             >
-              <Link href="/" className="flex items-center group">
+              <Link href={withLocalePrefix(locale.prefix, "/")} className="flex items-center group">
                 <div className="relative">
                   <Image
                     src="/primarylogo.png"
@@ -229,7 +231,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
                 {section.links.map((link) => (
                   <li key={link.label}>
                     <a
-                      href={link.href}
+                      href={localizedHref(link.href)}
                       className="text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors flex items-center gap-1 group"
                     >
                       <ChevronRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />

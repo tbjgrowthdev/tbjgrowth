@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scheduled-jobs",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/link-check",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

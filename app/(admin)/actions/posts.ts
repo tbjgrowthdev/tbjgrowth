@@ -7,6 +7,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { transitionContent, type WorkflowAction } from "@/lib/workflow";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
+import { checkStale } from "@/lib/stale-check";
 
 // Metadata only — excludes content/schemaJson so the audit log doesn't bloat.
 function postSnapshot(post: any) {
@@ -131,6 +132,13 @@ export async function updatePost(id: string, data: any) {
     }
 
     const before = await prisma.post.findUnique({ where: { id } });
+    if (!before) {
+      return { success: false, error: "Post not found" };
+    }
+    const staleError = checkStale(data.expectedUpdatedAt, before.updatedAt);
+    if (staleError) {
+      return { success: false, error: staleError, stale: true };
+    }
 
     // Status moves through transitionContent()/the workflow actions below,
     // not through this general-purpose save — editing content never changes

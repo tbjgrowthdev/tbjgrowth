@@ -1,7 +1,7 @@
 import { getCaseStudies, deleteCaseStudy } from "../../actions/cases";
 import Link from "next/link";
 import { Plus, Edit, Star } from "lucide-react";
-import DeleteButton from "@/components/Admin/DeleteButton";
+import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
 
 export default async function CaseStudiesList() {
   const caseStudies = await getCaseStudies();
@@ -61,7 +61,7 @@ export default async function CaseStudiesList() {
                     <Link href={`/admin/cases/${caseStudy.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
                       <Edit size={18} />
                     </Link>
-                    <DeleteButton id={caseStudy.id} onDelete={deleteCaseStudy} entityName="case study" />
+                    <ContentDeleteButton id={caseStudy.id} kind="CASE_STUDY" onDelete={deleteCaseStudy} entityName="case study" />
                   </td>
                 </tr>
               ))

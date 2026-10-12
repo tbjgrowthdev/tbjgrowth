@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images } from "lucide-react";
+import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
@@ -29,6 +29,8 @@ export default async function AdminLayout({
   const canManageSeo = hasPermission(role, "SEO_MANAGEMENT");
   const canManageSettings = hasPermission(role, "SETTINGS_MANAGEMENT");
   const canManageMedia = hasPermission(role, "MEDIA_MANAGEMENT");
+  const canExport = hasPermission(role, "EXPORT");
+  const canTranslate = hasPermission(role, "EDIT");
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -41,6 +43,10 @@ export default async function AdminLayout({
           <Link href="/admin" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <LayoutDashboard size={20} />
             Dashboard
+          </Link>
+          <Link href="/admin/search" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+            <SearchIcon size={20} />
+            Search
           </Link>
           <Link href="/admin/pages" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <FileText size={20} />
@@ -84,6 +90,12 @@ export default async function AdminLayout({
               Media Library
             </Link>
           )}
+          {canTranslate && (
+            <Link href="/admin/translations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Languages size={20} />
+              Translations
+            </Link>
+          )}
           <Link href="/admin/faqs" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <HelpCircle size={20} />
             FAQ
@@ -116,12 +128,22 @@ export default async function AdminLayout({
                 <Target size={20} />
                 Keyword Tracking
               </Link>
+              <Link href="/admin/link-monitor" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <Link2Off size={20} />
+                Link Monitor
+              </Link>
             </>
           )}
           {canManageSettings && (
             <Link href="/admin/settings" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
               <Settings size={20} />
               Settings
+            </Link>
+          )}
+          {canExport && (
+            <Link href="/admin/import-export" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <ArrowDownUp size={20} />
+              Import / Export
             </Link>
           )}
           <div className="pt-4 mt-4 border-t border-border space-y-1">

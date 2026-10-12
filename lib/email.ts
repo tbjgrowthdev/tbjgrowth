@@ -145,3 +145,136 @@ export async function sendBookingNotification(booking: BookingNotification, noti
     return { success: false, error };
   }
 }
+
+type ScheduledJobFailure = {
+  contentType: string;
+  contentId: string;
+  jobType: string;
+  attempt: number;
+  maxAttempts: number;
+  willRetry: boolean;
+  error: string;
+  notifyEmail?: string | null;
+};
+
+export async function sendScheduledJobFailureNotification(failure: ScheduledJobFailure) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping scheduled job failure email:", failure);
+    return { success: false, skipped: true };
+  }
+  if (!failure.notifyEmail) {
+    console.log("No recipient for scheduled job failure email — skipping:", failure);
+    return { success: false, skipped: true };
+  }
+
+  const statusLine = failure.willRetry
+    ? `This will be retried automatically (attempt ${failure.attempt} of ${failure.maxAttempts}).`
+    : `This has now failed ${failure.maxAttempts} times and will NOT be retried automatically — it needs manual attention.`;
+
+  const html = `
+    <h2>Scheduled ${escapeHtml(failure.jobType.toLowerCase())} failed</h2>
+    <p><strong>Content:</strong> ${escapeHtml(failure.contentType)} (${escapeHtml(failure.contentId)})</p>
+    <p><strong>Attempt:</strong> ${failure.attempt} of ${failure.maxAttempts}</p>
+    <p>${escapeHtml(statusLine)}</p>
+    <p><strong>Error:</strong></p>
+    <pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap;">${escapeHtml(failure.error)}</pre>
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [failure.notifyEmail],
+        subject: `⚠ Scheduled ${failure.jobType.toLowerCase()} failed — ${failure.willRetry ? "will retry" : "gave up"}`,
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send scheduled job failure email:", error);
+    return { success: false, error };
+  }
+}
+
+type LinkCheckFindingSummary = {
+  category: string;
+  path: string;
+  status?: number | string;
+  description?: string;
+};
+
+export async function sendLinkCheckNotification(params: {
+  findingCount: number;
+  findings: LinkCheckFindingSummary[];
+  notifyEmail?: string | null;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping link check notification email");
+    return { success: false, skipped: true };
+  }
+  if (!params.notifyEmail) {
+    console.log("No notification email configured in Site Settings — skipping link check email");
+    return { success: false, skipped: true };
+  }
+
+  const rows = params.findings
+    .map(
+      (f) =>
+        `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">${escapeHtml(f.category)}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;">${escapeHtml(f.path)}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">${escapeHtml(String(f.status ?? f.description ?? ""))}</td></tr>`
+    )
+    .join("");
+
+  const html = `
+    <h2>Link Monitor found ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""}</h2>
+    <table style="border-collapse:collapse;width:100%;">
+      <thead><tr><th style="text-align:left;padding:4px 8px;">Category</th><th style="text-align:left;padding:4px 8px;">Path</th><th style="text-align:left;padding:4px 8px;">Status</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${params.findingCount > params.findings.length ? `<p>...and ${params.findingCount - params.findings.length} more. See the Link Monitor in the admin dashboard for the full list.</p>` : ""}
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [params.notifyEmail],
+        subject: `⚠ Link Monitor: ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""} found`,
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send link check notification email:", error);
+    return { success: false, error };
+  }
+}

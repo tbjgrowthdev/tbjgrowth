@@ -2,10 +2,20 @@
 
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sun, Moon, ArrowRight } from "lucide-react";
+import { Menu, X, Sun, Moon, ArrowRight, Globe, ChevronDown } from "lucide-react";
 import Image from "next/image";
+import { LOCALES, withLocalePrefix, type LocaleConfig } from "@/lib/i18n";
 
+/** Strips the current locale's prefix off a pathname, e.g. "/bn-bd/about" -> "/about". */
+function pathWithoutLocale(pathname: string, prefix: string | null): string {
+  if (!prefix) return pathname;
+  const withSlash = `/${prefix}`;
+  if (pathname === withSlash) return "/";
+  if (pathname.startsWith(`${withSlash}/`)) return pathname.slice(withSlash.length);
+  return pathname;
+}
 
 const navItems = [
   {
@@ -29,9 +39,9 @@ const navItems = [
     type: "section",
   },
   {
-    label: "TBJ Systems",
-    href: "#tbj-systems",
-    type: "section",
+    label: "Pricing",
+    href: "/pricing",
+    type: "route",
   },
   {
     label: "Why TBJ",
@@ -45,11 +55,16 @@ const navItems = [
   },
 ];
 
-export default function Navbar() {
+export default function Navbar({ locale }: { locale: LocaleConfig }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const [mounted, setMounted] = useState(false);
+
+  const pathname = usePathname();
+  const barePath = pathWithoutLocale(pathname || "/", locale.prefix);
+  const localizedHref = (href: string) => (href.startsWith("#") ? href : withLocalePrefix(locale.prefix, href));
 
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -121,7 +136,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <motion.a
-              href="/"
+              href={withLocalePrefix(locale.prefix, "/")}
               className="flex items-center group"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -151,7 +166,7 @@ export default function Navbar() {
               {navItems.map((item, index) => (
                 <motion.a
                   key={item.label}
-                  href={item.href}
+                  href={localizedHref(item.href)}
                   onClick={(e) => handleNavClick(e, item.href)}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -174,6 +189,49 @@ export default function Navbar() {
 
             {/* Right Side Actions */}
             <div className="hidden lg:flex items-center gap-3">
+              {/* Language / Market Switcher */}
+              <div className="relative">
+                <motion.button
+                  onClick={() => setIsLangMenuOpen((v) => !v)}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className={`relative flex items-center gap-1 p-2 rounded-xl transition-all duration-300 ${isScrolled
+                    ? "bg-card text-muted hover:text-foreground"
+                    : "text-muted hover:text-foreground hover:bg-card/60"
+                    }`}
+                  aria-label="Change language or region"
+                  aria-expanded={isLangMenuOpen}
+                >
+                  <Globe size={20} />
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${isLangMenuOpen ? "rotate-180" : ""}`} />
+                </motion.button>
+                <AnimatePresence>
+                  {isLangMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
+                    >
+                      {LOCALES.map((l) => (
+                        <a
+                          key={l.code}
+                          href={withLocalePrefix(l.prefix, barePath)}
+                          onClick={() => setIsLangMenuOpen(false)}
+                          className={`block px-4 py-2.5 text-sm transition-colors ${l.code === locale.code
+                            ? "text-brand-orange-deep dark:text-brand-orange-light font-semibold bg-tint"
+                            : "text-muted hover:text-foreground hover:bg-background"
+                            }`}
+                        >
+                          {l.label}
+                        </a>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Dark Mode Toggle */}
               <motion.button
                 onClick={toggleDarkMode}
@@ -307,7 +365,7 @@ export default function Navbar() {
                   {navItems.map((item, index) => (
                     <motion.a
                       key={item.label}
-                      href={item.href}
+                      href={localizedHref(item.href)}
                       onClick={(e) => handleNavClick(e, item.href)}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -321,6 +379,27 @@ export default function Navbar() {
                       />
                     </motion.a>
                   ))}
+                </div>
+
+                {/* Mobile Language / Market Switcher */}
+                <div className="mt-6 pt-6 border-t border-border">
+                  <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider text-caption">Language / Region</p>
+                  <div className="flex flex-col gap-1">
+                    {LOCALES.map((l) => (
+                      <a
+                        key={l.code}
+                        href={withLocalePrefix(l.prefix, barePath)}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-colors ${l.code === locale.code
+                          ? "text-brand-orange-deep dark:text-brand-orange-light font-semibold bg-tint"
+                          : "text-foreground/85 hover:bg-background"
+                          }`}
+                      >
+                        <Globe size={14} />
+                        {l.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Mobile CTA & Dark Mode */}
