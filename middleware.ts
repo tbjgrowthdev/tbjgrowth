@@ -126,6 +126,11 @@ export default withAuth(
     return NextResponse.next();
   },
   {
+    // Must match lib/auth.ts's authOptions fallback exactly — withAuth reads
+    // NEXTAUTH_SECRET itself (separately from authOptions) and throws
+    // NO_SECRET if it can't see it in this execution context, even when the
+    // same var is visible elsewhere in the Worker (e.g. in Route Handlers).
+    secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development-only-replace-in-production",
     callbacks: {
       async authorized() {
         // We handle all path-scoping ourselves in the middleware function above,
