@@ -1,0 +1,84 @@
+name: Database backup
+
+# Runs entirely in CI, not in the Cloudflare Worker: pg_dump needs a real
+# TCP connection and a filesystem, neither of which the Worker runtime
+# provides (see lib/prisma.ts for why the app itself only ever talks to
+# Neon over HTTP). This workflow dumps the DB, uploads it to R2, rotates
+# old backups, verifies the dump actually restores, and reports the result
+# back into the app via /api/cron/backup-report. See
+# docs/runbooks/database-restore.md for how to actually use one of these
+# backups if it's ever needed.
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record start time
+        id: meta
+        run: echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Dump and upload
+        id: dump
+        run: bash scripts/backup/dump-and-upload.sh | tee /tmp/dump-output.txt
+        env:
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        continue-on-error: true
+
+      - name: Parse dump outputs
+        id: dump_parsed
+        run: |
+          if [ -f /tmp/dump-output.txt ]; then
+            grep -q '^DUMP_FILE=' /tmp/dump-output.txt && echo "dump_file=$(grep '^DUMP_FILE=' /tmp/dump-output.txt | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+            grep -q '^OBJECT_KEY=' /tmp/dump-output.txt && echo "object_key=$(grep '^OBJECT_KEY=' /tmp/dump-output.txt | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+            grep -q '^SIZE_BYTES=' /tmp/dump-output.txt && echo "size_bytes=$(grep '^SIZE_BYTES=' /tmp/dump-output.txt | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          fi
+          echo "success=${{ steps.dump.outcome == 'success' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Rotate old backups
+        if: steps.dump.outcome == 'success'
+        run: bash scripts/backup/rotate.sh
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS }}
+        continue-on-error: true
+
+      - name: Verify restore
+        id: verify
+        if: steps.dump.outcome == 'success'
+        run: bash scripts/backup/verify-restore.sh | tee /tmp/verify-output.txt
+        env:
+          DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT }}
+          DUMP_FILE: ${{ steps.dump_parsed.outputs.dump_file }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+        continue-on-error: true
+
+      - name: Report result
+        if: always()
+        run: |
+          VERIFIED=$(grep '^VERIFIED=' /tmp/verify-output.txt 2>/dev/null | cut -d= -f2 || echo false)
+          curl -fsS -X POST "${PRODUCTION_URL}/api/cron/backup-report" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"startedAt\": \"${STARTED_AT}\", \"completedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"success\": ${SUCCESS}, \"sizeBytes\": ${SIZE_BYTES:-null}, \"objectKey\": $(printf '%s' "${OBJECT_KEY:-}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read() or None))'), \"verified\": ${VERIFIED}, \"error\": $(printf '%s' "${ERROR_SUMMARY}" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read() or None))')}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          STARTED_AT: ${{ steps.meta.outputs.started_at }}
+          SUCCESS: ${{ steps.dump_parsed.outputs.success }}
+          SIZE_BYTES: ${{ steps.dump_parsed.outputs.size_bytes }}
+          OBJECT_KEY: ${{ steps.dump_parsed.outputs.object_key }}
+          ERROR_SUMMARY: ${{ steps.dump.outcome != 'success' && 'dump/upload step failed — see workflow logs' || (steps.verify.outcome != 'success' && 'restore verification failed — see workflow logs' || '') }}

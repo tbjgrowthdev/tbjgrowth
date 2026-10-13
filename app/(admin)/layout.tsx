@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages } from "lucide-react";
+import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
@@ -135,10 +135,16 @@ export default async function AdminLayout({
             </>
           )}
           {canManageSettings && (
-            <Link href="/admin/settings" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Settings size={20} />
-              Settings
-            </Link>
+            <>
+              <Link href="/admin/monitoring" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <Activity size={20} />
+                Monitoring
+              </Link>
+              <Link href="/admin/settings" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <Settings size={20} />
+                Settings
+              </Link>
+            </>
           )}
           {canExport && (
             <Link href="/admin/import-export" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">

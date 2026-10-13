@@ -211,6 +211,147 @@ export async function sendScheduledJobFailureNotification(failure: ScheduledJobF
   }
 }
 
+export async function sendErrorAlertNotification(params: {
+  message: string;
+  path: string | null;
+  source: "server" | "client";
+  notifyEmail?: string | null;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping error alert email:", params.message);
+    return { success: false, skipped: true };
+  }
+  if (!params.notifyEmail) {
+    console.log("No notification email configured in Site Settings — skipping error alert email");
+    return { success: false, skipped: true };
+  }
+
+  const html = `
+    <h2>New ${escapeHtml(params.source)}-side error</h2>
+    ${params.path ? `<p><strong>Path:</strong> <code>${escapeHtml(params.path)}</code></p>` : ""}
+    <p><strong>Message:</strong></p>
+    <pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap;">${escapeHtml(params.message)}</pre>
+    <p>Repeat occurrences of the same error won't trigger another email for 30 minutes — check the Monitoring tab in admin for the full log.</p>
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [params.notifyEmail],
+        subject: `⚠ New error: ${params.message.slice(0, 80)}`,
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send error alert email:", error);
+    return { success: false, error };
+  }
+}
+
+export async function sendBackupAlertNotification(params: {
+  success: boolean;
+  verified: boolean;
+  error: string | null;
+  notifyEmail?: string | null;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping backup alert email");
+    return { success: false, skipped: true };
+  }
+  if (!params.notifyEmail) {
+    console.log("No notification email configured in Site Settings — skipping backup alert email");
+    return { success: false, skipped: true };
+  }
+
+  const subject = !params.success
+    ? "⚠ Database backup FAILED"
+    : "⚠ Database backup succeeded but restore verification failed";
+
+  const html = `
+    <h2>${escapeHtml(subject)}</h2>
+    ${params.error ? `<pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap;">${escapeHtml(params.error)}</pre>` : ""}
+    <p>See the Monitoring tab in admin, or the "Database Backup" GitHub Actions run, for full logs.</p>
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [params.notifyEmail], subject, html }),
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send backup alert email:", error);
+    return { success: false, error };
+  }
+}
+
+export async function sendUptimeAlertNotification(params: {
+  recovered: boolean;
+  statusCode: number | null;
+  contentOk: boolean;
+  error: string | null;
+  notifyEmail?: string | null;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping uptime alert email");
+    return { success: false, skipped: true };
+  }
+  if (!params.notifyEmail) {
+    console.log("No notification email configured in Site Settings — skipping uptime alert email");
+    return { success: false, skipped: true };
+  }
+
+  const subject = params.recovered ? "✅ Site is back up" : "🔴 Site is DOWN or serving degraded content";
+  const html = `
+    <h2>${escapeHtml(subject)}</h2>
+    ${params.statusCode ? `<p><strong>Status code:</strong> ${params.statusCode}</p>` : ""}
+    <p><strong>Content check:</strong> ${params.contentOk ? "passed" : "failed (page served but looked empty/degraded)"}</p>
+    ${params.error ? `<pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap;">${escapeHtml(params.error)}</pre>` : ""}
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: [params.notifyEmail], subject, html }),
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send uptime alert email:", error);
+    return { success: false, error };
+  }
+}
+
 type LinkCheckFindingSummary = {
   category: string;
   path: string;

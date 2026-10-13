@@ -787,6 +787,70 @@ model TBJSystem {
   updatedAt    DateTime @updatedAt
 }
 
+// One row per nightly backup attempt, reported by the GitHub Actions
+// workflow (.github/workflows/db-backup.yml) that actually performs the
+// pg_dump + R2 upload + rotation + restore verification. That work can't
+// run inside the Cloudflare Worker itself — Workers can't shell out to
+// pg_dump or hold a long-lived raw TCP connection open for it (the exact
+// kind of connection that already hung here once, see lib/prisma.ts) — so
+// the backup job runs entirely in CI and just reports its result back here,
+// the same self-reporting shape as LinkCheckRun below.
+model BackupRun {
+  id          String   @id @default(cuid())
+  startedAt   DateTime
+  completedAt DateTime @default(now())
+  success     Boolean
+  sizeBytes   Int?
+  objectKey   String? // R2 object key of the uploaded dump — see docs/runbooks/database-restore.md
+  verified    Boolean  @default(false) // restore-into-a-throwaway-Neon-branch round-trip succeeded
+  error       String?  @db.Text
+
+  @@index([startedAt])
+}
+
+// One row per external uptime probe, reported by the GitHub Actions workflow
+// (.github/workflows/uptime-check.yml) that curls the live site from outside
+// Cloudflare. A probe running inside the Worker can't detect the Worker
+// itself being unreachable, so this intentionally runs from a separate
+// vantage point. contentOk is checked in addition to the status code
+// because a degraded DB can still serve a 200 with an empty page — exactly
+// what happened earlier in production, which an HTTP-status-only check
+// would have missed entirely.
+model UptimeCheck {
+  id         String   @id @default(cuid())
+  checkedAt  DateTime @default(now())
+  up         Boolean
+  statusCode Int?
+  contentOk  Boolean  @default(true)
+  latencyMs  Int?
+  error      String?  @db.Text
+
+  @@index([checkedAt])
+}
+
+// Captured server-side runtime errors (via instrumentation.ts's
+// onRequestError hook) and client-side top-level render crashes (forwarded
+// from app/global-error.tsx) — this project's error-monitoring layer in
+// place of a Sentry account/SDK: no new runtime dependency on a Worker
+// deployment that has already broken twice on new runtime dependencies this
+// week, just a durable log plus a rate-limited email alert, following the
+// same self-reporting pattern as LinkCheckRun/BackupRun/UptimeCheck.
+// fingerprint (hash of message+path) is used only to de-duplicate repeat
+// alerts within a short window — it is not a real grouping engine.
+model ErrorLog {
+  id          String   @id @default(cuid())
+  fingerprint String
+  message     String   @db.Text
+  stack       String?  @db.Text
+  path        String?
+  digest      String? // Next.js error digest, for correlating with wrangler tail output
+  source      String // "server" | "client"
+  createdAt   DateTime @default(now())
+
+  @@index([fingerprint, createdAt])
+  @@index([createdAt])
+}
+
 // One row per scheduled or manual crawl — the running history is what makes
 // this a "monitor" rather than a one-off button, same reasoning as every
 // other audit-style table in this schema (AuditLog, ApprovalHistory):

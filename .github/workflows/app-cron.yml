@@ -1,0 +1,37 @@
+name: App cron (scheduled jobs + link check)
+
+# vercel.json's "crons" config only fires when the app is actually hosted on
+# Vercel — it has had no effect since the app moved to Cloudflare Workers,
+# so /api/cron/scheduled-jobs and /api/cron/link-check have not been running
+# on a schedule at all. This workflow replaces that: it's hosting-agnostic,
+# per the comment already in those two route files.
+on:
+  schedule:
+    - cron: "*/5 * * * *" # scheduled-jobs: publish/unpublish/update at their scheduled time
+    - cron: "0 3 * * *" # link-check: nightly broken-link crawl
+  workflow_dispatch: {}
+
+jobs:
+  scheduled-jobs:
+    if: github.event.schedule == '*/5 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scheduled jobs processor
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/scheduled-jobs" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  link-check:
+    if: github.event.schedule == '0 3 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger link check
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/link-check" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

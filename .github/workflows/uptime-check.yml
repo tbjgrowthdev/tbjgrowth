@@ -1,0 +1,76 @@
+name: Uptime check
+
+# Deliberately runs outside Cloudflare: a probe running inside the Worker
+# itself can't detect the Worker being unreachable. GitHub's scheduler does
+# not guarantee exact 5-minute precision (it can be delayed under load), so
+# treat this as "best-effort every few minutes," not a hard SLA monitor — a
+# dedicated service (UptimeRobot, Better Uptime, etc.) is a reasonable
+# upgrade later if sub-minute precision matters, but that requires creating
+# an account there, which is a call for whoever owns this repo to make.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe production URL
+        id: probe
+        run: |
+          set +e
+          start=$(date +%s%3N)
+          body_file=$(mktemp)
+          status=$(curl -s -o "$body_file" -w "%{http_code}" --max-time 15 "${PRODUCTION_URL}")
+          curl_exit=$?
+          end=$(date +%s%3N)
+          latency=$((end - start))
+          size=$(wc -c < "$body_file")
+
+          up="false"
+          error=""
+          if [ "$curl_exit" -ne 0 ]; then
+            error="curl failed with exit code $curl_exit"
+          elif [ "$status" = "200" ]; then
+            up="true"
+          else
+            error="unexpected status code $status"
+          fi
+
+          # Content-health heuristic: a degraded-but-200 page (DB reachable
+          # but empty, e.g. the env-var incident this app has already hit
+          # once) renders a much smaller page than a healthy one with real
+          # case studies / posts / services on it. This threshold is
+          # intentionally generous — tune MIN_CONTENT_BYTES if the homepage's
+          # real baseline size changes significantly.
+          content_ok="true"
+          if [ "$up" = "true" ] && [ "$size" -lt "${MIN_CONTENT_BYTES:-20000}" ]; then
+            content_ok="false"
+            error="page served 200 but only ${size} bytes (expected >= ${MIN_CONTENT_BYTES:-20000}) — looks degraded/empty"
+          fi
+
+          echo "up=$up" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "latency=$latency" >> "$GITHUB_OUTPUT"
+          echo "content_ok=$content_ok" >> "$GITHUB_OUTPUT"
+          echo "error=$error" >> "$GITHUB_OUTPUT"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          MIN_CONTENT_BYTES: ${{ vars.MIN_CONTENT_BYTES }}
+
+      - name: Report result
+        if: always()
+        run: |
+          curl -fsS -X POST "${PRODUCTION_URL}/api/cron/uptime-report" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d "{\"up\": ${UP}, \"statusCode\": ${STATUS}, \"contentOk\": ${CONTENT_OK}, \"latencyMs\": ${LATENCY}, \"error\": $(printf '%s' "$ERROR" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read() or None))')}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          UP: ${{ steps.probe.outputs.up }}
+          STATUS: ${{ steps.probe.outputs.status }}
+          CONTENT_OK: ${{ steps.probe.outputs.content_ok }}
+          LATENCY: ${{ steps.probe.outputs.latency }}
+          ERROR: ${{ steps.probe.outputs.error }}
