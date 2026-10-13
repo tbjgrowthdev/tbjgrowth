@@ -1,14 +1,19 @@
 import { PrismaClient } from '@/lib/generated/prisma/client'
-import { PrismaNeon } from '@prisma/adapter-neon'
+import { PrismaNeonHttp } from '@prisma/adapter-neon'
 
-const connectionString = process.env.DATABASE_URL
+const connectionString = process.env.DATABASE_URL as string
 
-// Neon's serverless driver talks over WebSockets/HTTP instead of a raw
-// Postgres TCP connection — raw TCP via Cloudflare Workers' connect() sockets
-// hangs on Neon's TLS handshake (sslmode=verify-full), so this is required
-// for the deployed Worker, not just a preference.
+// Cloudflare Workers forbids reusing an I/O object (e.g. an open WebSocket)
+// across different requests, even within the same long-lived isolate — the
+// WebSocket-based PrismaNeon adapter hung on every request after the first
+// in a given isolate because of this. PrismaNeonHttp issues a fresh fetch()
+// per query instead of holding a connection open, so there's nothing to
+// reuse across requests. Tradeoff: no interactive $transaction(async tx =>
+// ...) callbacks — only the batched array form, which is all this app uses
+// (see app/(admin)/actions/booking.ts for the one callback-form transaction
+// that had to be restructured around this).
 const prismaClientSingleton = () => {
-  const adapter = new PrismaNeon({ connectionString })
+  const adapter = new PrismaNeonHttp(connectionString, {})
   return new PrismaClient({ adapter })
 }
 

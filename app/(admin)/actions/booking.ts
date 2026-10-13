@@ -45,15 +45,23 @@ export async function createBooking(data: {
       return { success: false, error: "This slot is in the past. Please choose another time." };
     }
 
-    const booking = await prisma.$transaction(async (tx) => {
-      const updated = await tx.availableSlot.updateMany({
-        where: { id: data.slotId, isBooked: false },
-        data: { isBooked: true },
-      });
-      if (updated.count === 0) {
-        throw new Error("This slot was just booked by someone else. Please choose another time.");
-      }
-      return tx.booking.create({
+    // Not a single interactive transaction — the HTTP-based Neon adapter
+    // (required so connections aren't reused across Worker requests, see
+    // lib/prisma.ts) only supports the batched array form of $transaction,
+    // not interactive callbacks. Claim the slot first, then create the
+    // booking; if that second step fails, best-effort release the slot
+    // back rather than leaving it stuck "booked" with no booking record.
+    const claimed = await prisma.availableSlot.updateMany({
+      where: { id: data.slotId, isBooked: false },
+      data: { isBooked: true },
+    });
+    if (claimed.count === 0) {
+      return { success: false, error: "This slot was just booked by someone else. Please choose another time." };
+    }
+
+    let booking;
+    try {
+      booking = await prisma.booking.create({
         data: {
           slotId: data.slotId,
           name: data.name,
@@ -63,7 +71,13 @@ export async function createBooking(data: {
           message: data.message || null,
         },
       });
-    });
+    } catch (error) {
+      await prisma.availableSlot.updateMany({
+        where: { id: data.slotId },
+        data: { isBooked: false },
+      });
+      throw error;
+    }
 
     const settings = await prisma.siteSetting.findFirst();
     await sendBookingNotification(
