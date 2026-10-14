@@ -98,4 +98,28 @@
   .bg-gradient-premium {
     @apply bg-gradient-to-br from-background to-card;
   }
+
+  /* Thin, theme-matched scrollbar for internally-scrolling panes (e.g. the
+     admin sidebar) instead of the browser default — Firefox via the
+     standard scrollbar-color/-width properties, Chrome/Safari/Edge via the
+     WebKit pseudo-elements. Reacts to light/dark since --border-c/--bg are
+     theme-reactive custom properties, not hardcoded. */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-c) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--border-c);
+    border-radius: 999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--caption-fg);
+  }
 }
