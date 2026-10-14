@@ -13,6 +13,7 @@ import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates } from "@/lib/translation";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -188,7 +189,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         )}
 
         <div className="max-w-3xl mx-auto lg:mx-0 prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
-          <div dangerouslySetInnerHTML={{ __html: study.content }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(study.content) }} />
         </div>
 
         {study.imageGallery && study.imageGallery.length > 0 && (

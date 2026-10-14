@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendBookingNotification } from "@/lib/email";
@@ -24,16 +25,37 @@ export async function getAvailableSlots() {
   }
 }
 
-export async function createBooking(data: {
-  slotId: string;
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  message?: string;
-}) {
+const createBookingSchema = z.object({
+  slotId: z.string().trim().min(1),
+  name: z.string().trim().min(1).max(200),
+  email: z.string().trim().toLowerCase().email().max(320),
+  phone: z.string().trim().max(50).optional(),
+  company: z.string().trim().max(200).optional(),
+  message: z.string().trim().max(5000).optional(),
+});
+
+// Same rolling-window throttle as submitContactForm (lib/forms.ts) — see
+// that file's comment for why this is email-based and not a substitute for
+// edge-level rate limiting.
+const BOOKING_WINDOW_MS = 60 * 60 * 1000;
+const BOOKING_MAX_PER_WINDOW = 3;
+
+export async function createBooking(data: unknown) {
   try {
-    const slot = await prisma.availableSlot.findUnique({ where: { id: data.slotId } });
+    const parsed = createBookingSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, error: "Please check the form for errors and try again." };
+    }
+    const input = parsed.data;
+
+    const recentCount = await prisma.booking.count({
+      where: { email: input.email, createdAt: { gte: new Date(Date.now() - BOOKING_WINDOW_MS) } },
+    });
+    if (recentCount >= BOOKING_MAX_PER_WINDOW) {
+      return { success: false, error: "Too many booking attempts from this email recently. Please try again later." };
+    }
+
+    const slot = await prisma.availableSlot.findUnique({ where: { id: input.slotId } });
 
     if (!slot) {
       return { success: false, error: "This slot no longer exists. Please choose another time." };
@@ -52,7 +74,7 @@ export async function createBooking(data: {
     // booking; if that second step fails, best-effort release the slot
     // back rather than leaving it stuck "booked" with no booking record.
     const claimed = await prisma.availableSlot.updateMany({
-      where: { id: data.slotId, isBooked: false },
+      where: { id: input.slotId, isBooked: false },
       data: { isBooked: true },
     });
     if (claimed.count === 0) {
@@ -63,17 +85,17 @@ export async function createBooking(data: {
     try {
       booking = await prisma.booking.create({
         data: {
-          slotId: data.slotId,
-          name: data.name,
-          email: data.email,
-          phone: data.phone || null,
-          company: data.company || null,
-          message: data.message || null,
+          slotId: input.slotId,
+          name: input.name,
+          email: input.email,
+          phone: input.phone || null,
+          company: input.company || null,
+          message: input.message || null,
         },
       });
     } catch (error) {
       await prisma.availableSlot.updateMany({
-        where: { id: data.slotId },
+        where: { id: input.slotId },
         data: { isBooked: false },
       });
       throw error;
@@ -81,7 +103,7 @@ export async function createBooking(data: {
 
     const settings = await prisma.siteSetting.findFirst();
     await sendBookingNotification(
-      { ...data, startsAt: slot.startsAt, duration: slot.duration },
+      { ...input, startsAt: slot.startsAt, duration: slot.duration },
       settings?.email
     );
 

@@ -211,6 +211,44 @@ export async function sendScheduledJobFailureNotification(failure: ScheduledJobF
   }
 }
 
+export async function sendAccountLockedNotification(params: { email: string; windowMinutes: number }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping account-locked email for:", params.email);
+    return { success: false, skipped: true };
+  }
+
+  const html = `
+    <h2>Your admin account was temporarily locked</h2>
+    <p>There were too many failed sign-in attempts for <strong>${escapeHtml(params.email)}</strong> in the last ${params.windowMinutes} minutes.</p>
+    <p>Sign-ins for this account are blocked for ${params.windowMinutes} minutes from the most recent failed attempt. If this wasn't you, consider changing your password once you're back in.</p>
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [params.email],
+        subject: "⚠ Your admin account was temporarily locked",
+        html,
+      }),
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send account-locked email:", error);
+    return { success: false, error };
+  }
+}
+
 export async function sendErrorAlertNotification(params: {
   message: string;
   path: string | null;

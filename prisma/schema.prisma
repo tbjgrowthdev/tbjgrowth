@@ -17,17 +17,26 @@ model User {
   email           String?           @unique
   emailVerified   DateTime?
   image           String?
-  password        String?
+  password        String? // null for an SSO-only account once a provider using the Account/Session models below is added
   role            Role              @default(CONTRIBUTOR)
   slug            String?           @unique
   bio             String?           @db.Text
   socialLinks     String?           @db.Text // JSON string for social links
   accounts        Account[]
   sessions        Session[]
+  adminSessions   AdminSession[]
   posts           Post[]
   pages           Page[]
   caseStudies     CaseStudy[]
   approvalHistory ApprovalHistory[]
+
+  // TOTP two-factor auth. twoFactorSecret is written as soon as setup
+  // begins but twoFactorEnabled stays false until the user proves they can
+  // generate a valid code with it (lib/auth.ts's confirmTwoFactorSetup) —
+  // an abandoned setup attempt never silently enables 2FA.
+  twoFactorSecret      String?
+  twoFactorEnabled     Boolean @default(false)
+  twoFactorBackupCodes String? @db.Text // JSON array of bcrypt-hashed one-time codes
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -76,6 +85,27 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// A device/session-list entry for the admin UI — distinct from the Session
+// model above (which belongs to NextAuth's adapter, unused while this app
+// is Credentials+JWT-only, and reserved for a future SSO provider's account
+// linking). This app stays JWT-based even with this table: the JWT carries
+// this row's id as `sessionId`, and lib/auth-guard.ts's requireSession()
+// checks `revokedAt` on every request — the one DB round-trip that makes
+// "revoke this device" actually take effect without switching to NextAuth's
+// database session strategy (which CredentialsProvider can't use in v4).
+model AdminSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([userId])
 }
 
 // ------------------------------------------------------

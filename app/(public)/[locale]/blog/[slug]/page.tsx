@@ -13,6 +13,7 @@ import { articleSchema, breadcrumbSchema } from "@/lib/schema";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates, localizeList } from "@/lib/translation";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -239,7 +240,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Main Content */}
           <div className="flex-1 max-w-3xl min-w-0 prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(post.content) }} />
           </div>
 
           {/* Sidebar / Author Profile */}

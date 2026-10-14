@@ -8,6 +8,7 @@ import { transitionContent, type WorkflowAction } from "@/lib/workflow";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 function pageSnapshot(page: any) {
   return {
@@ -63,7 +64,7 @@ export async function createPage(data: any) {
       data: {
         title: data.title,
         slug,
-        content: data.content,
+        content: sanitizeRichText(data.content),
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         focusKeyword: data.focusKeyword,
@@ -131,7 +132,7 @@ export async function updatePage(id: string, data: any) {
       data: {
         title: data.title,
         slug,
-        content: data.content,
+        content: sanitizeRichText(data.content),
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         focusKeyword: data.focusKeyword,

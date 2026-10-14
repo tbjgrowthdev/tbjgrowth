@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { checkStale } from "@/lib/stale-check";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 function serviceSnapshot(service: any) {
   return {
@@ -59,7 +60,7 @@ export async function createService(data: any) {
   try {
     await requirePermission("CREATE");
     const service = await prisma.agencyService.create({
-      data,
+      data: { ...data, content: data.content ? sanitizeRichText(data.content) : data.content },
     });
     revalidatePath("/");
     revalidatePath("/services");
@@ -98,7 +99,7 @@ export async function updateService(id: string, data: any) {
 
     const service = await prisma.agencyService.update({
       where: { id },
-      data: updateData,
+      data: { ...updateData, content: updateData.content ? sanitizeRichText(updateData.content) : updateData.content },
     });
     revalidatePath("/");
     revalidatePath("/services");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DatabaseBackup, Activity, Bug, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
+import { DatabaseBackup, Activity, Bug, CheckCircle2, AlertTriangle, XCircle, ShieldAlert } from "lucide-react";
 
 type BackupRun = {
   id: string;
@@ -32,6 +32,14 @@ type ErrorLog = {
   createdAt: string | Date;
 };
 
+type LoginAttempt = {
+  id: string;
+  email: string;
+  success: boolean;
+  ip: string | null;
+  createdAt: string | Date;
+};
+
 function formatBytes(bytes: number | null) {
   if (!bytes) return "—";
   const mb = bytes / (1024 * 1024);
@@ -42,20 +50,23 @@ export default function MonitoringClient({
   backups,
   uptime,
   errors,
+  loginHistory,
 }: {
   backups: BackupRun[];
   uptime: UptimeCheck[];
   errors: ErrorLog[];
+  loginHistory: LoginAttempt[];
 }) {
-  const [tab, setTab] = useState<"backups" | "uptime" | "errors">("backups");
+  const [tab, setTab] = useState<"backups" | "uptime" | "errors" | "logins">("backups");
 
   const latestBackup = backups[0];
   const latestUptime = uptime[0];
   const currentlyUp = latestUptime ? latestUptime.up && latestUptime.contentOk : true;
+  const recentFailedLogins = loginHistory.filter((a) => !a.success).length;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <SummaryCard
           icon={DatabaseBackup}
           label="Last backup"
@@ -77,10 +88,17 @@ export default function MonitoringClient({
           status={errors.length === 0 ? "ok" : "warn"}
           detail={errors[0] ? new Date(errors[0].createdAt).toLocaleString() : undefined}
         />
+        <SummaryCard
+          icon={ShieldAlert}
+          label="Failed logins (recent)"
+          value={String(recentFailedLogins)}
+          status={recentFailedLogins === 0 ? "ok" : "warn"}
+          detail={loginHistory[0] ? new Date(loginHistory[0].createdAt).toLocaleString() : undefined}
+        />
       </div>
 
       <div className="flex gap-1 border-b border-border">
-        {(["backups", "uptime", "errors"] as const).map((id) => (
+        {(["backups", "uptime", "errors", "logins"] as const).map((id) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -131,6 +149,19 @@ export default function MonitoringClient({
             { header: "Source", render: (r: ErrorLog) => r.source },
             { header: "Path", render: (r: ErrorLog) => <span className="font-mono text-xs">{r.path ?? "—"}</span> },
             { header: "Message", render: (r: ErrorLog) => <span className="text-xs">{r.message}</span> },
+          ]}
+        />
+      )}
+
+      {tab === "logins" && (
+        <Table
+          emptyLabel="No login attempts recorded yet."
+          rows={loginHistory}
+          columns={[
+            { header: "When", render: (r: LoginAttempt) => new Date(r.createdAt).toLocaleString() },
+            { header: "Email", render: (r: LoginAttempt) => r.email },
+            { header: "Result", render: (r: LoginAttempt) => <StatusBadge ok={r.success} label={r.success ? "Success" : "Failed"} /> },
+            { header: "IP", render: (r: LoginAttempt) => <span className="font-mono text-xs">{r.ip ?? "—"}</span> },
           ]}
         />
       )}

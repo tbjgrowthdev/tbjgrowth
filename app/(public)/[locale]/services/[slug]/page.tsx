@@ -10,6 +10,7 @@ import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates } from "@/lib/translation";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -95,7 +96,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           faqs.length > 0 ? faqPageSchema(faqs) : null,
         ]}
       />
-      <ServiceDetailClient service={service} localePrefix={locale.prefix} />
+      <ServiceDetailClient service={{ ...service, content: sanitizeRichText(service.content) }} localePrefix={locale.prefix} />
     </>
   );
 }

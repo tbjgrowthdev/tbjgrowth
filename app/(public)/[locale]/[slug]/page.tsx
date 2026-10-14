@@ -7,6 +7,7 @@ import { resolveSocialMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates } from "@/lib/translation";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -98,7 +99,7 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
           {page.title}
         </h1>
         <div className="prose prose-lg dark:prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
-          <div dangerouslySetInnerHTML={{ __html: page.content || "" }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(page.content) }} />
         </div>
       </article>
     </main>

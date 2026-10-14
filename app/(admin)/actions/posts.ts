@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/utils";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { transitionContent, type WorkflowAction } from "@/lib/workflow";
+import { sanitizeRichText } from "@/lib/sanitize";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
@@ -69,7 +70,7 @@ export async function createPost(data: any) {
       data: {
         title: data.title,
         slug,
-        content: data.content,
+        content: sanitizeRichText(data.content),
         excerpt: data.excerpt,
         featuredImage: data.featuredImage,
         featuredImageAlt: data.featuredImageAlt,
@@ -148,7 +149,7 @@ export async function updatePost(id: string, data: any) {
       data: {
         title: data.title,
         slug,
-        content: data.content,
+        content: sanitizeRichText(data.content),
         excerpt: data.excerpt,
         featuredImage: data.featuredImage,
         featuredImageAlt: data.featuredImageAlt,

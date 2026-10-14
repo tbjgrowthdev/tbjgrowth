@@ -8,6 +8,7 @@ import { transitionContent, type WorkflowAction } from "@/lib/workflow";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 function caseStudySnapshot(cs: any) {
   return {
@@ -83,7 +84,7 @@ export async function createCaseStudy(data: any) {
         industry: data.industry,
         serviceType: data.serviceType,
         results: data.results,
-        content: data.content,
+        content: sanitizeRichText(data.content),
         excerpt: data.excerpt,
         websiteUrl: data.websiteUrl || null,
         featuredImage: data.featuredImage,
@@ -165,7 +166,7 @@ export async function updateCaseStudy(id: string, data: any) {
         industry: data.industry,
         serviceType: data.serviceType,
         results: data.results,
-        content: data.content,
+        content: sanitizeRichText(data.content),
         excerpt: data.excerpt,
         websiteUrl: data.websiteUrl || null,
         featuredImage: data.featuredImage,

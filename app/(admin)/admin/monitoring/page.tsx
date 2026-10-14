@@ -2,7 +2,7 @@ import { getMonitoringData } from "@/app/(admin)/actions/monitoring";
 import MonitoringClient from "@/components/Admin/MonitoringClient";
 
 export default async function MonitoringPage() {
-  const { backups, uptime, errors } = await getMonitoringData();
+  const { backups, uptime, errors, loginHistory } = await getMonitoringData();
 
   return (
     <div className="space-y-6">
@@ -14,7 +14,7 @@ export default async function MonitoringPage() {
           for the restore procedure.
         </p>
       </div>
-      <MonitoringClient backups={backups} uptime={uptime} errors={errors} />
+      <MonitoringClient backups={backups} uptime={uptime} errors={errors} loginHistory={loginHistory} />
     </div>
   );
 }

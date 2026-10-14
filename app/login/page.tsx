@@ -4,7 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +13,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Credentials provider can't return a user mid-way, so the two-factor
+  // step is a second signIn() call from this same form rather than a
+  // separate page — see lib/auth.ts's "2FA_REQUIRED" sentinel.
+  const [needsTwoFactor, setNeedsTwoFactor] = useState(false);
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [code, setCode] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,9 +31,13 @@ export default function LoginPage() {
         redirect: false,
         email,
         password,
+        ...(needsTwoFactor ? (useBackupCode ? { backupCode: code } : { totpCode: code }) : {}),
       });
 
-      if (result?.error) {
+      if (result?.error === "2FA_REQUIRED") {
+        setNeedsTwoFactor(true);
+        setError("");
+      } else if (result?.error) {
         setError(result.error);
       } else {
         router.push("/admin");
@@ -81,52 +92,87 @@ export default function LoginPage() {
                 </motion.div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-muted mb-1.5">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-caption" />
+              {!needsTwoFactor ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-muted mb-1.5">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-caption" />
+                      </div>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
+                        placeholder="admin@example.com"
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
-                    placeholder="admin@example.com"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-muted mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-caption" />
+                  <div>
+                    <label className="block text-sm font-medium text-muted mb-1.5">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-caption" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-11 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-caption hover:text-foreground transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
                   </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-11 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
-                    placeholder="••••••••"
-                  />
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1.5">
+                    {useBackupCode ? "Backup code" : "Authenticator code"}
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <ShieldCheck className="h-5 w-5 text-caption" />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
+                      placeholder={useBackupCode ? "XXXX-XXXX" : "6-digit code"}
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-caption hover:text-foreground transition-colors"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    tabIndex={-1}
+                    onClick={() => {
+                      setUseBackupCode((prev) => !prev);
+                      setCode("");
+                      setError("");
+                    }}
+                    className="mt-2 text-xs text-caption hover:text-foreground underline transition-colors"
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {useBackupCode ? "Use authenticator app instead" : "Use a backup code instead"}
                   </button>
                 </div>
-              </div>
+              )}
 
               <button
                 type="submit"
@@ -137,7 +183,7 @@ export default function LoginPage() {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    <span>Sign In</span>
+                    <span>{needsTwoFactor ? "Verify" : "Sign In"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
