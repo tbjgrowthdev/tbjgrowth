@@ -260,6 +260,65 @@ model ApprovalHistory {
   @@index([contentType, contentId])
 }
 
+enum BrandSectionKey {
+  BRAND_VOICE
+  AUDIENCE
+  SERVICES
+  PRODUCTS
+  USPS
+  TERMINOLOGY
+  FORBIDDEN_TERMS
+  CTA_RULES
+  EXAMPLES
+  GUIDELINES
+}
+
+// The central Brand Knowledge Base at /admin/brand-kb — one versioned
+// section per BrandSectionKey, with an append-only version history and an
+// activeVersionId pointer for rollback (activating an older version is
+// never a delete, just repointing which one is live).
+//
+// lib/brand-kb/context.ts's buildBrandContextBlock() assembles every
+// section with content into one block and injects it into EVERY AI
+// pipeline stage's system prompt (lib/content-pipeline/prompts.ts) — not
+// just the stage-specific Prompt Library categories — since brand voice/
+// audience/forbidden terms/terminology apply to everything the pipeline
+// generates, not one content type. FORBIDDEN_TERMS also gets a real,
+// code-computed check in the QA stage (lib/content-pipeline/stages.ts),
+// not just a model instruction — the model is asked to avoid them, and
+// the output is actually checked for them.
+model BrandKnowledgeSection {
+  id  String          @id @default(cuid())
+  key BrandSectionKey @unique
+
+  activeVersionId String?                 @unique
+  activeVersion   BrandKnowledgeVersion?  @relation("ActiveBrandVersion", fields: [activeVersionId], references: [id])
+  versions        BrandKnowledgeVersion[] @relation("BrandVersions")
+
+  createdById String
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BrandKnowledgeVersion {
+  id            String                 @id @default(cuid())
+  sectionId     String
+  section       BrandKnowledgeSection  @relation("BrandVersions", fields: [sectionId], references: [id], onDelete: Cascade)
+  activeFor     BrandKnowledgeSection? @relation("ActiveBrandVersion")
+  versionNumber Int
+
+  content    String  @db.Text
+  changeNote String? @db.Text
+
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([sectionId, versionNumber])
+  @@index([sectionId])
+}
+
 // Full-content snapshots for history/compare/restore — separate from
 // ApprovalHistory (workflow status transitions) and AuditLog (lean
 // system-wide mutation metadata). This is the only one of the three that
