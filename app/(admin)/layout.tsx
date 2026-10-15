@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen } from "lucide-react";
+import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
@@ -31,6 +31,7 @@ export default async function AdminLayout({
   const canManageMedia = hasPermission(role, "MEDIA_MANAGEMENT");
   const canExport = hasPermission(role, "EXPORT");
   const canTranslate = hasPermission(role, "EDIT");
+  const canCreateContent = hasPermission(role, "CREATE");
 
   return (
     <div className="h-screen bg-background flex overflow-hidden">
@@ -95,6 +96,12 @@ export default async function AdminLayout({
             <Link href="/admin/translations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
               <Languages size={20} />
               Translations
+            </Link>
+          )}
+          {canCreateContent && (
+            <Link href="/admin/ai-pipeline" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Sparkles size={20} />
+              AI Content Pipeline
             </Link>
           )}
           <Link href="/admin/faqs" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">

@@ -12,16 +12,16 @@ generator client {
 // User & Authentication (NextAuth)
 // ------------------------------------------------------
 model User {
-  id              String            @id @default(cuid())
+  id              String               @id @default(cuid())
   name            String?
-  email           String?           @unique
+  email           String?              @unique
   emailVerified   DateTime?
   image           String?
   password        String? // null for an SSO-only account once a provider using the Account/Session models below is added
-  role            Role              @default(CONTRIBUTOR)
-  slug            String?           @unique
-  bio             String?           @db.Text
-  socialLinks     String?           @db.Text // JSON string for social links
+  role            Role                 @default(CONTRIBUTOR)
+  slug            String?              @unique
+  bio             String?              @db.Text
+  socialLinks     String?              @db.Text // JSON string for social links
   accounts        Account[]
   sessions        Session[]
   adminSessions   AdminSession[]
@@ -29,6 +29,7 @@ model User {
   pages           Page[]
   caseStudies     CaseStudy[]
   approvalHistory ApprovalHistory[]
+  pipelineRuns    ContentPipelineRun[]
 
   // TOTP two-factor auth. twoFactorSecret is written as soon as setup
   // begins but twoFactorEnabled stays false until the user proves they can
@@ -260,6 +261,195 @@ model ApprovalHistory {
   @@index([contentType, contentId])
 }
 
+enum PipelineStage {
+  BRIEF
+  SEARCH_INTENT
+  RESEARCH
+  OUTLINE
+  DRAFT
+  SEO
+  INTERNAL_LINKS
+  SCHEMA
+  QA
+  APPROVAL
+  PUBLISHED
+}
+
+// Tracks one run of the AI content pipeline (Brief -> Search Intent ->
+// Research -> Outline -> Draft -> SEO -> Internal Links -> Schema -> QA ->
+// Human Approval -> Publish) for a single piece of content. `stage` is the
+// last stage completed; the admin UI always offers to run whichever stage
+// comes next (lib/content-pipeline/types.ts's PIPELINE_STAGE_ORDER).
+//
+// contentType/contentId point at the real Post/CaseStudy row created once
+// the Draft stage runs via the normal createPost/createCaseStudy actions —
+// before that, this row is the only record of the run (brief/searchIntent/
+// research/outline live here as JSON, same "serialize as String @db.Text"
+// convention as every other JSON-shaped column in this schema, e.g.
+// ScheduledJob.payload). After Draft, this row stops duplicating fields
+// that now live on the real content row (content, metaTitle, schemaJson,
+// ...) and only keeps the pipeline's own bookkeeping.
+model ContentPipelineRun {
+  id          String      @id @default(cuid())
+  contentType ContentType // POST | CASE_STUDY — PAGE unused by this feature
+  contentId   String?
+
+  stage PipelineStage @default(BRIEF)
+
+  brief         String  @db.Text // JSON: topic/goal/audience/tone/notes/(case study fields)
+  searchIntent  String? @db.Text // JSON
+  research      String? @db.Text // JSON
+  outline       String? @db.Text // JSON
+  internalLinks String? @db.Text // JSON: links actually applied to the draft
+  schemaNotes   String? @db.Text // JSON: schema.org type chosen + notes
+  qaReport      String? @db.Text // JSON
+
+  approvedAt   DateTime?
+  approvedById String?
+
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobs AiJob[]
+
+  @@index([contentType, contentId])
+  @@index([createdById])
+}
+
+enum AiJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// One tracked AI-provider call per (pipeline run, stage) — not a generic
+// task queue. `idempotencyKey` ("<pipelineRunId>:<stage>") is the actual
+// idempotency guarantee: starting a job looks this up first, and a stage
+// that's already COMPLETED is never re-run (see
+// lib/content-pipeline/jobs.ts's startOrResumeJob) — calling the same
+// stage-advance action twice, whether a genuine double-click or a retried
+// request, can only execute the underlying Claude call and its side
+// effects once. A FAILED job's retry reuses this same row (same Job ID),
+// incrementing retryCount, rather than creating a new one.
+//
+// Jobs run synchronously inside the request that triggers them (the
+// pipeline wizard calls each stage inline, deliberately, to stay inside
+// one Cloudflare Workers request — see docs/runbooks/ai-content-pipeline.md)
+// — QUEUED/PROCESSING/COMPLETED/FAILED are still real, meaningful states
+// (a QUEUED/PROCESSING row with no completedAt after a request clearly
+// died mid-flight is itself diagnostic), just not asynchronously processed
+// by a separate worker.
+model AiJob {
+  id             String             @id @default(cuid())
+  idempotencyKey String             @unique
+  pipelineRunId  String
+  pipelineRun    ContentPipelineRun @relation(fields: [pipelineRunId], references: [id], onDelete: Cascade)
+  contentId      String? // the real Post/CaseStudy id, once known (unset for pre-Draft stages)
+  stage          PipelineStage
+  provider       String // "anthropic"
+  model          String // actual model id used, e.g. "claude-sonnet-5-5"
+  status         AiJobStatus        @default(QUEUED)
+  error          String?            @db.Text
+  retryCount     Int                @default(0)
+
+  // Cost tracking — set on both COMPLETED and FAILED when the provider
+  // actually returned a response (so a call that failed only because the
+  // reply wasn't valid JSON still records what it cost; a call that never
+  // got a response, e.g. a network/auth error, has none of these set,
+  // since nothing was billed). costUsd is null whenever `model` isn't in
+  // lib/content-pipeline/pricing.ts's rate table — never a silently wrong
+  // number — and the cost dashboard calls that out explicitly rather than
+  // undercounting without saying so.
+  inputTokens  Int?
+  outputTokens Int?
+  totalTokens  Int?
+  costUsd      Float?
+
+  queuedAt    DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([pipelineRunId])
+  @@index([status])
+  @@index([contentId])
+}
+
+enum PromptCategory {
+  BLOG
+  CASE_STUDY
+  SERVICE
+  LANDING_PAGE
+  SEO
+  SOCIAL
+  IMAGE
+  REFRESH
+}
+
+// One editable, versioned prompt per category — the admin-facing Prompt
+// Library at /admin/ai-pipeline/prompts. Only BLOG, CASE_STUDY, and SEO
+// are actually read by a live pipeline stage today (lib/content-pipeline/
+// prompt-library.ts's WIRED_CATEGORIES) — the other five exist so an
+// editor can author/version their prompt ahead of the generation feature
+// that will eventually consume it, same as drafting copy for a page that
+// hasn't shipped yet.
+//
+// activeVersionId is which version prompt-library.ts actually serves to
+// the pipeline right now. Every edit creates a new, immutable
+// PromptTemplateVersion row (append-only, same convention as
+// ContentVersion below) instead of overwriting one — "Rollback" is just
+// repointing activeVersionId at an older version, never deleting anything.
+//
+// createdById/updatedById are plain user-id pointers (no Prisma relation),
+// same lightweight pattern Page/Post/CaseStudy already use for
+// reviewerId/seoReviewerId/approverId, resolved via a manual lookup where
+// displayed rather than growing User with more back-relation arrays.
+model PromptTemplate {
+  id          String         @id @default(cuid())
+  category    PromptCategory @unique
+  name        String
+  description String?        @db.Text
+
+  activeVersionId String?                 @unique
+  activeVersion   PromptTemplateVersion?  @relation("ActivePromptVersion", fields: [activeVersionId], references: [id])
+  versions        PromptTemplateVersion[] @relation("PromptVersions")
+
+  createdById String
+  updatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PromptTemplateVersion {
+  id            String          @id @default(cuid())
+  templateId    String
+  template      PromptTemplate  @relation("PromptVersions", fields: [templateId], references: [id], onDelete: Cascade)
+  activeFor     PromptTemplate? @relation("ActivePromptVersion")
+  versionNumber Int
+
+  // Overrides the stage's default persona/system text when set; null means
+  // "use the pipeline's own hardcoded default" (see resolvePrompt()).
+  systemPrompt String? @db.Text
+  // The admin-editable instructional/style text — supports {{placeholder}}
+  // substitution (see fillTemplate()). Never the whole prompt: the pipeline
+  // always appends its own code-generated dynamic context (brief/outline/
+  // keyword) before this and its own JSON-output contract after it, so an
+  // edit here can't accidentally break the parser that reads the model's
+  // reply.
+  bodyTemplate String  @db.Text
+  changeNote   String? @db.Text
+
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([templateId, versionNumber])
+  @@index([templateId])
+}
+
 enum BrandSectionKey {
   BRAND_VOICE
   AUDIENCE
@@ -274,9 +464,10 @@ enum BrandSectionKey {
 }
 
 // The central Brand Knowledge Base at /admin/brand-kb — one versioned
-// section per BrandSectionKey, with an append-only version history and an
-// activeVersionId pointer for rollback (activating an older version is
-// never a delete, just repointing which one is live).
+// section per BrandSectionKey, same append-only version/active-version/
+// rollback shape as PromptTemplate above (duplicated rather than shared,
+// since the two hold genuinely different content and this project's own
+// convention is "three similar lines beat a premature abstraction").
 //
 // lib/brand-kb/context.ts's buildBrandContextBlock() assembles every
 // section with content into one block and injects it into EVERY AI

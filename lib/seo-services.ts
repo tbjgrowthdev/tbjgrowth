@@ -66,6 +66,98 @@ export const fetchKeywordRankings = async (keyword: string): Promise<RankResult 
   }
 };
 
+// --- DataForSEO (SERP overview + keyword volume, for the AI content pipeline) ---
+export type SerpOverviewItem = { position: number; title: string; description: string | null; url: string; domain: string };
+
+/**
+ * Top organic results for a keyword — the content pipeline's "Research"
+ * stage reasons over these titles/snippets (what's already ranking, what
+ * angles/questions competitors cover) instead of fetching live competitor
+ * pages, which would need a separate web-search/browsing API this project
+ * doesn't have. Same endpoint as fetchKeywordRankings, just returning the
+ * result set instead of searching it for one domain.
+ */
+export async function fetchSerpOverview(keyword: string, limit = 10): Promise<SerpOverviewItem[] | null> {
+  const login = process.env.DATAFORSEO_LOGIN;
+  const password = process.env.DATAFORSEO_PASSWORD;
+  if (!login || !password) {
+    console.error("DataForSEO credentials not configured");
+    return null;
+  }
+  const auth = Buffer.from(`${login}:${password}`).toString("base64");
+
+  try {
+    const res = await fetch("https://api.dataforseo.com/v3/serp/google/organic/live/advanced", {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify([{ keyword, location_code: 2826, language_code: "en", device: "desktop", depth: limit }]),
+    });
+    if (!res.ok) {
+      console.error(`DataForSEO SERP overview request failed: ${res.status}`);
+      return null;
+    }
+    type RawSerpItem = { type?: string; rank_absolute?: number; title?: string; description?: string | null; url?: string; domain?: string };
+    const data = await res.json();
+    const items: RawSerpItem[] = data?.tasks?.[0]?.result?.[0]?.items || [];
+    return items
+      .filter((item) => item.type === "organic")
+      .slice(0, limit)
+      .map((item) => ({
+        position: item.rank_absolute ?? 0,
+        title: item.title ?? "",
+        description: item.description ?? null,
+        url: item.url ?? "",
+        domain: item.domain ?? "",
+      }));
+  } catch (error) {
+    console.error("DataForSEO SERP overview call failed:", error);
+    return null;
+  }
+}
+
+export type KeywordVolume = { keyword: string; searchVolume: number | null; competition: number | null; cpc: number | null };
+
+/**
+ * Real search-volume/competition/CPC for up to 20 candidate keywords in one
+ * call — the "Search Intent" stage uses this to ground the AI's proposed
+ * primary/secondary keywords in actual demand data rather than the model's
+ * own (frequently wrong) guess at how popular a phrase is.
+ */
+export async function fetchSearchVolume(keywords: string[]): Promise<KeywordVolume[] | null> {
+  const login = process.env.DATAFORSEO_LOGIN;
+  const password = process.env.DATAFORSEO_PASSWORD;
+  if (!login || !password) {
+    console.error("DataForSEO credentials not configured");
+    return null;
+  }
+  if (keywords.length === 0) return [];
+  const auth = Buffer.from(`${login}:${password}`).toString("base64");
+
+  try {
+    const res = await fetch("https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live", {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify([{ keywords: keywords.slice(0, 20), location_code: 2826, language_code: "en" }]),
+    });
+    if (!res.ok) {
+      console.error(`DataForSEO search volume request failed: ${res.status}`);
+      return null;
+    }
+    type RawVolumeItem = { keyword?: string; search_volume?: number; competition?: number; cpc?: number };
+    const data = await res.json();
+    const items: RawVolumeItem[] = data?.tasks?.[0]?.result || [];
+    return items.map((item) => ({
+      keyword: item.keyword ?? "",
+      searchVolume: item.search_volume ?? null,
+      competition: item.competition ?? null,
+      cpc: item.cpc ?? null,
+    }));
+  } catch (error) {
+    console.error("DataForSEO search volume call failed:", error);
+    return null;
+  }
+}
+
 // --- Google Analytics (GA4) ---
 type GA4Traffic = {
   sessions: number;
