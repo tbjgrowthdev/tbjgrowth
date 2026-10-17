@@ -8,7 +8,8 @@ import { replaceServiceFaqs } from "@/app/(admin)/actions/serviceFaqs";
 import { createRedirect } from "@/app/(admin)/actions/redirects";
 import { slugify } from "@/lib/utils";
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
-import SocialSeoFields from "./SocialSeoFields";
+import SeoPanel from "./SeoPanel";
+import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import ContentLockBanner from "./ContentLockBanner";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
@@ -70,8 +71,13 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
     gradient: initialData?.gradient || "from-blue-500 to-cyan-500",
     order: initialData?.order || 0,
     isIndexable: initialData?.isIndexable ?? true,
+    allowFollow: initialData?.allowFollow ?? true,
     metaTitle: initialData?.metaTitle || "",
     metaDescription: initialData?.metaDescription || "",
+    focusKeyword: initialData?.focusKeyword || "",
+    secondaryKeywords: parseSecondaryKeywords(initialData?.secondaryKeywords),
+    canonicalUrl: initialData?.canonicalUrl || "",
+    schemaJson: initialData?.schemaJson || "",
     ogTitle: initialData?.ogTitle || "",
     ogDescription: initialData?.ogDescription || "",
     ogImage: initialData?.ogImage || "",
@@ -117,6 +123,7 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
             .map((s, i) => ({ step: i + 1, title: s.title.trim(), desc: s.desc.trim() }))
         ),
         deliverables: JSON.stringify(deliverables.map((d) => d.trim()).filter(Boolean)),
+        secondaryKeywords: JSON.stringify(formData.secondaryKeywords),
         expectedUpdatedAt: initialData?.updatedAt,
       };
 
@@ -293,56 +300,16 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
         </div>
       </div>
 
-      <div className="bg-card p-6 rounded-xl shadow-sm border border-border">
-        <h2 className="text-xl font-bold text-foreground mb-2">SEO</h2>
-        <p className="text-sm text-caption mb-6">
-          Optional. Falls back to the title and intro above when left empty.
-        </p>
-        <div className="flex items-center gap-2 mb-6">
-          <input
-            type="checkbox"
-            id="isIndexable"
-            checked={formData.isIndexable}
-            onChange={(e) => setFormData({ ...formData, isIndexable: e.target.checked })}
-            className="w-4 h-4 rounded border-border"
-          />
-          <label htmlFor="isIndexable" className="text-sm text-muted">
-            Allow search engines to index this page (unchecking sets meta robots to noindex)
-          </label>
-        </div>
-        <div className="space-y-4 max-w-2xl">
-          <div>
-            <label className={labelClass}>Meta Title</label>
-            <input
-              type="text"
-              name="metaTitle"
-              value={formData.metaTitle}
-              onChange={handleChange}
-              className={inputClass}
-              placeholder={formData.title ? `${formData.title} | TBJ Growth` : "e.g. Paid Ads Management | TBJ Growth"}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>Meta Description</label>
-            <textarea
-              name="metaDescription"
-              rows={2}
-              value={formData.metaDescription}
-              onChange={handleChange}
-              className={inputClass}
-              placeholder="A short summary for search results (~150-160 characters)."
-            />
-          </div>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-border max-w-2xl">
-          <h3 className="text-lg font-medium text-foreground mb-4">Social Sharing (OpenGraph &amp; Twitter)</h3>
-          <SocialSeoFields
-            data={formData}
-            onChange={(field, value) => setFormData({ ...formData, [field]: value })}
-          />
-        </div>
-      </div>
+      <p className="text-sm text-caption">SEO fields below are optional — they fall back to the title and intro above when left empty.</p>
+      <SeoPanel
+        data={formData}
+        onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+        secondaryKeywords={formData.secondaryKeywords}
+        onSecondaryKeywordsChange={(secondaryKeywords) => setFormData({ ...formData, secondaryKeywords })}
+        content={formData.content || formData.detailIntro || formData.description}
+        slugPreviewPath={`services/${formData.slug}`}
+        contentLabel="service"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border">

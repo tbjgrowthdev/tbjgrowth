@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, Circle, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 import {
   advanceDraftAction,
+  advanceImageAction,
   advanceInternalLinksAction,
   advanceOutlineAction,
   advanceQaAction,
@@ -13,13 +14,18 @@ import {
   advanceSchemaAction,
   advanceSearchIntentAction,
   advanceSeoAction,
+  applyInternalLinksAction,
   approveRunAction,
+  attachGeneratedImageAction,
+  decideLinkSuggestionAction,
   publishRunAction,
   getPipelineRunAction,
   getJobsForRunAction,
+  skipImageStageAction,
+  updatePendingImageAltTextAction,
 } from "@/app/(admin)/actions/content-pipeline";
 import { PIPELINE_STAGE_ORDER, STAGE_LABEL, nextStage } from "@/lib/content-pipeline/types";
-import type { Brief, Research, SearchIntent, Outline, QaReport, AppliedInternalLink } from "@/lib/content-pipeline/types";
+import type { Brief, Research, SearchIntent, Outline, QaReport, QaCheck, LinkSuggestion, GeneratedImage } from "@/lib/content-pipeline/types";
 
 type RunAndContent = NonNullable<Awaited<ReturnType<typeof getPipelineRunAction>>> & { jobs: Awaited<ReturnType<typeof getJobsForRunAction>> };
 
@@ -32,13 +38,15 @@ function parse<T>(value: string | null | undefined): T | null {
   }
 }
 
+// INTERNAL_LINKS is deliberately not here — it gets its own
+// InternalLinksReviewCard with a bundled generate/regenerate trigger,
+// same reason IMAGE isn't here either (see that card's own comment).
 const STAGE_ACTIONS: Record<string, (runId: string) => Promise<{ success: boolean; error?: string }>> = {
   SEARCH_INTENT: advanceSearchIntentAction,
   RESEARCH: advanceResearchAction,
   OUTLINE: advanceOutlineAction,
   DRAFT: advanceDraftAction,
   SEO: advanceSeoAction,
-  INTERNAL_LINKS: advanceInternalLinksAction,
   SCHEMA: advanceSchemaAction,
   QA: advanceQaAction,
 };
@@ -52,8 +60,9 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
   const searchIntent = parse<SearchIntent>(run.searchIntent);
   const research = parse<Research>(run.research);
   const outline = parse<Outline>(run.outline);
-  const internalLinks = parse<AppliedInternalLink[]>(run.internalLinks);
+  const internalLinks = parse<LinkSuggestion[]>(run.internalLinks);
   const qaReport = parse<QaReport>(run.qaReport);
+  const generatedImage = parse<GeneratedImage>(run.generatedImage);
 
   const upcoming = nextStage(run.stage);
   const currentIndex = PIPELINE_STAGE_ORDER.indexOf(run.stage);
@@ -177,6 +186,23 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
         </StageCard>
       )}
 
+      {generatedImage && (
+        <ImageReviewCard runId={run.id} image={generatedImage} busy={busy} setBusy={setBusy} setError={setError} onDone={() => router.refresh()} />
+      )}
+
+      {run.stage === "DRAFT" && !generatedImage && (
+        <div className="flex gap-2">
+          <ActionBar busy={busy} label="Generate Image" onClick={() => runStage(() => advanceImageAction(run.id))} />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => runStage(() => skipImageStageAction(run.id))}
+            className="px-5 py-3 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm whitespace-nowrap"
+          >
+            Skip
+          </button>
+        </div>
+      )}
       {content?.metaTitle && (
         <StageCard title="SEO" done>
           <dl className="grid grid-cols-1 gap-2 text-sm">
@@ -186,18 +212,29 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
         </StageCard>
       )}
 
-      {internalLinks && (
+      {run.stage === "SEO" && (
+        <InternalLinksReviewCard
+          runId={run.id}
+          suggestions={internalLinks}
+          busy={busy}
+          setBusy={setBusy}
+          setError={setError}
+          onDone={() => router.refresh()}
+        />
+      )}
+
+      {internalLinks && run.stage !== "SEO" && (
         <StageCard title="Internal Links" done>
           {internalLinks.length === 0 ? (
             <p className="text-sm text-caption">No internal links were applied.</p>
           ) : (
             <ul className="space-y-1 text-sm">
-              {internalLinks.map((l, i) => (
-                <li key={i} className="flex items-center gap-2">
+              {internalLinks.map((l) => (
+                <li key={l.id} className="flex items-center gap-2">
                   {l.applied ? <CheckCircle2 size={14} className="text-green-600 shrink-0" /> : <AlertTriangle size={14} className="text-amber-500 shrink-0" />}
                   <span className="text-foreground">&ldquo;{l.anchorText}&rdquo;</span>
                   <span className="text-caption">→ {l.targetUrl}</span>
-                  {!l.applied && <span className="text-xs text-caption">({l.reason})</span>}
+                  <span className="text-xs text-caption">({l.status === "approved" && !l.applied ? "approved, not applied" : l.status})</span>
                 </li>
               ))}
             </ul>
@@ -214,22 +251,30 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
       )}
 
       {qaReport && (
-        <StageCard title="QA" done>
+        <StageCard title="Quality Gate" done>
           <p className="text-sm text-caption mb-3">{qaReport.summary} — {qaReport.wordCount} words.</p>
-          <ul className="space-y-1.5 text-sm">
-            {qaReport.checks.map((c, i) => (
-              <li key={i} className="flex items-start gap-2">
-                {c.passed ? <CheckCircle2 size={14} className="text-green-600 mt-0.5 shrink-0" /> : <AlertTriangle size={14} className="text-amber-500 mt-0.5 shrink-0" />}
-                <span>
-                  <span className="text-foreground">{c.label}</span>
-                  {c.note && <span className="text-caption"> — {c.note}</span>}
-                </span>
-              </li>
+          <div className="space-y-3">
+            {groupChecksByCategory(qaReport.checks).map(([category, checks]) => (
+              <div key={category}>
+                <div className="text-xs font-medium text-caption uppercase tracking-wide mb-1">{category}</div>
+                <ul className="space-y-1 text-sm">
+                  {checks.map((c, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      {c.passed ? <CheckCircle2 size={14} className="text-green-600 mt-0.5 shrink-0" /> : <AlertTriangle size={14} className="text-amber-500 mt-0.5 shrink-0" />}
+                      <span>
+                        <span className="text-foreground">{c.label}</span>
+                        {c.note && <span className="text-caption"> — {c.note}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
           {!qaReport.overallPassed && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
-              One or more checks didn&apos;t pass — review the notes above before approving. This doesn&apos;t block approval; it&apos;s your call.
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-4">
+              One or more checks didn&apos;t pass — review the notes above. This is advisory, not a block: human approval is mandatory either way, and it&apos;s the
+              approver&apos;s call.
             </p>
           )}
         </StageCard>
@@ -381,12 +426,281 @@ function ListBlock({ label, items }: { label: string; items: string[] }) {
   );
 }
 
+// Preserves first-seen order across the 10 named categories rather than
+// alphabetizing — matches the order quality-gate checks are actually
+// produced in (lib/content-pipeline/stages.ts's runQaStage).
+function groupChecksByCategory(checks: QaCheck[]): [string, QaCheck[]][] {
+  const order: string[] = [];
+  const byCategory = new Map<string, QaCheck[]>();
+  for (const check of checks) {
+    if (!byCategory.has(check.category)) {
+      byCategory.set(check.category, []);
+      order.push(check.category);
+    }
+    byCategory.get(check.category)!.push(check);
+  }
+  return order.map((category) => [category, byCategory.get(category)!]);
+}
+
 function KeywordChip({ keyword, volume, highlight }: { keyword: string; volume?: number | null; highlight?: boolean }) {
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border mr-2 mb-1 ${highlight ? "bg-brand-orange-deep text-white border-brand-orange-deep" : "border-border text-caption"}`}>
       {keyword}
       {typeof volume === "number" && <span className="opacity-70">· {volume}/mo</span>}
     </span>
+  );
+}
+
+function ImageReviewCard({
+  runId,
+  image,
+  busy,
+  setBusy,
+  setError,
+  onDone,
+}: {
+  runId: string;
+  image: GeneratedImage;
+  busy: boolean;
+  setBusy: (v: boolean) => void;
+  setError: (v: string | null) => void;
+  onDone: () => void;
+}) {
+  const [altText, setAltText] = useState(image.altText);
+  const [savingAlt, setSavingAlt] = useState(false);
+
+  const act = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
+    setBusy(true);
+    setError(null);
+    const result = await fn();
+    setBusy(false);
+    if (!result.success) {
+      setError(result.error || "Something went wrong");
+      return;
+    }
+    onDone();
+  };
+
+  const saveAltText = async () => {
+    setSavingAlt(true);
+    const result = await updatePendingImageAltTextAction(runId, altText);
+    setSavingAlt(false);
+    if (!result.success) {
+      setError(result.error || "Failed to save alt text");
+      return;
+    }
+    onDone();
+  };
+
+  const altTextChanged = altText !== image.altText;
+
+  return (
+    <StageCard title="Image" done={image.approved}>
+      <div className="flex gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={image.url} alt={image.altText} className="w-40 h-40 object-cover rounded-md border border-border shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div>
+            <label className="text-xs text-caption">Alt text</label>
+            {image.approved ? (
+              <p className="text-sm text-foreground">{image.altText}</p>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={altText}
+                  onChange={(e) => setAltText(e.target.value)}
+                  className="flex-1 px-2 py-1 border border-border rounded-md bg-background text-sm text-foreground"
+                />
+                {altTextChanged && (
+                  <button
+                    type="button"
+                    disabled={savingAlt || !altText.trim()}
+                    onClick={saveAltText}
+                    className="px-3 py-1 border border-border rounded-md hover:bg-background disabled:opacity-50 text-xs shrink-0"
+                  >
+                    {savingAlt ? "Saving…" : "Save"}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="text-xs text-caption">
+            {image.provider} / {image.model}
+          </div>
+          {image.approved ? (
+            <p className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
+              <CheckCircle2 size={14} /> Attached to content
+            </p>
+          ) : (
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={busy || altTextChanged}
+                onClick={() => act(() => attachGeneratedImageAction(runId))}
+                className="px-3 py-1.5 bg-brand-orange-deep text-white rounded-md hover:bg-brand-orange disabled:opacity-50 text-xs font-medium"
+                title={altTextChanged ? "Save your alt text edit first" : undefined}
+              >
+                Approve & Attach
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => act(() => advanceImageAction(runId))}
+                className="px-3 py-1.5 border border-border rounded-md hover:bg-background disabled:opacity-50 text-xs"
+              >
+                Regenerate
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => act(() => skipImageStageAction(runId))}
+                className="px-3 py-1.5 text-caption hover:text-foreground text-xs underline"
+              >
+                Skip
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </StageCard>
+  );
+}
+
+// Bundles its own generate/regenerate trigger (same reason ImageReviewCard
+// does) rather than going through the generic "whatever comes next" action
+// bar — this stage has its own multi-row review state that a single
+// generic button can't represent. "Source" is this run's own content
+// title, shown as its own column for every row even though it's constant
+// here — see LinkSuggestion's own comment on why.
+function InternalLinksReviewCard({
+  runId,
+  suggestions,
+  busy,
+  setBusy,
+  setError,
+  onDone,
+}: {
+  runId: string;
+  suggestions: LinkSuggestion[] | null;
+  busy: boolean;
+  setBusy: (v: boolean) => void;
+  setError: (v: string | null) => void;
+  onDone: () => void;
+}) {
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+
+  const generate = async () => {
+    setBusy(true);
+    setError(null);
+    const result = await advanceInternalLinksAction(runId);
+    setBusy(false);
+    if (!result.success) {
+      setError(result.error || "Failed to generate link suggestions");
+      return;
+    }
+    onDone();
+  };
+
+  const decide = async (suggestionId: string, decision: "approved" | "rejected") => {
+    setDecidingId(suggestionId);
+    setError(null);
+    const result = await decideLinkSuggestionAction(runId, suggestionId, decision);
+    setDecidingId(null);
+    if (!result.success) {
+      setError(result.error || "Failed to record decision");
+      return;
+    }
+    onDone();
+  };
+
+  const apply = async () => {
+    setBusy(true);
+    setError(null);
+    const result = await applyInternalLinksAction(runId);
+    setBusy(false);
+    if (!result.success) {
+      setError(result.error || "Failed to apply internal links");
+      return;
+    }
+    onDone();
+  };
+
+  if (!suggestions) {
+    return <ActionBar busy={busy} label="Generate Internal Link Suggestions" onClick={generate} />;
+  }
+
+  const pendingCount = suggestions.filter((s) => s.status === "pending").length;
+
+  return (
+    <StageCard title="Internal Links">
+      <p className="text-xs text-caption mb-3">AI suggestions — each needs your approval or rejection before they can be applied.</p>
+      <div className="space-y-2">
+        {suggestions.map((s) => (
+          <div key={s.id} className="border border-border rounded-md p-3 text-sm space-y-1">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-xs text-caption">Source: </span>
+                <span className="text-foreground">{s.sourceTitle}</span>
+              </div>
+              <div>
+                <span className="text-xs text-caption">Target: </span>
+                <span className="text-foreground">{s.targetTitle}</span>
+              </div>
+            </div>
+            <div>
+              <span className="text-xs text-caption">Anchor: </span>
+              <span className="text-foreground">&ldquo;{s.anchorText}&rdquo;</span>
+            </div>
+            <div>
+              <span className="text-xs text-caption">Reason: </span>
+              <span className="text-caption">{s.reason}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1">
+              {s.status === "pending" ? (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={decidingId === s.id}
+                    onClick={() => decide(s.id, "approved")}
+                    className="px-3 py-1 bg-brand-orange-deep text-white rounded-md hover:bg-brand-orange disabled:opacity-50 text-xs"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    disabled={decidingId === s.id}
+                    onClick={() => decide(s.id, "rejected")}
+                    className="px-3 py-1 border border-border rounded-md hover:bg-background disabled:opacity-50 text-xs"
+                  >
+                    Reject
+                  </button>
+                </div>
+              ) : (
+                <span className={`flex items-center gap-1.5 text-xs ${s.status === "approved" ? "text-green-600 dark:text-green-400" : "text-caption"}`}>
+                  {s.status === "approved" && <CheckCircle2 size={12} />}
+                  {s.status === "invalid" ? `Invalid — ${s.invalidReason}` : s.status}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button
+          type="button"
+          disabled={busy || pendingCount > 0}
+          onClick={apply}
+          title={pendingCount > 0 ? "Every suggestion needs a decision first" : undefined}
+          className="px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm font-medium"
+        >
+          {pendingCount > 0 ? `Apply Links (${pendingCount} pending)` : "Apply Links"}
+        </button>
+        <button type="button" disabled={busy} onClick={generate} className="px-4 py-2 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm">
+          Regenerate suggestions
+        </button>
+      </div>
+    </StageCard>
   );
 }
 

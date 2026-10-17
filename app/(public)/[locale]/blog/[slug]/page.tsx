@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: social.title,
     description: social.description,
     alternates: { canonical, languages },
-    robots: buildRobotsMeta(post.isIndexable),
+    robots: buildRobotsMeta(post.isIndexable, post.allowFollow),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };

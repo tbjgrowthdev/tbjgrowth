@@ -21,3 +21,17 @@ export function estimateCostUsd(provider: string, model: string, inputTokens: nu
   if (!rates) return null;
   return (inputTokens / 1_000_000) * rates.inputPer1M + (outputTokens / 1_000_000) * rates.outputPer1M;
 }
+
+// Flat USD per generated image — image models are priced per-image (or
+// per-megapixel-tier), not per-token, so this is a separate table from
+// RATES above rather than forcing image jobs through the token math.
+// Same PLACEHOLDER caveat as RATES: not verified against a live pricing
+// page. Unknown provider:model returns null, same honesty rule as above.
+const IMAGE_RATES: Record<string, number> = {
+  "openai:gpt-image-1": 0.04,
+  "gemini:gemini-2.5-flash-image": 0.02,
+};
+
+export function estimateImageCostUsd(provider: string, model: string): number | null {
+  return IMAGE_RATES[`${provider}:${model}`] ?? null;
+}

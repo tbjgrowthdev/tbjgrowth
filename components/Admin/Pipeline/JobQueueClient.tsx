@@ -22,6 +22,7 @@ export default function JobQueueClient({ jobs }: { jobs: Job[] }) {
   const [error, setError] = useState<string | null>(null);
 
   const retry = async (job: Job) => {
+    if (!job.pipelineRunId) return; // Content Refresh jobs: regenerate from the refresh's own detail page instead.
     setRetrying(job.id);
     setError(null);
     const result = await retryJobAction(job.pipelineRunId, job.stage);
@@ -33,12 +34,18 @@ export default function JobQueueClient({ jobs }: { jobs: Job[] }) {
     router.refresh();
   };
 
+  const linkFor = (job: Job) => (job.pipelineRunId ? `/admin/ai-pipeline/${job.pipelineRunId}` : job.contentRefreshId ? `/admin/content-refresh/${job.contentRefreshId}` : null);
+
   const topicFor = (job: Job) => {
-    try {
-      return JSON.parse(job.pipelineRun.brief)?.topic || job.pipelineRunId;
-    } catch {
-      return job.pipelineRunId;
+    if (job.pipelineRun) {
+      try {
+        return JSON.parse(job.pipelineRun.brief)?.topic || job.pipelineRunId;
+      } catch {
+        return job.pipelineRunId;
+      }
     }
+    if (job.contentRefresh) return job.contentRefresh.draftTitle || "Content refresh";
+    return job.id;
   };
 
   const duration = (job: Job) => {
@@ -82,9 +89,13 @@ export default function JobQueueClient({ jobs }: { jobs: Job[] }) {
                 <tr key={job.id} className="hover:bg-background transition-colors">
                   <td className="px-4 py-3 font-mono text-xs text-caption">{job.id.slice(0, 10)}…</td>
                   <td className="px-4 py-3 text-foreground">
-                    <Link href={`/admin/ai-pipeline/${job.pipelineRunId}`} className="hover:text-brand-orange-deep dark:hover:text-brand-orange-light">
-                      {topicFor(job)}
-                    </Link>
+                    {linkFor(job) ? (
+                      <Link href={linkFor(job)!} className="hover:text-brand-orange-deep dark:hover:text-brand-orange-light">
+                        {topicFor(job)}
+                      </Link>
+                    ) : (
+                      topicFor(job)
+                    )}
                   </td>
                   <td className="px-4 py-3 text-caption">{STAGE_LABEL[job.stage]}</td>
                   <td className="px-4 py-3 text-caption">
@@ -101,7 +112,7 @@ export default function JobQueueClient({ jobs }: { jobs: Job[] }) {
                     {job.error || "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {job.status === "FAILED" && (
+                    {job.status === "FAILED" && job.pipelineRunId && (
                       <button
                         type="button"
                         disabled={retrying === job.id}

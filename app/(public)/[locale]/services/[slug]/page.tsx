@@ -43,7 +43,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   const { languages } = await buildHreflangAlternates("SERVICE", service.id, service.slug || slug, (s) => `/services/${s}`);
-  const canonical = `${baseUrl}${withLocalePrefix(locale.prefix, `/services/${service.slug || slug}`)}`;
+  // fallbackServices (shown when no real Service rows exist yet) predates
+  // canonicalUrl/allowFollow/schemaJson, hence the "in" guards here and below.
+  const canonical =
+    ("canonicalUrl" in service && service.canonicalUrl) || `${baseUrl}${withLocalePrefix(locale.prefix, `/services/${service.slug || slug}`)}`;
   const settings = await getSiteSettings();
 
   const social = resolveSocialMeta({
@@ -65,7 +68,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: social.title,
     description: social.description,
     alternates: { canonical, languages },
-    robots: buildRobotsMeta(service.isIndexable),
+    robots: buildRobotsMeta(service.isIndexable, "allowFollow" in service ? service.allowFollow : true),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };
@@ -92,10 +95,16 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             { name: "Services", path: withLocalePrefix(locale.prefix, "/services") },
             { name: service.title, path: withLocalePrefix(locale.prefix, `/services/${service.slug || slug}`) },
           ]),
-          serviceSchema(service),
+          // Service's own schemaJson (from the admin's Schema Builder) replaces
+          // the auto-generated serviceSchema when set — same override pattern
+          // as blog/[slug] and case-studies/[slug].
+          "schemaJson" in service && service.schemaJson ? null : serviceSchema(service),
           faqs.length > 0 ? faqPageSchema(faqs) : null,
         ]}
       />
+      {"schemaJson" in service && service.schemaJson && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: service.schemaJson }} />
+      )}
       <ServiceDetailClient service={{ ...service, content: sanitizeRichText(service.content) }} localePrefix={locale.prefix} />
     </>
   );

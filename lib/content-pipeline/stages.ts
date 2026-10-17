@@ -7,11 +7,18 @@ import { searchContent } from "@/lib/content-search";
 import { sanitizeRichText } from "@/lib/sanitize";
 import { fetchSearchVolume, fetchSerpOverview } from "@/lib/seo-services";
 import { callAiForJson } from "./ai";
-import { completeJob, failJob, startOrResumeJob } from "./jobs";
+import { completeJob, createImageJob, createTextJob, failJob, startOrResumeJob } from "./jobs";
+import { getActiveImageProvider } from "./providers";
+import { estimateImageCostUsd } from "./pricing";
 import { getForbiddenTerms } from "@/lib/brand-kb/context";
 import { retrieveApprovedSources } from "@/lib/rag/retrieve";
+import { uploadAndRegisterGeneratedImage } from "@/lib/cloudinary";
+import { checkAltText, checkDuplicateContent, checkLinks, checkMetadata, checkSchema, checkSeoHeadings } from "./quality-gate";
+import { getContentRecord, patchContent, publicUrlFor } from "./content-helpers";
 import {
+  buildAltTextPrompt,
   buildDraftPrompt,
+  buildImageGenerationPrompt,
   buildInternalLinksPrompt,
   buildOutlinePrompt,
   buildQaPrompt,
@@ -21,10 +28,13 @@ import {
   buildSeoPrompt,
 } from "./prompts";
 import type {
-  AppliedInternalLink,
   Brief,
+  GeneratedImage,
+  LinkSuggestion,
+  LinkSuggestionStatus,
   Outline,
   PipelineContentType,
+  QaCheck,
   QaReport,
   Research,
   SchemaNotes,
@@ -150,28 +160,6 @@ export async function deletePipelineRun(id: string): Promise<StageResult> {
 // an empty value), so patching one field always means "fetch, spread,
 // override, save" rather than sending just the changed key.
 // ------------------------------------------------------
-
-async function getContentRecord(contentType: PipelineContentType, id: string) {
-  return contentType === "POST"
-    ? prisma.post.findUnique({ where: { id }, include: { categories: true, tags: true } })
-    : prisma.caseStudy.findUnique({ where: { id } });
-}
-
-async function patchContent(contentType: PipelineContentType, id: string, patch: Record<string, unknown>) {
-  const current = await getContentRecord(contentType, id);
-  if (!current) return { success: false, error: "Content record not found" };
-  const payload: Record<string, unknown> = { ...current, ...patch, expectedUpdatedAt: current.updatedAt };
-  if (contentType === "POST") {
-    const { updatePost } = await import("@/app/(admin)/actions/posts");
-    return updatePost(id, payload);
-  }
-  const { updateCaseStudy } = await import("@/app/(admin)/actions/cases");
-  return updateCaseStudy(id, payload);
-}
-
-function publicUrlFor(contentType: PipelineContentType, slug: string): string {
-  return contentType === "POST" ? `/blog/${slug}` : `/case-studies/${slug}`;
-}
 
 // ------------------------------------------------------
 // Stage 2: Search Intent
@@ -339,6 +327,12 @@ export async function runDraftStage(runId: string): Promise<StageResult> {
         content: contentHtml,
         excerpt: outline.excerpt,
         focusKeyword: searchIntent.primaryKeyword,
+        // Carries the Search Intent stage's own secondary keyword picks
+        // straight onto the real row — same JSON string[] shape the
+        // Unified SEO Engine's SeoPanel reads/writes for manually-created
+        // content, just populated automatically here instead of left for
+        // an admin to type in by hand.
+        secondaryKeywords: JSON.stringify(searchIntent.secondaryKeywords.map((k) => k.keyword)),
       };
 
       let contentId: string;
@@ -379,6 +373,191 @@ export async function runDraftStage(runId: string): Promise<StageResult> {
 }
 
 // ------------------------------------------------------
+// Stage 5b: Image — Generate -> Store -> Optimize -> Generate alt text,
+// landing on a pending, unapproved GeneratedImage. Deliberately does NOT
+// use startOrResumeJob()'s idempotent pattern (see createImageJob's own
+// comment): "Regenerate" must be able to run this as many times as a
+// human wants before approving one result, so each call always does real
+// work and creates a fresh Job ID rather than short-circuiting on a prior
+// completed attempt. Nothing is attached to the real content row here —
+// that only happens in attachGeneratedImage, a separate, explicit human
+// action (see Stage 5c below).
+// ------------------------------------------------------
+
+export async function runImageStage(runId: string): Promise<StageResult> {
+  try {
+    const session = await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    if (run.stage !== "DRAFT") return wrongStage(`Expected stage DRAFT, run is at ${run.stage}`);
+    if (!run.contentId) return wrongStage("This run has no draft content yet");
+    const brief = parseJson<Brief>(run.brief);
+    const outline = parseJson<Outline>(run.outline);
+    if (!brief || !outline) return wrongStage("Could not read this run's prior stages");
+
+    const imagePromptText = await buildImageGenerationPrompt(brief, outline);
+    const imageProvider = getActiveImageProvider();
+
+    // Generate + Store + Optimize, tracked as their own job — completed
+    // (with real cost recorded) the moment the upload succeeds, before
+    // alt-text generation even starts. Real money was spent calling the
+    // image provider regardless of what happens next, so that cost must
+    // never end up attributed to a "FAILED" job just because a later,
+    // independent step (alt text) has a problem.
+    const imageJob = await createImageJob(runId, run.contentId);
+    let asset: { id: string };
+    let url: string;
+    try {
+      const { data, mimeType } = await imageProvider.generateImage(imagePromptText);
+      const uploaded = await uploadAndRegisterGeneratedImage(data, mimeType, {
+        folder: "AI Generated",
+        title: outline.title,
+        uploadedBy: { id: session.user.id, name: session.user.name ?? null, email: session.user.email ?? null },
+      });
+      asset = uploaded.asset;
+      url = uploaded.url;
+      await completeJob(imageJob.id, { flatCostUsd: estimateImageCostUsd(imageProvider.name, imageProvider.model) });
+    } catch (stageError: any) {
+      await failJob(imageJob.id, stageError?.message || String(stageError), stageError?.usage);
+      throw stageError;
+    }
+
+    // Alt text, as its own job — a failure here doesn't throw the whole
+    // stage out (the image itself is already safely stored): it falls
+    // back to a plain, usable default so there's always something for the
+    // human reviewer to approve or edit, never a blank/missing alt text.
+    const altTextJob = await createImageJob(runId, run.contentId);
+    let altText = outline.title;
+    try {
+      const altPrompt = await buildAltTextPrompt(outline, imagePromptText);
+      const { data: altData, usage } = await callAiForJson<{ altText: string }>(altPrompt.system, altPrompt.user);
+      altText = altData.altText;
+      await completeJob(altTextJob.id, { usage });
+    } catch (altError: any) {
+      await failJob(altTextJob.id, altError?.message || String(altError), altError?.usage);
+      // Deliberately not re-thrown — see comment above.
+    }
+    await prisma.mediaAsset.update({ where: { id: asset.id }, data: { altText } });
+
+    const generatedImage: GeneratedImage = {
+      mediaAssetId: asset.id,
+      url,
+      altText,
+      provider: imageProvider.name,
+      model: imageProvider.model,
+      approved: false,
+    };
+    const updated = await prisma.contentPipelineRun.update({
+      where: { id: runId },
+      data: { generatedImage: JSON.stringify(generatedImage) },
+    });
+
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Image stage failed for run ${runId}:`, error);
+    return wrongStage(error.message || "Image stage failed");
+  }
+}
+
+// ------------------------------------------------------
+// Stage 5c: Human review + attach — the explicit gate between "a human
+// looked at the generated image/alt text" and it actually becoming the
+// content's featuredImage/featuredImageAlt. Approving and attaching are
+// the same action: there's no "approved but not yet attached" state.
+// ------------------------------------------------------
+
+// Part of review, not a separate stage: lets the human correct the
+// AI-written (or fallback) alt text before approving, without having to
+// regenerate the whole image over it. Updates both the run's pending
+// record and the underlying MediaAsset, so they can never drift once
+// attached.
+export async function updatePendingImageAltText(runId: string, altText: string): Promise<StageResult> {
+  const trimmed = altText.trim();
+  if (!trimmed) return wrongStage("Alt text is required");
+  try {
+    await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    const generatedImage = parseJson<GeneratedImage>(run.generatedImage);
+    if (!generatedImage) return wrongStage("No generated image to update yet");
+    if (generatedImage.approved) return wrongStage("This image has already been attached");
+
+    await prisma.mediaAsset.update({ where: { id: generatedImage.mediaAssetId }, data: { altText: trimmed } });
+    const next: GeneratedImage = { ...generatedImage, altText: trimmed };
+    const updated = await prisma.contentPipelineRun.update({ where: { id: runId }, data: { generatedImage: JSON.stringify(next) } });
+
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Failed to update pending image alt text for run ${runId}:`, error);
+    return wrongStage(error.message || "Failed to update alt text");
+  }
+}
+
+export async function attachGeneratedImage(runId: string): Promise<StageResult> {
+  try {
+    const session = await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    if (run.stage !== "DRAFT") return wrongStage(`Expected stage DRAFT, run is at ${run.stage}`);
+    if (!run.contentId) return wrongStage("This run has no draft content yet");
+    const generatedImage = parseJson<GeneratedImage>(run.generatedImage);
+    if (!generatedImage) return wrongStage("No generated image to review yet");
+    if (generatedImage.approved) return wrongStage("This image has already been attached");
+
+    const patchResult = await patchContent(run.contentType as PipelineContentType, run.contentId, {
+      featuredImage: generatedImage.url,
+      featuredImageAlt: generatedImage.altText,
+    });
+    if (!patchResult.success) return wrongStage(patchResult.error || "Failed to attach the image to the content");
+
+    const approved: GeneratedImage = { ...generatedImage, approved: true, approvedAt: new Date().toISOString(), approvedById: session.user.id };
+    const updated = await prisma.contentPipelineRun.update({
+      where: { id: runId },
+      data: { stage: "IMAGE", generatedImage: JSON.stringify(approved) },
+    });
+
+    await logAudit({
+      action: "approve",
+      category: "Content",
+      entityType: "ContentPipelineRun",
+      entityId: runId,
+      entityLabel: generatedImage.mediaAssetId,
+      after: { mediaAssetId: generatedImage.mediaAssetId },
+    });
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Attach generated image failed for run ${runId}:`, error);
+    return wrongStage(error.message || "Failed to attach generated image");
+  }
+}
+
+// Not every piece of content needs an AI-generated featured image — this
+// advances past the Image stage without attaching one, leaving
+// featuredImage exactly as it was (unset, or whatever the admin set
+// manually via the full editor). Safe to call even after a pending,
+// unapproved generatedImage exists — skipping just means that pending
+// result is never attached; its MediaAsset row stays in the library,
+// same as any other unused generated attempt.
+export async function skipImageStage(runId: string): Promise<StageResult> {
+  try {
+    await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    if (run.stage !== "DRAFT") return wrongStage(`Expected stage DRAFT, run is at ${run.stage}`);
+
+    const updated = await prisma.contentPipelineRun.update({ where: { id: runId }, data: { stage: "IMAGE" } });
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Skip image stage failed for run ${runId}:`, error);
+    return wrongStage(error.message || "Failed to skip image stage");
+  }
+}
+
+// ------------------------------------------------------
 // Stage 6: SEO — patches the real content row's SEO fields
 // ------------------------------------------------------
 
@@ -386,7 +565,7 @@ export async function runSeoStage(runId: string): Promise<StageResult> {
   try {
     await requirePermission("EDIT");
     const run = await getRunOrThrow(runId);
-    if (run.stage !== "DRAFT") return wrongStage(`Expected stage DRAFT, run is at ${run.stage}`);
+    if (run.stage !== "IMAGE") return wrongStage(`Expected stage IMAGE, run is at ${run.stage}`);
     if (!run.contentId) return wrongStage("This run has no draft content yet");
     const searchIntent = parseJson<SearchIntent>(run.searchIntent);
     if (!searchIntent) return wrongStage("Could not read this run's search intent");
@@ -435,6 +614,12 @@ export async function runSeoStage(runId: string): Promise<StageResult> {
 // replacement (never trusts the model to hand back safely-rewritten HTML).
 // ------------------------------------------------------
 
+// Generates suggestions and stores them pending review — does NOT apply
+// anything or advance the stage. Same non-idempotent "fresh job every
+// call" shape as the Image stage: calling this again (whether first
+// "Generate" or a later "Regenerate") always does real work and discards
+// whatever suggestion batch was there before, including any decisions
+// already made on it.
 export async function runInternalLinksStage(runId: string): Promise<StageResult> {
   try {
     await requirePermission("EDIT");
@@ -445,8 +630,7 @@ export async function runInternalLinksStage(runId: string): Promise<StageResult>
     const content = await getContentRecord(run.contentType as PipelineContentType, run.contentId);
     if (!content) return wrongStage("Draft content not found");
 
-    const job = await startOrResumeJob(runId, "INTERNAL_LINKS", run.contentId);
-    if (job.alreadyCompleted) return { success: true, data: run };
+    const job = await createTextJob(runId, "INTERNAL_LINKS", run.contentId);
 
     try {
       const allItems = await searchContent({});
@@ -467,31 +651,36 @@ export async function runInternalLinksStage(runId: string): Promise<StageResult>
         prompt.system,
         prompt.user
       );
-      const { links } = linksData;
 
-      let html = content.content;
-      const applied: AppliedInternalLink[] = [];
       const usedUrls = new Set<string>();
-      for (const link of links) {
+      const suggestions: LinkSuggestion[] = linksData.links.map((link) => {
+        let status: LinkSuggestionStatus = "pending";
+        let invalidReason: string | undefined;
         if (usedUrls.has(link.targetUrl) || !candidates.some((c) => c.url === link.targetUrl)) {
-          applied.push({ anchorText: link.anchorText, targetUrl: link.targetUrl, targetTitle: link.targetTitle, applied: false, reason: "Invalid or duplicate target URL" });
-          continue;
+          status = "invalid";
+          invalidReason = "Invalid or duplicate target URL";
+        } else if (!content.content.includes(link.anchorText)) {
+          status = "invalid";
+          invalidReason = "Anchor text not found verbatim in content";
+        } else {
+          usedUrls.add(link.targetUrl);
         }
-        if (!html.includes(link.anchorText)) {
-          applied.push({ anchorText: link.anchorText, targetUrl: link.targetUrl, targetTitle: link.targetTitle, applied: false, reason: "Anchor text not found verbatim in content" });
-          continue;
-        }
-        html = html.replace(link.anchorText, `<a href="${link.targetUrl}">${link.anchorText}</a>`);
-        usedUrls.add(link.targetUrl);
-        applied.push({ anchorText: link.anchorText, targetUrl: link.targetUrl, targetTitle: link.targetTitle, applied: true });
-      }
-
-      const patchResult = await patchContent(run.contentType as PipelineContentType, run.contentId, { content: sanitizeRichText(html) });
-      if (!patchResult.success) throw new Error(patchResult.error || "Failed to save internal links");
+        return {
+          id: crypto.randomUUID(),
+          sourceTitle: content.title,
+          targetTitle: link.targetTitle,
+          targetUrl: link.targetUrl,
+          anchorText: link.anchorText,
+          reason: link.reason,
+          status,
+          invalidReason,
+          applied: false,
+        };
+      });
 
       const updated = await prisma.contentPipelineRun.update({
         where: { id: runId },
-        data: { stage: "INTERNAL_LINKS", internalLinks: JSON.stringify(applied) },
+        data: { internalLinks: JSON.stringify(suggestions) },
       });
       await completeJob(job.id, { usage });
       revalidatePath(`/admin/ai-pipeline/${runId}`);
@@ -504,6 +693,73 @@ export async function runInternalLinksStage(runId: string): Promise<StageResult>
     if (error instanceof AuthError) return wrongStage(error.message);
     console.error(`Internal Links stage failed for run ${runId}:`, error);
     return wrongStage(error.message || "Internal Links stage failed");
+  }
+}
+
+// Human review, one suggestion at a time — see Stage 5c's attachGeneratedImage comment for the same "approve/reject is a decision, applying is separate" shape.
+export async function decideLinkSuggestion(runId: string, suggestionId: string, decision: "approved" | "rejected"): Promise<StageResult> {
+  try {
+    await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    const suggestions = parseJson<LinkSuggestion[]>(run.internalLinks);
+    if (!suggestions) return wrongStage("No link suggestions to review yet");
+    const target = suggestions.find((s) => s.id === suggestionId);
+    if (!target) return wrongStage("Suggestion not found");
+    if (target.status !== "pending") return wrongStage("This suggestion has already been decided");
+
+    target.status = decision;
+    const updated = await prisma.contentPipelineRun.update({ where: { id: runId }, data: { internalLinks: JSON.stringify(suggestions) } });
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Failed to decide link suggestion for run ${runId}:`, error);
+    return wrongStage(error.message || "Failed to record decision");
+  }
+}
+
+// Finalizes the review: inserts every "approved" suggestion's anchor/link
+// into the content and advances the stage. Requires every suggestion to
+// have a decision first (no silently-skipped pending ones) — rejecting
+// everything is a valid way to proceed with zero links applied.
+export async function applyInternalLinks(runId: string): Promise<StageResult> {
+  try {
+    await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    if (run.stage !== "SEO") return wrongStage(`Expected stage SEO, run is at ${run.stage}`);
+    if (!run.contentId) return wrongStage("This run has no draft content yet");
+    const suggestions = parseJson<LinkSuggestion[]>(run.internalLinks);
+    if (!suggestions) return wrongStage("No link suggestions to apply yet");
+    if (suggestions.some((s) => s.status === "pending")) return wrongStage("Every suggestion needs a decision (approve or reject) before applying");
+
+    const content = await getContentRecord(run.contentType as PipelineContentType, run.contentId);
+    if (!content) return wrongStage("Draft content not found");
+
+    let html = content.content;
+    for (const suggestion of suggestions) {
+      if (suggestion.status !== "approved") continue;
+      if (!html.includes(suggestion.anchorText)) {
+        suggestion.status = "invalid";
+        suggestion.invalidReason = "Anchor text no longer present in content";
+        continue;
+      }
+      html = html.replace(suggestion.anchorText, `<a href="${suggestion.targetUrl}">${suggestion.anchorText}</a>`);
+      suggestion.applied = true;
+    }
+
+    const patchResult = await patchContent(run.contentType as PipelineContentType, run.contentId, { content: sanitizeRichText(html) });
+    if (!patchResult.success) return wrongStage(patchResult.error || "Failed to save internal links");
+
+    const updated = await prisma.contentPipelineRun.update({
+      where: { id: runId },
+      data: { stage: "INTERNAL_LINKS", internalLinks: JSON.stringify(suggestions) },
+    });
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Failed to apply internal links for run ${runId}:`, error);
+    return wrongStage(error.message || "Failed to apply internal links");
   }
 }
 
@@ -566,11 +822,17 @@ export async function runSchemaStage(runId: string): Promise<StageResult> {
 }
 
 // ------------------------------------------------------
-// Stage 9: QA — a handful of objective checks computed here (character
-// counts, keyword presence) plus the model's own qualitative review.
-// Advisory, not a hard gate: a failed check is surfaced to the human
-// approver, not blocked automatically — only a person signs off on
-// publishing, per the explicit Human Approval step.
+// Stage 9: Quality Gate — ten named checks before mandatory human
+// approval: Duplicate Content, Brand Voice, SEO, Search Intent, Facts,
+// Links, Schema, Metadata, Alt Text, and Quality. Six are deterministic,
+// computed in code (lib/content-pipeline/quality-gate.ts) rather than
+// trusted to the model; four (Brand Voice, Search Intent, Facts, Quality)
+// genuinely need judgment, so one AI call covers those. Advisory, not a
+// hard gate: a failed check is surfaced to the human approver, never
+// blocked automatically — a person always has to sign off regardless of
+// what passed or failed here (see approveRunForPublish, which requires
+// APPROVE permission specifically, not just EDIT, so the approver is
+// never required to be the same person who ran the pipeline).
 // ------------------------------------------------------
 
 export async function runQaStage(runId: string): Promise<StageResult> {
@@ -580,7 +842,9 @@ export async function runQaStage(runId: string): Promise<StageResult> {
     if (run.stage !== "SCHEMA") return wrongStage(`Expected stage SCHEMA, run is at ${run.stage}`);
     if (!run.contentId) return wrongStage("This run has no draft content yet");
     const searchIntent = parseJson<SearchIntent>(run.searchIntent);
-    if (!searchIntent) return wrongStage("Could not read this run's search intent");
+    const research = parseJson<Research>(run.research);
+    if (!searchIntent || !research) return wrongStage("Could not read this run's prior stages");
+    const appliedLinks = parseJson<LinkSuggestion[]>(run.internalLinks);
 
     const content = await getContentRecord(run.contentType as PipelineContentType, run.contentId);
     if (!content) return wrongStage("Draft content not found");
@@ -597,20 +861,40 @@ export async function runQaStage(runId: string): Promise<StageResult> {
       const forbiddenTerms = await getForbiddenTerms();
       const foundForbiddenTerms = forbiddenTerms.filter((term) => plainTextLower.includes(term.toLowerCase()));
 
-      const objectiveChecks = [
-        { label: "Meta title is 60 characters or fewer", passed: (content.metaTitle?.length ?? 0) > 0 && (content.metaTitle?.length ?? 0) <= 60 },
-        { label: "Meta description is 160 characters or fewer", passed: (content.metaDescription?.length ?? 0) > 0 && (content.metaDescription?.length ?? 0) <= 160 },
-        { label: "Focus keyword appears in the content", passed: plainTextLower.includes(keywordLower) },
-        { label: "Focus keyword appears in the meta title", passed: (content.metaTitle ?? "").toLowerCase().includes(keywordLower) },
-        { label: "Content is at least 600 words", passed: wordCount >= 600 },
-        { label: "Schema.org structured data is present", passed: Boolean(content.schemaJson) },
+      const duplicateCheck = await checkDuplicateContent(run.contentId, content.content);
+      const linksCheck = checkLinks(content.content, appliedLinks);
+      const schemaCheck = checkSchema(content.schemaJson);
+      const metadataCheck = checkMetadata(content);
+      const altTextCheck = checkAltText(content.featuredImage, content.featuredImageAlt);
+      const seoHeadingCheck = checkSeoHeadings(content.content, searchIntent.primaryKeyword);
+
+      const objectiveChecks: QaCheck[] = [
+        { category: "Duplicate Content", label: "Not substantially similar to other published content", ...duplicateCheck },
+        { category: "SEO", label: "Meta title is 60 characters or fewer", passed: (content.metaTitle?.length ?? 0) > 0 && (content.metaTitle?.length ?? 0) <= 60 },
+        { category: "SEO", label: "Meta description is 160 characters or fewer", passed: (content.metaDescription?.length ?? 0) > 0 && (content.metaDescription?.length ?? 0) <= 160 },
+        { category: "SEO", label: "Focus keyword appears in the content", passed: plainTextLower.includes(keywordLower) },
+        { category: "SEO", label: "Focus keyword appears in the meta title", passed: (content.metaTitle ?? "").toLowerCase().includes(keywordLower) },
+        { category: "SEO", label: "Focus keyword appears in a heading", ...seoHeadingCheck },
+        { category: "Links", label: "Applied internal links are intact; external links counted", ...linksCheck },
+        { category: "Schema", label: "Schema.org data is present and structurally valid", ...schemaCheck },
+        { category: "Metadata", label: "Focus keyword, OG, and Twitter metadata are all set", ...metadataCheck },
+        { category: "Alt Text", label: "Featured image has real alt text", ...altTextCheck },
+        { category: "Quality", label: "Content is at least 600 words", passed: wordCount >= 600 },
         ...(forbiddenTerms.length > 0
-          ? [{ label: "No forbidden terms from the Brand Knowledge Base", passed: foundForbiddenTerms.length === 0, note: foundForbiddenTerms.length > 0 ? `Found: ${foundForbiddenTerms.join(", ")}` : undefined }]
+          ? [{ category: "Brand Voice" as const, label: "No forbidden terms from the Brand Knowledge Base", passed: foundForbiddenTerms.length === 0, note: foundForbiddenTerms.length > 0 ? `Found: ${foundForbiddenTerms.join(", ")}` : undefined }]
           : []),
       ];
 
-      const prompt = await buildQaPrompt(content.title, content.metaTitle || "", content.metaDescription || "", content.content, searchIntent.primaryKeyword);
-      const { data: aiReview, usage } = await callAiForJson<{ checks: { label: string; passed: boolean; note?: string }[]; summary: string }>(prompt.system, prompt.user);
+      const prompt = await buildQaPrompt({
+        title: content.title,
+        metaTitle: content.metaTitle || "",
+        metaDescription: content.metaDescription || "",
+        contentHtml: content.content,
+        primaryKeyword: searchIntent.primaryKeyword,
+        questionsToAnswer: research.questionsToAnswer,
+        retrievedSources: research.retrievedSources,
+      });
+      const { data: aiReview, usage } = await callAiForJson<{ checks: QaCheck[]; summary: string }>(prompt.system, prompt.user);
 
       const allChecks = [...objectiveChecks, ...aiReview.checks];
       const qaReport: QaReport = {
@@ -633,21 +917,27 @@ export async function runQaStage(runId: string): Promise<StageResult> {
     }
   } catch (error: any) {
     if (error instanceof AuthError) return wrongStage(error.message);
-    console.error(`QA stage failed for run ${runId}:`, error);
-    return wrongStage(error.message || "QA stage failed");
+    console.error(`Quality Gate stage failed for run ${runId}:`, error);
+    return wrongStage(error.message || "Quality Gate stage failed");
   }
 }
 
 // ------------------------------------------------------
 // Stage 10: Human Approval — a deliberate manual gate, not an AI call.
-// Recorded on the run itself; the actual publish-permission check still
-// happens for real in the Publish stage via transitionContent, so approving
-// here never bypasses PUBLISH/CREATE permission checks.
+// Requires APPROVE specifically (not just EDIT) — the same permission the
+// main editorial workflow (lib/workflow.ts) requires to approve
+// hand-written content, and for the same reason: mandatory human approval
+// should mean a genuinely separate reviewing authority, not a rubber
+// stamp from whoever happened to run the pipeline (a Contributor has
+// CREATE/EDIT but not APPROVE, same as for ordinary content). Recorded on
+// the run itself; the actual publish-permission check still happens for
+// real in the Publish stage via transitionContent, so approving here
+// never bypasses PUBLISH/CREATE permission checks either.
 // ------------------------------------------------------
 
 export async function approveRunForPublish(runId: string): Promise<StageResult> {
   try {
-    const session = await requirePermission("EDIT");
+    const session = await requirePermission("APPROVE");
     const run = await getRunOrThrow(runId);
     if (run.stage !== "QA") return wrongStage(`Expected stage QA, run is at ${run.stage}`);
 

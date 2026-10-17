@@ -25,7 +25,16 @@ export async function getCostSummary(): Promise<CostSummary | null> {
 
   const priced = await prisma.aiJob.findMany({
     where: { costUsd: { not: null } },
-    select: { costUsd: true, totalTokens: true, provider: true, model: true, completedAt: true, queuedAt: true, pipelineRun: { select: { contentType: true } } },
+    select: {
+      costUsd: true,
+      totalTokens: true,
+      provider: true,
+      model: true,
+      completedAt: true,
+      queuedAt: true,
+      pipelineRun: { select: { contentType: true } },
+      contentRefresh: { select: { contentType: true } },
+    },
   });
 
   // Completed/failed jobs that DID record token usage but have no cost
@@ -60,7 +69,7 @@ export async function getCostSummary(): Promise<CostSummary | null> {
     modelEntry.jobCount += 1;
     modelMap.set(modelKey, modelEntry);
 
-    const contentType = job.pipelineRun?.contentType ?? "UNKNOWN";
+    const contentType = job.pipelineRun?.contentType ?? job.contentRefresh?.contentType ?? "UNKNOWN";
     const typeEntry = typeMap.get(contentType) ?? { cost: 0, jobCount: 0 };
     typeEntry.cost += cost;
     typeEntry.jobCount += 1;

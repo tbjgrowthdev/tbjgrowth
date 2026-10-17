@@ -9,10 +9,8 @@ import { uploadMediaAsset } from "@/app/(admin)/actions/media";
 import { slugify } from "@/lib/utils";
 import { AlertCircle, Upload, FolderOpen, CalendarClock } from "lucide-react";
 import MediaAssetPicker from "./Media/MediaAssetPicker";
-import SERPPreview from "./SERPPreview";
-import SEOScorePanel from "./SEOScorePanel";
-import SchemaBuilder from "./SchemaBuilder";
-import SocialSeoFields from "./SocialSeoFields";
+import SeoPanel from "./SeoPanel";
+import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import WorkflowPanel from "./WorkflowPanel";
 import AssignmentPanel from "./AssignmentPanel";
 import VersionHistoryPanel from "./VersionHistoryPanel";
@@ -52,6 +50,7 @@ export default function PostForm({
     metaTitle: initialData?.metaTitle || "",
     metaDescription: initialData?.metaDescription || "",
     focusKeyword: initialData?.focusKeyword || "",
+    secondaryKeywords: parseSecondaryKeywords(initialData?.secondaryKeywords),
     canonicalUrl: initialData?.canonicalUrl || "",
     twitterCard: initialData?.twitterCard || "",
     ogImage: initialData?.ogImage || "",
@@ -62,6 +61,7 @@ export default function PostForm({
     twitterImage: initialData?.twitterImage || "",
     schemaJson: initialData?.schemaJson || "",
     isIndexable: initialData?.isIndexable ?? true,
+    allowFollow: initialData?.allowFollow ?? true,
     categoryIds: initialData?.categories?.map((c: any) => c.id) || [],
     tagIds: initialData?.tags?.map((t: any) => t.id) || [],
   });
@@ -135,6 +135,7 @@ export default function PostForm({
     try {
       const isExisting = Boolean(initialData?.id);
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
+      const payload = { ...formData, secondaryKeywords: JSON.stringify(formData.secondaryKeywords) };
 
       if (isExisting && scheduleUpdate) {
         if (!scheduleUpdateDate || !scheduleUpdateTime) {
@@ -149,7 +150,7 @@ export default function PostForm({
           scheduleUpdateDate,
           scheduleUpdateTime,
           scheduleUpdateTimezone,
-          formData
+          payload
         );
         if (jobResult.success) {
           router.push("/admin/posts");
@@ -162,8 +163,8 @@ export default function PostForm({
       }
 
       const result = isExisting
-        ? await updatePost(initialData.id, { ...formData, changeSummary, expectedUpdatedAt: initialData.updatedAt })
-        : await createPost({ ...formData, changeSummary });
+        ? await updatePost(initialData.id, { ...payload, changeSummary, expectedUpdatedAt: initialData.updatedAt })
+        : await createPost({ ...payload, changeSummary });
 
       if (result.success) {
         if (slugChanged && confirm(
@@ -373,18 +374,6 @@ export default function PostForm({
           </div>
         )}
 
-        <div className="flex items-center gap-2 pt-2">
-          <input
-            type="checkbox"
-            id="isIndexable"
-            checked={formData.isIndexable}
-            onChange={(e) => setFormData({ ...formData, isIndexable: e.target.checked })}
-            className="w-4 h-4 rounded border-border"
-          />
-          <label htmlFor="isIndexable" className="text-sm text-muted">
-            Allow search engines to index this post (unchecking sets meta robots to noindex)
-          </label>
-        </div>
       </div>
 
       {initialData?.id && (
@@ -419,92 +408,15 @@ export default function PostForm({
         />
       </div>
 
-      {/* SEO Settings */}
-      <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-6">
-        <h2 className="text-xl font-semibold text-foreground mb-4">SEO Settings</h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Meta Title</label>
-              <input
-                type="text"
-                value={formData.metaTitle}
-                onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Meta Description</label>
-              <textarea
-                rows={3}
-                value={formData.metaDescription}
-                onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Focus Keyword</label>
-              <input
-                type="text"
-                value={formData.focusKeyword}
-                onChange={(e) => setFormData({ ...formData, focusKeyword: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Canonical URL</label>
-              <input
-                type="text"
-                value={formData.canonicalUrl}
-                onChange={(e) => setFormData({ ...formData, canonicalUrl: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-                placeholder="https://example.com/canonical-url"
-              />
-            </div>
-
-          </div>
-
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-muted">Live SERP Preview</label>
-              <SERPPreview
-                title={formData.metaTitle}
-                description={formData.metaDescription}
-                slug={`blog/${formData.slug}`}
-              />
-            </div>
-
-            <SEOScorePanel
-              content={formData.content}
-              title={formData.metaTitle}
-              description={formData.metaDescription}
-              focusKeyword={formData.focusKeyword}
-            />
-          </div>
-        </div>
-
-        {/* Social SEO */}
-        <div className="mt-8 pt-6 border-t border-border">
-          <h3 className="text-lg font-medium text-foreground mb-4">Social Sharing (OpenGraph &amp; Twitter)</h3>
-          <SocialSeoFields
-            data={formData}
-            onChange={(field, value) => setFormData({ ...formData, [field]: value })}
-          />
-        </div>
-
-        {/* Schema Builder Section */}
-        <div className="mt-8 pt-6 border-t border-border">
-          <h3 className="text-lg font-medium text-foreground mb-4">Schema Markup (JSON-LD)</h3>
-          <SchemaBuilder
-            initialSchema={formData.schemaJson}
-            onChange={(schemaJson) => setFormData({ ...formData, schemaJson })}
-          />
-        </div>
-      </div>
+      <SeoPanel
+        data={formData}
+        onChange={(field, value) => setFormData({ ...formData, [field]: value })}
+        secondaryKeywords={formData.secondaryKeywords}
+        onSecondaryKeywordsChange={(secondaryKeywords) => setFormData({ ...formData, secondaryKeywords })}
+        content={formData.content}
+        slugPreviewPath={`blog/${formData.slug}`}
+        contentLabel="post"
+      />
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-muted">Change Summary (optional)</label>

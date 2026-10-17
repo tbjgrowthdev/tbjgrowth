@@ -268,3 +268,234 @@ export const fetchGSCClicks = async (): Promise<GSCStats | null> => {
     return null;
   }
 };
+
+export type SearchQueryStat = { query: string; clicks: number; impressions: number; ctr: number; position: number };
+
+/**
+ * Every query Search Console has impression data for over the last 90
+ * days (a longer window than the page-trend functions below — query-level
+ * rows are sparser, so 30 days is often too thin to be useful), sorted by
+ * impressions descending. The Content Recommendations engine's keyword-gap
+ * detection (lib/content-recommendations/) uses this as its raw demand
+ * signal: queries people already search that land on the site somehow,
+ * cross-referenced against existing content to find ones with nothing
+ * written for them yet.
+ */
+export async function fetchTopSearchQueries(limit = 200): Promise<SearchQueryStat[] | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.gscSiteUrl) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 90);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  try {
+    const res = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(integration.gscSiteUrl)}/searchAnalytics/query`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ startDate: fmt(startDate), endDate: fmt(endDate), dimensions: ["query"], rowLimit: 5000 }),
+    });
+    if (!res.ok) {
+      console.error(`GSC top queries request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    type Row = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number };
+    const rows: Row[] = data.rows || [];
+    return rows
+      .map((r) => ({ query: r.keys?.[0] ?? "", clicks: r.clicks ?? 0, impressions: r.impressions ?? 0, ctr: r.ctr ?? 0, position: r.position ?? 0 }))
+      .sort((a, b) => b.impressions - a.impressions)
+      .slice(0, limit);
+  } catch (error) {
+    console.error("GSC top queries call failed:", error);
+    return null;
+  }
+}
+
+export type QueryPageRow = { query: string; page: string; impressions: number; clicks: number };
+
+/**
+ * Every (query, page) combination Search Console has impression data for
+ * over the last 90 days, filtered to a minimum impression floor per row.
+ * The Content Cannibalization detector's primary signal: if two different
+ * internal pages both show up in this list for the *same* query, Google
+ * is already splitting that query's authority between them — the
+ * clearest real evidence of cannibalization there is, stronger than any
+ * text-similarity heuristic.
+ */
+export async function fetchQueryPageOverlap(minImpressions = 5): Promise<QueryPageRow[] | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.gscSiteUrl) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 90);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  try {
+    const res = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(integration.gscSiteUrl)}/searchAnalytics/query`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ startDate: fmt(startDate), endDate: fmt(endDate), dimensions: ["query", "page"], rowLimit: 5000 }),
+    });
+    if (!res.ok) {
+      console.error(`GSC query/page overlap request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    type Row = { keys?: string[]; clicks?: number; impressions?: number };
+    const rows: Row[] = data.rows || [];
+    return rows
+      .map((r) => ({ query: r.keys?.[0] ?? "", page: r.keys?.[1] ?? "", impressions: r.impressions ?? 0, clicks: r.clicks ?? 0 }))
+      .filter((r) => r.impressions >= minImpressions);
+  } catch (error) {
+    console.error("GSC query/page overlap call failed:", error);
+    return null;
+  }
+}
+
+// --- Per-page trend data, for the Content Refresh Engine's decline detection ---
+
+export type PageTrafficTrend = { recentSessions: number; priorSessions: number };
+
+/**
+ * GA4 sessions for one exact page path, last-30-days vs. the 30 days
+ * before that — two named date ranges in a single GA4 Data API request
+ * (the API supports several dateRanges in one call, distinguished by the
+ * "dateRange" dimension in the response), filtered to that one page.
+ */
+export async function fetchPageTrafficTrend(pagePath: string): Promise<PageTrafficTrend | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.ga4PropertyId) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${integration.ga4PropertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dateRanges: [
+          { startDate: "30daysAgo", endDate: "today", name: "recent" },
+          { startDate: "60daysAgo", endDate: "31daysAgo", name: "prior" },
+        ],
+        dimensions: [{ name: "pagePath" }, { name: "dateRange" }],
+        metrics: [{ name: "sessions" }],
+        dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { value: pagePath, matchType: "EXACT" } } },
+      }),
+    });
+    if (!res.ok) {
+      console.error(`GA4 page trend request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    type Row = { dimensionValues?: { value?: string }[]; metricValues?: { value?: string }[] };
+    const rows: Row[] = data.rows || [];
+    const recent = rows.find((r) => r.dimensionValues?.[1]?.value === "recent");
+    const prior = rows.find((r) => r.dimensionValues?.[1]?.value === "prior");
+    return { recentSessions: Number(recent?.metricValues?.[0]?.value || 0), priorSessions: Number(prior?.metricValues?.[0]?.value || 0) };
+  } catch (error) {
+    console.error("GA4 page trend call failed:", error);
+    return null;
+  }
+}
+
+export type PageConversionStats = { conversions: number; sessions: number };
+
+/**
+ * GA4's standard "conversions" metric (counts whatever events are marked
+ * as key events in that GA4 property) for one exact page path, last 30
+ * days, alongside its sessions for computing a rate. If the property has
+ * no key events configured this legitimately returns 0 for every page —
+ * that's real data saying "nothing is marked as a conversion here," not
+ * a failure, and the Content Health Score (lib/content-health/) treats
+ * an all-zero result differently from a null (not connected) result.
+ */
+export async function fetchPageConversions(pagePath: string): Promise<PageConversionStats | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.ga4PropertyId) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${integration.ga4PropertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dimensions: [{ name: "pagePath" }],
+        metrics: [{ name: "conversions" }, { name: "sessions" }],
+        dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { value: pagePath, matchType: "EXACT" } } },
+      }),
+    });
+    if (!res.ok) {
+      console.error(`GA4 page conversions request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    const row = data.rows?.[0];
+    return { conversions: Number(row?.metricValues?.[0]?.value || 0), sessions: Number(row?.metricValues?.[1]?.value || 0) };
+  } catch (error) {
+    console.error("GA4 page conversions call failed:", error);
+    return null;
+  }
+}
+
+export type PageSearchTrend = { recentClicks: number; priorClicks: number; recentCtr: number; priorCtr: number; recentPosition: number; priorPosition: number };
+
+/**
+ * GSC clicks/CTR/position for one exact page URL, last-30-days vs. the 30
+ * days before that. Unlike GA4's Data API, Search Console's
+ * searchAnalytics.query takes exactly one date range per request, so this
+ * is two sequential calls rather than one.
+ */
+export async function fetchPageSearchTrend(pageUrl: string): Promise<PageSearchTrend | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.gscSiteUrl) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const windowDates = (daysAgoStart: number, daysAgoEnd: number) => {
+    const end = new Date();
+    end.setDate(end.getDate() - daysAgoEnd);
+    const start = new Date();
+    start.setDate(start.getDate() - daysAgoStart);
+    return { startDate: fmt(start), endDate: fmt(end) };
+  };
+
+  async function queryWindow(startDate: string, endDate: string) {
+    const res = await fetch(`https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(integration!.gscSiteUrl!)}/searchAnalytics/query`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        startDate,
+        endDate,
+        dimensionFilterGroups: [{ filters: [{ dimension: "page", operator: "equals", expression: pageUrl }] }],
+      }),
+    });
+    if (!res.ok) {
+      console.error(`GSC page trend request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    const row = data.rows?.[0];
+    return { clicks: row?.clicks ?? 0, ctr: row?.ctr ?? 0, position: row?.position ?? 0 };
+  }
+
+  try {
+    const recentWindow = windowDates(30, 0);
+    const priorWindow = windowDates(60, 31);
+    const [recent, prior] = await Promise.all([queryWindow(recentWindow.startDate, recentWindow.endDate), queryWindow(priorWindow.startDate, priorWindow.endDate)]);
+    if (!recent || !prior) return null;
+    return { recentClicks: recent.clicks, priorClicks: prior.clicks, recentCtr: recent.ctr, priorCtr: prior.ctr, recentPosition: recent.position, priorPosition: prior.position };
+  } catch (error) {
+    console.error("GSC page trend call failed:", error);
+    return null;
+  }
+}

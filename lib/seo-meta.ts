@@ -12,10 +12,19 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
  * Indexable production content gets unrestricted rich-result previews (what a
  * marketing site wants); noindex content gets a plain noindex/nofollow with no
  * preview directives, since those are moot once a page is excluded anyway.
+ *
+ * `follow` is the Unified SEO Engine's Robots "allow search engines to
+ * follow links on this page" toggle — independent of `indexable` (a page
+ * can be indexed but ask crawlers not to follow its outbound links, or
+ * vice versa). Defaults to `true` so every pre-existing caller that
+ * doesn't pass it keeps today's behavior unchanged.
  */
-export function buildRobotsMeta(indexable: boolean): NonNullable<Metadata["robots"]> {
+export function buildRobotsMeta(indexable: boolean, follow: boolean = true): NonNullable<Metadata["robots"]> {
   if (!indexable) {
     return { index: false, follow: false };
+  }
+  if (!follow) {
+    return { index: true, follow: false };
   }
   return {
     index: true,
@@ -151,7 +160,7 @@ export async function getPageMetadata(
     title: social.title,
     description: social.description,
     alternates: { canonical: canonicalUrl, languages },
-    robots: buildRobotsMeta(page.isIndexable),
+    robots: buildRobotsMeta(page.isIndexable, page.allowFollow),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };

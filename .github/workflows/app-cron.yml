@@ -1,4 +1,4 @@
-name: App cron (scheduled jobs + link check)
+name: App cron (scheduled jobs + link check + content refresh + content recommendations + content cannibalization + content health)
 
 # vercel.json's "crons" config only fires when the app is actually hosted on
 # Vercel — it has had no effect since the app moved to Cloudflare Workers,
@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: "*/5 * * * *" # scheduled-jobs: publish/unpublish/update at their scheduled time
     - cron: "0 3 * * *" # link-check: nightly broken-link crawl
+    - cron: "0 4 * * 1" # content-refresh-scan: weekly (Monday) detection scan
+    - cron: "0 5 * * 1" # content-recommendations-scan: weekly (Monday) keyword-gap scan
+    - cron: "0 6 * * 1" # content-cannibalization-scan: weekly (Monday) overlapping-content scan
+    - cron: "0 7 * * 1" # content-health-scan: weekly (Monday) health score recompute
   workflow_dispatch: {}
 
 jobs:
@@ -31,6 +35,54 @@ jobs:
       - name: Trigger link check
         run: |
           curl -fsS -X GET "${PRODUCTION_URL}/api/cron/link-check" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  content-refresh-scan:
+    if: github.event.schedule == '0 4 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger content refresh detection scan
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/content-refresh-scan" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  content-recommendations-scan:
+    if: github.event.schedule == '0 5 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger content recommendations keyword-gap scan
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/content-recommendations-scan" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  content-cannibalization-scan:
+    if: github.event.schedule == '0 6 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger content cannibalization scan
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/content-cannibalization-scan" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  content-health-scan:
+    if: github.event.schedule == '0 7 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger content health score recompute
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/content-health-scan" \
             -H "Authorization: Bearer ${CRON_SECRET}"
         env:
           PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}

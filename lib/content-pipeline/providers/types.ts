@@ -29,3 +29,18 @@ export class AiProviderError extends Error {
   // instead of only ever on success.
   usage?: AiUsage;
 }
+
+// A separate contract from AiProvider, with its own registry
+// (./image-index.ts) and its own env var (AI_IMAGE_PROVIDER) — Anthropic
+// has no image-generation API at all, so "the active text provider" and
+// "the active image provider" can never be the same selection mechanism.
+export interface AiImageResult {
+  data: ArrayBuffer;
+  mimeType: string;
+}
+
+export interface AiImageProvider {
+  name: string;
+  model: string;
+  generateImage(prompt: string): Promise<AiImageResult>;
+}

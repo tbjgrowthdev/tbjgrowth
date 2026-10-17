@@ -2,13 +2,17 @@
 
 import type { Brief } from "@/lib/content-pipeline/types";
 import {
+  applyInternalLinks,
   approveRunForPublish,
+  attachGeneratedImage,
   createPipelineRun,
+  decideLinkSuggestion,
   deletePipelineRun,
   getPipelineRun,
   getPipelineRuns,
   publishRun,
   runDraftStage,
+  runImageStage,
   runInternalLinksStage,
   runOutlineStage,
   runQaStage,
@@ -16,6 +20,8 @@ import {
   runSchemaStage,
   runSearchIntentStage,
   runSeoStage,
+  skipImageStage,
+  updatePendingImageAltText,
 } from "@/lib/content-pipeline/stages";
 import { getAllJobs, getJobsForRun } from "@/lib/content-pipeline/jobs";
 import { getCostSummary } from "@/lib/content-pipeline/costs";
@@ -54,12 +60,36 @@ export async function advanceDraftAction(runId: string) {
   return runDraftStage(runId);
 }
 
+export async function advanceImageAction(runId: string) {
+  return runImageStage(runId);
+}
+
+export async function attachGeneratedImageAction(runId: string) {
+  return attachGeneratedImage(runId);
+}
+
+export async function skipImageStageAction(runId: string) {
+  return skipImageStage(runId);
+}
+
+export async function updatePendingImageAltTextAction(runId: string, altText: string) {
+  return updatePendingImageAltText(runId, altText);
+}
+
 export async function advanceSeoAction(runId: string) {
   return runSeoStage(runId);
 }
 
 export async function advanceInternalLinksAction(runId: string) {
   return runInternalLinksStage(runId);
+}
+
+export async function decideLinkSuggestionAction(runId: string, suggestionId: string, decision: "approved" | "rejected") {
+  return decideLinkSuggestion(runId, suggestionId, decision);
+}
+
+export async function applyInternalLinksAction(runId: string) {
+  return applyInternalLinks(runId);
 }
 
 export async function advanceSchemaAction(runId: string) {
@@ -91,6 +121,7 @@ const RETRY_BY_STAGE: Record<string, (runId: string) => Promise<{ success: boole
   RESEARCH: runResearchStage,
   OUTLINE: runOutlineStage,
   DRAFT: runDraftStage,
+  IMAGE: runImageStage,
   SEO: runSeoStage,
   INTERNAL_LINKS: runInternalLinksStage,
   SCHEMA: runSchemaStage,
@@ -100,7 +131,10 @@ const RETRY_BY_STAGE: Record<string, (runId: string) => Promise<{ success: boole
 // Used by the global Job Queue list to retry a FAILED job without
 // navigating into that run's wizard first. Reuses the exact same
 // stage-advance functions the wizard calls — a retry from here and a click
-// on "Retry" inside the wizard are the same idempotent operation.
+// on "Retry"/"Regenerate" inside the wizard are the same operation. Most
+// of these are idempotent (a retry after COMPLETED is a safe no-op); IMAGE
+// and INTERNAL_LINKS are the two deliberate exceptions that always do
+// real work (see their own stage functions' comments).
 export async function retryJobAction(runId: string, stage: string) {
   const fn = RETRY_BY_STAGE[stage];
   if (!fn) return { success: false, error: `Stage "${stage}" cannot be retried from here` };

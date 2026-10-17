@@ -134,14 +134,16 @@ model Page {
   reviewDeadline DateTime?
 
   // SEO Fields
-  metaTitle       String?
-  metaDescription String?
-  focusKeyword    String?
-  ogImage         String?
-  twitterCard     String?
-  canonicalUrl    String?
-  schemaJson      String? @db.Text
-  isIndexable     Boolean @default(true)
+  metaTitle         String?
+  metaDescription   String?
+  focusKeyword      String?
+  secondaryKeywords String? @db.Text // JSON string[] — see lib/seo-fields.ts
+  ogImage           String?
+  twitterCard       String?
+  canonicalUrl      String?
+  schemaJson        String? @db.Text
+  isIndexable       Boolean @default(true)
+  allowFollow       Boolean @default(true) // the other half of the robots directive — see buildRobotsMeta() in lib/seo-meta.ts
 
   // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
   // metaDescription/ogImage, then to SiteSetting.defaultOgImage, when empty.
@@ -181,17 +183,19 @@ model Post {
   reviewDeadline DateTime?
 
   // SEO Fields
-  metaTitle        String?
-  metaDescription  String?
-  focusKeyword     String?
-  ogImage          String?
-  twitterCard      String?
-  canonicalUrl     String?
-  schemaJson       String? @db.Text
-  seoScore         Int?
-  readabilityScore Int?
-  keywordDensity   Float?
-  isIndexable      Boolean @default(true)
+  metaTitle         String?
+  metaDescription   String?
+  focusKeyword      String?
+  secondaryKeywords String? @db.Text // JSON string[] — see lib/seo-fields.ts
+  ogImage           String?
+  twitterCard       String?
+  canonicalUrl      String?
+  schemaJson        String? @db.Text
+  seoScore          Int?
+  readabilityScore  Int?
+  keywordDensity    Float?
+  isIndexable       Boolean @default(true)
+  allowFollow       Boolean @default(true) // the other half of the robots directive — see buildRobotsMeta() in lib/seo-meta.ts
 
   // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
   // metaDescription/ogImage/featuredImage, then SiteSetting.defaultOgImage.
@@ -267,12 +271,18 @@ enum PipelineStage {
   RESEARCH
   OUTLINE
   DRAFT
+  IMAGE
   SEO
   INTERNAL_LINKS
   SCHEMA
   QA
   APPROVAL
   PUBLISHED
+  // Not part of ContentPipelineRun's state machine (PIPELINE_STAGE_ORDER in
+  // lib/content-pipeline/types.ts) at all — used only to tag AiJob rows
+  // created for a ContentRefresh cycle, so the Job Queue/Cost Dashboard
+  // can show and price those jobs the same way as every other AI call.
+  REFRESH
 }
 
 // Tracks one run of the AI content pipeline (Brief -> Search Intent ->
@@ -296,13 +306,21 @@ model ContentPipelineRun {
 
   stage PipelineStage @default(BRIEF)
 
-  brief         String  @db.Text // JSON: topic/goal/audience/tone/notes/(case study fields)
-  searchIntent  String? @db.Text // JSON
-  research      String? @db.Text // JSON
-  outline       String? @db.Text // JSON
-  internalLinks String? @db.Text // JSON: links actually applied to the draft
-  schemaNotes   String? @db.Text // JSON: schema.org type chosen + notes
-  qaReport      String? @db.Text // JSON
+  brief          String  @db.Text // JSON: topic/goal/audience/tone/notes/(case study fields)
+  searchIntent   String? @db.Text // JSON
+  research       String? @db.Text // JSON
+  outline        String? @db.Text // JSON
+  internalLinks  String? @db.Text // JSON: links actually applied to the draft
+  schemaNotes    String? @db.Text // JSON: schema.org type chosen + notes
+  qaReport       String? @db.Text // JSON
+  // JSON: GeneratedImage (lib/content-pipeline/types.ts) — the latest
+  // AI-generated featured image pending human review. Overwritten on each
+  // "Regenerate" (the prior MediaAsset row is left in the library, not
+  // deleted — same append-only-in-spirit approach as everything else in
+  // this schema). `approved` flips true only once attachGeneratedImage()
+  // has actually written featuredImage/featuredImageAlt onto the real
+  // content row — approval and attachment are the same action, not two.
+  generatedImage String? @db.Text
 
   approvedAt   DateTime?
   approvedById String?
@@ -343,17 +361,24 @@ enum AiJobStatus {
 // died mid-flight is itself diagnostic), just not asynchronously processed
 // by a separate worker.
 model AiJob {
-  id             String             @id @default(cuid())
-  idempotencyKey String             @unique
-  pipelineRunId  String
-  pipelineRun    ContentPipelineRun @relation(fields: [pipelineRunId], references: [id], onDelete: Cascade)
-  contentId      String? // the real Post/CaseStudy id, once known (unset for pre-Draft stages)
-  stage          PipelineStage
-  provider       String // "anthropic"
-  model          String // actual model id used, e.g. "claude-sonnet-5-5"
-  status         AiJobStatus        @default(QUEUED)
-  error          String?            @db.Text
-  retryCount     Int                @default(0)
+  id               String              @id @default(cuid())
+  idempotencyKey   String              @unique
+  // Exactly one of pipelineRunId/contentRefreshId is set — a job always
+  // belongs to either a ContentPipelineRun or a ContentRefresh cycle,
+  // never both and never neither. Optional (not a discriminated union)
+  // because Prisma has no native way to express "exactly one of two FKs,"
+  // same pragmatic tradeoff as elsewhere in this schema.
+  pipelineRunId    String?
+  pipelineRun      ContentPipelineRun? @relation(fields: [pipelineRunId], references: [id], onDelete: Cascade)
+  contentRefreshId String?
+  contentRefresh   ContentRefresh?     @relation(fields: [contentRefreshId], references: [id], onDelete: Cascade)
+  contentId        String? // the real Post/CaseStudy id, once known (unset for pre-Draft stages)
+  stage            PipelineStage
+  provider         String // "anthropic"
+  model            String // actual model id used, e.g. "claude-sonnet-5-5"
+  status           AiJobStatus         @default(QUEUED)
+  error            String?             @db.Text
+  retryCount       Int                 @default(0)
 
   // Cost tracking — set on both COMPLETED and FAILED when the provider
   // actually returned a response (so a call that failed only because the
@@ -374,8 +399,58 @@ model AiJob {
   updatedAt   DateTime  @updatedAt
 
   @@index([pipelineRunId])
+  @@index([contentRefreshId])
   @@index([status])
   @@index([contentId])
+}
+
+enum ContentRefreshStatus {
+  DETECTED // flagged by a scan; no AI call has run yet
+  DRAFTING // an AI draft call is in flight
+  DRAFTED // a proposed revision exists, pending human approval
+  APPROVED // a human signed off; not yet applied
+  REJECTED // a human discarded this draft — a later scan can start a new cycle
+  APPLIED // the approved draft has been written onto the live content row
+}
+
+// One refresh cycle for one EXISTING, already-published piece of content —
+// never a new piece of content, and the live Post/CaseStudy row is never
+// touched until applyRefreshDraft() runs, after human approval. Detection
+// (lib/content-refresh/detect.ts) only ever creates/updates rows here; it
+// never writes to Post/CaseStudy. `draftContent`/the other draft* fields
+// are the proposed revision, staged — the same "look, never touch
+// published content automatically" principle as the AI Content Pipeline's
+// own mandatory Human Approval step, just for an edit to existing content
+// instead of a brand-new piece.
+model ContentRefresh {
+  id          String      @id @default(cuid())
+  contentType ContentType // POST | CASE_STUDY
+  contentId   String
+
+  // JSON: DetectedSignal[] (lib/content-refresh/types.ts) — what triggered
+  // this cycle (old content, outdated mentions, ranking/traffic/CTR decline).
+  signals String               @db.Text
+  status  ContentRefreshStatus @default(DETECTED)
+
+  draftTitle           String?
+  draftContent         String? @db.Text
+  draftExcerpt         String? @db.Text
+  draftMetaTitle       String?
+  draftMetaDescription String? @db.Text
+  changeSummary        String? @db.Text // the AI's own explanation of what it changed and why
+
+  createdById  String? // null when a scheduled scan (no human session) created this row, rather than an admin's own "Scan Now" click
+  approvedById String?
+  approvedAt   DateTime?
+  appliedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs AiJob[]
+
+  @@index([contentType, contentId])
+  @@index([status])
 }
 
 enum PromptCategory {
@@ -742,17 +817,19 @@ model CaseStudy {
   reviewDeadline DateTime?
 
   // SEO Fields
-  metaTitle        String?
-  metaDescription  String?
-  focusKeyword     String?
-  ogImage          String?
-  twitterCard      String?
-  canonicalUrl     String?
-  schemaJson       String? @db.Text
-  seoScore         Int?
-  readabilityScore Int?
-  keywordDensity   Float?
-  isIndexable      Boolean @default(true)
+  metaTitle         String?
+  metaDescription   String?
+  focusKeyword      String?
+  secondaryKeywords String? @db.Text // JSON string[] — see lib/seo-fields.ts
+  ogImage           String?
+  twitterCard       String?
+  canonicalUrl      String?
+  schemaJson        String? @db.Text
+  seoScore          Int?
+  readabilityScore  Int?
+  keywordDensity    Float?
+  isIndexable       Boolean @default(true)
+  allowFollow       Boolean @default(true) // the other half of the robots directive — see buildRobotsMeta() in lib/seo-meta.ts
 
   // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
   // metaDescription/ogImage/featuredImage, then SiteSetting.defaultOgImage.
@@ -830,12 +907,19 @@ model AgencyService {
   gradient     String? // Tailwind class, e.g., "from-blue-500 to-cyan-500"
   order        Int     @default(0) // For sorting on the frontend
 
-  // SEO Fields
-  metaTitle       String?
-  metaDescription String?
-  ogImage         String?
-  twitterCard     String?
-  isIndexable     Boolean @default(true)
+  // SEO Fields — brought up to parity with Post/Page/CaseStudy (focusKeyword/
+  // canonicalUrl/schemaJson/secondaryKeywords/allowFollow didn't exist on
+  // this model before the Unified SEO Engine's shared SeoPanel component).
+  metaTitle         String?
+  metaDescription   String?
+  focusKeyword      String?
+  secondaryKeywords String? @db.Text // JSON string[] — see lib/seo-fields.ts
+  canonicalUrl      String?
+  schemaJson        String? @db.Text
+  ogImage           String?
+  twitterCard       String?
+  isIndexable       Boolean @default(true)
+  allowFollow       Boolean @default(true) // the other half of the robots directive — see buildRobotsMeta() in lib/seo-meta.ts
 
   // Social SEO — per-content OG/Twitter overrides; fall back to metaTitle/
   // metaDescription/ogImage, then SiteSetting.defaultOgImage.
@@ -952,6 +1036,124 @@ model CompetitorDomain {
   name      String?
   notes     String?
   createdAt DateTime @default(now())
+}
+
+enum RecommendationPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RecommendationStatus {
+  NEW
+  IN_PROGRESS
+  DISMISSED
+}
+
+// Computed by lib/content-recommendations/ from keyword gaps (GSC queries
+// and tracked keywords with no dedicated content) cross-referenced against
+// existing Post/CaseStudy titles. Fully re-derivable from live data, so a
+// rescan is a safe upsert-by-keyword: NEW rows get their fields refreshed,
+// IN_PROGRESS/DISMISSED rows are left alone (see runRecommendationScan's
+// own comment) rather than being recreated or reset.
+model ContentRecommendation {
+  id      String @id @default(cuid())
+  keyword String @unique // the GSC query or TrackedKeyword term this gap was found from
+
+  topic           String // suggested working title
+  suggestedFormat String // e.g. "How-To Guide", "Listicle", "Comparison", "Explainer", "Case Study", "Standard Post" — a hint for the brief, not an enforced type
+  contentType     ContentType // POST | CASE_STUDY — PAGE/SERVICE unused by this feature, same convention as ContentPipelineRun.contentType
+
+  priority      RecommendationPriority
+  priorityScore Float // underlying number priority was bucketed from, for stable sort order within a bucket
+  reasoning     String                 @db.Text // human-readable explanation of the signals behind the score
+
+  suggestedPublishAt DateTime // spaced out from today using the site's own recent publish cadence + priority rank — see detect.ts
+  source             String // "gsc_query" | "tracked_keyword" — which signal this gap came from
+
+  status    RecommendationStatus @default(NEW)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([status])
+  @@index([priority])
+}
+
+enum CannibalizationAction {
+  MERGE
+  DIFFERENTIATE
+  REDIRECT
+  RETARGET
+}
+
+enum CannibalizationStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+// Computed by lib/content-cannibalization/ — a pair of published Post/
+// CaseStudy rows that appear to be competing for the same search intent.
+// contentIdA/contentIdB are stored in a canonical sort order (string
+// comparison, enforced in code) so a rescan upserts the same row instead
+// of creating the mirror image of an existing pair. Entirely advisory —
+// this system never merges, redirects, or edits anything itself; every
+// suggested action is carried out (or not) by a human elsewhere in the
+// admin (the Posts/CaseStudies editors, the Redirects manager), and
+// status here only ever changes via that human clicking Resolve/Dismiss.
+model ContentCannibalization {
+  id String @id @default(cuid())
+
+  contentTypeA ContentType
+  contentIdA   String
+  contentTypeB ContentType
+  contentIdB   String
+
+  similarity    Float // Jaccard word-overlap between the two pages' title+focusKeyword+content; 0 if this pair was only found via the GSC signal below
+  sharedQueries String @db.Text // JSON SharedQuery[] (query + each page's impressions); "[]" if this pair was only found via content similarity
+
+  suggestedAction CannibalizationAction
+  reasoning       String                @db.Text
+
+  status    CannibalizationStatus @default(OPEN)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@unique([contentIdA, contentIdB])
+  @@index([status])
+}
+
+enum ContentHealthGrade {
+  EXCELLENT
+  GOOD
+  NEEDS_ATTENTION
+  POOR
+}
+
+// A recomputed snapshot, not a lifecycle like ContentRefresh/
+// ContentRecommendation/ContentCannibalization above — there's nothing to
+// approve, dismiss, or apply here, just a number and its breakdown, so a
+// rescan always overwrites the existing row for that content outright.
+// Computed by lib/content-health/score.ts.
+model ContentHealthScore {
+  id          String      @id @default(cuid())
+  contentType ContentType
+  contentId   String
+
+  overallScore Float
+  grade        ContentHealthGrade
+
+  // JSON FactorScore[] (lib/content-health/types.ts) — each of the 8
+  // factors' score (null when that page had no data for it, e.g. no
+  // tracked keyword) and a human-readable detail string, computed once
+  // here so the admin page can render the full breakdown without
+  // recomputing or re-fetching GA4/GSC on every page view.
+  factors String @db.Text
+
+  computedAt DateTime @default(now())
+
+  @@unique([contentType, contentId])
+  @@index([grade])
 }
 
 // ------------------------------------------------------

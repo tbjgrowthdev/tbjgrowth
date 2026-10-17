@@ -16,7 +16,7 @@ const BASE_INSTRUCTION = `You are a senior content strategist and SEO writer. Re
  * context block is always appended regardless — a per-category override
  * can change tone/persona, never silently drop brand constraints.
  */
-async function buildSystemPrompt(override?: string | null): Promise<string> {
+export async function buildSystemPrompt(override?: string | null): Promise<string> {
   const base = override || BASE_INSTRUCTION;
   const brandContext = await buildBrandContextBlock();
   return `${base}\n\n${brandContext}`;
@@ -121,6 +121,35 @@ Reply with JSON exactly matching:
   };
 }
 
+// Plain text, not a {system, user} Prompt — image providers' generateImage()
+// takes one prompt string, not a chat-style system/user split. IMAGE is a
+// Prompt Library category (lib/content-pipeline/prompt-constants.ts), so
+// an admin can tune style/subject guidance the same way they tune Draft's
+// writing rules; the brand/topic framing around it is still code-generated.
+export async function buildImageGenerationPrompt(brief: Brief, outline: Outline): Promise<string> {
+  const template = await resolvePrompt("IMAGE");
+  const styleGuidance = template
+    ? fillTemplate(template.bodyTemplate, { topic: brief.topic, title: outline.title, goal: brief.goal, audience: brief.audience, tone: brief.tone })
+    : DEFAULT_BODY_TEMPLATE.IMAGE!;
+  return `A featured image for an article titled "${outline.title}", about: ${brief.topic}. ${styleGuidance}`;
+}
+
+// Alt text is always a plain accessibility description — never run through
+// the Prompt Library's admin-editable template, since the one thing that
+// actually matters here (accurately describing what the image shows) isn't
+// something a style template should be able to override.
+export async function buildAltTextPrompt(outline: Outline, imagePromptText: string): Promise<Prompt> {
+  return {
+    system: await buildSystemPrompt(),
+    user: `Write accessible alt text for an image generated from this description: "${imagePromptText}"
+
+The image is the featured image for an article titled "${outline.title}".
+
+Reply with JSON exactly matching:
+{ "altText": string (concise, factual description of what the image depicts, under 125 characters, no "image of"/"picture of" phrasing, no marketing language) }`,
+  };
+}
+
 export async function buildSeoPrompt(title: string, excerpt: string, contentHtml: string, primaryKeyword: string): Promise<Prompt> {
   const template = await resolvePrompt("SEO");
   const instruction = template ? fillTemplate(template.bodyTemplate, { title, keyword: primaryKeyword }) : DEFAULT_BODY_TEMPLATE.SEO!;
@@ -198,23 +227,48 @@ Where "schema" is a complete, valid JSON-LD object: must include "@context": "ht
   };
 }
 
-export async function buildQaPrompt(title: string, metaTitle: string, metaDescription: string, contentHtml: string, primaryKeyword: string): Promise<Prompt> {
+// The 4 categories here are the ones that genuinely need judgment, not a
+// deterministic rule — the other 6 named categories in the Quality Gate
+// (Duplicate Content, SEO, Links, Schema, Metadata, Alt Text) are computed
+// in code (lib/content-pipeline/quality-gate.ts) precisely because they
+// don't. The system prompt already carries the full Brand Knowledge Base
+// context (see buildSystemPrompt), so "Brand Voice" judges against that,
+// not a value passed in separately.
+export async function buildQaPrompt(params: {
+  title: string;
+  metaTitle: string;
+  metaDescription: string;
+  contentHtml: string;
+  primaryKeyword: string;
+  questionsToAnswer: string[];
+  retrievedSources: RetrievedSource[];
+}): Promise<Prompt> {
   return {
     system: await buildSystemPrompt(),
-    user: `Review this finished content as a final quality check before it goes to human approval.
+    user: `Review this finished content as the final quality gate before it goes to MANDATORY human approval — nothing publishes without a person signing off after this, so your job is to surface anything they should look at, not to decide pass/fail yourself.
 
-Title: ${title}
-Meta title: ${metaTitle}
-Meta description: ${metaDescription}
-Target keyword: "${primaryKeyword}"
+Title: ${params.title}
+Meta title: ${params.metaTitle}
+Meta description: ${params.metaDescription}
+Target keyword: "${params.primaryKeyword}"
+Reader questions this piece was supposed to answer: ${params.questionsToAnswer.join("; ") || "(none specified)"}
+Approved internal sources this content's claims about us should be consistent with:
+${formatRetrievedSources(params.retrievedSources)}
+
 Content (HTML):
-${contentHtml}
+${params.contentHtml}
 
-Check for: factual-sounding claims stated with false confidence, placeholder/lorem-ipsum-like text, awkward repetition, tone inconsistency, and whether the content actually delivers on its title. Do NOT check character counts or keyword counting — those are measured separately.
+Produce checks across exactly these 4 categories (one or more checks each):
+- "Brand Voice": does the tone/style actually match the brand voice described in your system prompt above?
+- "Search Intent": does the content genuinely answer the target keyword's intent and the reader questions listed above?
+- "Facts": are any claims about our own services, results, or policies unsupported by the approved internal sources above or inconsistent with them?
+- "Quality": factual-sounding claims stated with false confidence, placeholder/lorem-ipsum-like text, awkward repetition, tone inconsistency, and whether the content delivers on its title.
+
+Do NOT check character counts, keyword counting, schema validity, metadata completeness, alt text, or duplicate content — those are measured separately in code.
 
 Reply with JSON exactly matching:
 {
-  "checks": [ { "label": string, "passed": boolean, "note": string } ] (3-6 qualitative checks as described above),
+  "checks": [ { "category": "Brand Voice" | "Search Intent" | "Facts" | "Quality", "label": string, "passed": boolean, "note": string } ] (4-8 checks total, covering all 4 categories),
   "summary": string (1-2 sentence overall verdict)
 }`,
   };

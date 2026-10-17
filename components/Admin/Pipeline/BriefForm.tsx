@@ -6,14 +6,14 @@ import { Loader2 } from "lucide-react";
 import { createPipelineRunAction } from "@/app/(admin)/actions/content-pipeline";
 import type { Brief, PipelineContentType } from "@/lib/content-pipeline/types";
 
-export default function BriefForm() {
+export default function BriefForm({ initialTopic, initialContentType, initialNotes }: { initialTopic?: string; initialContentType?: PipelineContentType; initialNotes?: string } = {}) {
   const router = useRouter();
-  const [contentType, setContentType] = useState<PipelineContentType>("POST");
-  const [topic, setTopic] = useState("");
+  const [contentType, setContentType] = useState<PipelineContentType>(initialContentType || "POST");
+  const [topic, setTopic] = useState(initialTopic || "");
   const [goal, setGoal] = useState("");
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("Professional, confident, no fluff");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(initialNotes || "");
   const [clientName, setClientName] = useState("");
   const [industry, setIndustry] = useState("");
   const [serviceType, setServiceType] = useState("");

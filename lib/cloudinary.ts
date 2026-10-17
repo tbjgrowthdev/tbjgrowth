@@ -39,16 +39,12 @@ type CloudinaryUploadResponse = {
   original_filename: string;
 };
 
-async function uploadToCloudinary(file: File, folder: string): Promise<CloudinaryUploadResponse> {
+async function uploadDataUriToCloudinary(dataUri: string, folder: string): Promise<CloudinaryUploadResponse> {
   const { cloudName, apiKey, apiSecret } = getCredentials();
 
   const timestamp = Math.round(Date.now() / 1000);
   const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
   const signature = sign(paramsToSign, apiSecret);
-
-  const arrayBuffer = await file.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString("base64");
-  const dataUri = `data:${file.type};base64,${base64}`;
 
   const body = new FormData();
   body.append("file", dataUri);
@@ -68,6 +64,21 @@ async function uploadToCloudinary(file: File, folder: string): Promise<Cloudinar
   }
 
   return res.json();
+}
+
+async function uploadToCloudinary(file: File, folder: string): Promise<CloudinaryUploadResponse> {
+  const arrayBuffer = await file.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString("base64");
+  return uploadDataUriToCloudinary(`data:${file.type};base64,${base64}`, folder);
+}
+
+// For bytes that never existed as a browser File — an AI-generated image
+// comes back from the provider as raw bytes, not a file picked in a form.
+// Same upload path/signing as uploadToCloudinary, just skipping the
+// File.arrayBuffer() step since there's no File to begin with.
+async function uploadBufferToCloudinary(buffer: ArrayBuffer, mimeType: string, folder: string): Promise<CloudinaryUploadResponse> {
+  const base64 = Buffer.from(buffer).toString("base64");
+  return uploadDataUriToCloudinary(`data:${mimeType};base64,${base64}`, folder);
 }
 
 // Unchanged, still used directly by ProfileForm for avatar uploads — those
@@ -148,6 +159,51 @@ export async function uploadAndRegisterMedia(
     entityId: asset.id,
     entityLabel: asset.title,
     after: { url: asset.url, folder: asset.folder, altText: asset.altText, filename: asset.filename, format: asset.format, width: asset.width, height: asset.height, bytes: asset.bytes },
+  });
+
+  return { asset, url: asset.url };
+}
+
+// For the AI Content Pipeline's Image stage (lib/content-pipeline/
+// stages.ts) — same storage path as uploadAndRegisterMedia, but the real
+// alt text doesn't exist yet at upload time (it's generated in a later
+// step and only becomes real content once a human approves it), so this
+// takes a placeholder instead of requiring one upfront. No auth check
+// here: every caller is an already-`requirePermission`-gated stage
+// function, not a directly reachable "use server" entry point the way
+// uploadAndRegisterMedia is.
+export async function uploadAndRegisterGeneratedImage(
+  buffer: ArrayBuffer,
+  mimeType: string,
+  opts: { folder: string; title: string; uploadedBy: { id: string; name: string | null; email: string | null } }
+) {
+  const data = await uploadBufferToCloudinary(buffer, mimeType, "tbj-growth");
+
+  const asset = await prisma.mediaAsset.create({
+    data: {
+      publicId: data.public_id,
+      url: data.secure_url,
+      filename: data.original_filename,
+      format: data.format,
+      width: data.width,
+      height: data.height,
+      bytes: data.bytes,
+      folder: opts.folder,
+      altText: "(AI-generated image — pending alt text)",
+      title: opts.title,
+      uploadedById: opts.uploadedBy.id,
+      uploadedByName: opts.uploadedBy.name,
+      uploadedByEmail: opts.uploadedBy.email,
+    },
+  });
+
+  await logAudit({
+    action: "create",
+    category: "Media",
+    entityType: "MediaAsset",
+    entityId: asset.id,
+    entityLabel: asset.title,
+    after: { url: asset.url, folder: asset.folder, source: "ai-generated", filename: asset.filename, format: asset.format, width: asset.width, height: asset.height, bytes: asset.bytes },
   });
 
   return { asset, url: asset.url };

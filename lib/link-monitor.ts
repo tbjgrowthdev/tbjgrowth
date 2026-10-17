@@ -10,9 +10,12 @@ export type LinkCheckFinding = {
   description?: string;
 };
 
-type ContentItem = { label: string; content: string | null };
+export type ContentItem = { label: string; content: string | null };
 
-async function getAllContent(): Promise<ContentItem[]> {
+// Exported for lib/content-health/ — it needs the same "every published
+// page's raw content" list to build its own inbound-internal-link count,
+// without duplicating this query.
+export async function getAllContent(): Promise<ContentItem[]> {
   const [posts, pages, cases, services] = await Promise.all([
     prisma.post.findMany({ where: { status: "PUBLISHED" }, select: { title: true, content: true } }),
     prisma.page.findMany({ where: { status: "PUBLISHED" }, select: { title: true, content: true } }),

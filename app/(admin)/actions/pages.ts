@@ -68,6 +68,7 @@ export async function createPage(data: any) {
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         focusKeyword: data.focusKeyword,
+        secondaryKeywords: data.secondaryKeywords,
         canonicalUrl: data.canonicalUrl,
         twitterCard: data.twitterCard,
         ogImage: data.ogImage,
@@ -79,6 +80,7 @@ export async function createPage(data: any) {
         schemaJson: data.schemaJson,
         status: "DRAFT",
         isIndexable: data.isIndexable ?? true,
+        allowFollow: data.allowFollow ?? true,
       },
     });
     revalidatePath("/admin/pages");
@@ -136,6 +138,7 @@ export async function updatePage(id: string, data: any) {
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         focusKeyword: data.focusKeyword,
+        secondaryKeywords: data.secondaryKeywords,
         canonicalUrl: data.canonicalUrl,
         twitterCard: data.twitterCard,
         ogImage: data.ogImage,
@@ -146,6 +149,7 @@ export async function updatePage(id: string, data: any) {
         twitterImage: data.twitterImage,
         schemaJson: data.schemaJson,
         isIndexable: data.isIndexable ?? true,
+        allowFollow: data.allowFollow ?? true,
       },
     });
     revalidatePath("/admin/pages");

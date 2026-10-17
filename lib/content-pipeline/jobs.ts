@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth-guard";
-import { getActiveProvider } from "./providers";
+import { getActiveImageProvider, getActiveProvider } from "./providers";
 import type { AiUsage } from "./providers/types";
 import { estimateCostUsd } from "./pricing";
 import type { PipelineStage } from "@/lib/generated/prisma/client";
@@ -79,14 +79,14 @@ async function usageFields(jobId: string, usage?: AiUsage) {
   return { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens, costUsd };
 }
 
-export async function completeJob(jobId: string, options: { contentId?: string | null; usage?: AiUsage } = {}) {
+export async function completeJob(jobId: string, options: { contentId?: string | null; usage?: AiUsage; flatCostUsd?: number | null } = {}) {
   await prisma.aiJob.update({
     where: { id: jobId },
     data: {
       status: "COMPLETED",
       completedAt: new Date(),
       ...(options.contentId ? { contentId: options.contentId } : {}),
-      ...(await usageFields(jobId, options.usage)),
+      ...(options.flatCostUsd !== undefined ? { costUsd: options.flatCostUsd } : await usageFields(jobId, options.usage)),
     },
   });
 }
@@ -96,6 +96,68 @@ export async function failJob(jobId: string, error: string, usage?: AiUsage) {
     where: { id: jobId },
     data: { status: "FAILED", error: error.slice(0, 4000), completedAt: new Date(), ...(await usageFields(jobId, usage)) },
   });
+}
+
+/**
+ * Creates a FRESH AiJob — deliberately NOT the idempotent
+ * startOrResumeJob()/"already completed is a no-op" pattern most stages
+ * use. Some stages (Image, Internal Links) let a human explicitly ask for
+ * a fresh attempt before they've approved anything ("Regenerate") — that's
+ * a repeatable human choice, not an accidental double-click/retried
+ * request, so each call gets its own Job ID rather than reusing or
+ * short-circuiting on a prior completed attempt. Whatever the prior
+ * attempt produced (an unused MediaAsset, a discarded suggestion batch)
+ * is left as-is rather than deleted — same "nothing destructive happens
+ * automatically" stance as everywhere else in this schema.
+ */
+async function createFreshJob(pipelineRunId: string, stage: PipelineStage, contentId: string | null, provider: { name: string; model: string }): Promise<{ id: string }> {
+  const created = await prisma.aiJob.create({
+    data: {
+      idempotencyKey: `${pipelineRunId}:${stage}:${crypto.randomUUID()}`,
+      pipelineRunId,
+      contentId,
+      stage,
+      provider: provider.name,
+      model: provider.model,
+      status: "PROCESSING",
+      startedAt: new Date(),
+    },
+  });
+  return { id: created.id };
+}
+
+export async function createImageJob(pipelineRunId: string, contentId: string | null): Promise<{ id: string }> {
+  return createFreshJob(pipelineRunId, "IMAGE", contentId, getActiveImageProvider());
+}
+
+/** Same non-idempotent "fresh job every call" shape as createImageJob, for text stages that support regeneration (currently just Internal Links). */
+export async function createTextJob(pipelineRunId: string, stage: PipelineStage, contentId: string | null): Promise<{ id: string }> {
+  return createFreshJob(pipelineRunId, stage, contentId, getActiveProvider());
+}
+
+/**
+ * Jobs for a ContentRefresh cycle use `contentRefreshId`, not
+ * `pipelineRunId` — a separate creator since the FK differs, not just a
+ * parameter swap. Always fresh (never idempotent-short-circuited): every
+ * refresh cycle only ever drafts once at a time, but "regenerate this
+ * draft" after a rejection is exactly the same deliberate-repeat case as
+ * Image/Internal Links above.
+ */
+export async function createRefreshJob(contentRefreshId: string, contentId: string | null): Promise<{ id: string }> {
+  const provider = getActiveProvider();
+  const created = await prisma.aiJob.create({
+    data: {
+      idempotencyKey: `${contentRefreshId}:REFRESH:${crypto.randomUUID()}`,
+      contentRefreshId,
+      contentId,
+      stage: "REFRESH",
+      provider: provider.name,
+      model: provider.model,
+      status: "PROCESSING",
+      startedAt: new Date(),
+    },
+  });
+  return { id: created.id };
 }
 
 export async function getJobsForRun(pipelineRunId: string) {
@@ -108,13 +170,26 @@ export async function getJobsForRun(pipelineRunId: string) {
   }
 }
 
+export async function getJobsForRefresh(contentRefreshId: string) {
+  try {
+    await requirePermission("EDIT");
+    return await prisma.aiJob.findMany({ where: { contentRefreshId }, orderBy: { queuedAt: "asc" } });
+  } catch (error) {
+    console.error(`Failed to fetch jobs for refresh ${contentRefreshId}:`, error);
+    return [];
+  }
+}
+
 export async function getAllJobs() {
   try {
     await requirePermission("CREATE");
     return await prisma.aiJob.findMany({
       orderBy: { queuedAt: "desc" },
       take: 200,
-      include: { pipelineRun: { select: { contentType: true, brief: true } } },
+      include: {
+        pipelineRun: { select: { contentType: true, brief: true } },
+        contentRefresh: { select: { contentType: true, draftTitle: true } },
+      },
     });
   } catch (error) {
     console.error("Failed to fetch AI jobs:", error);
