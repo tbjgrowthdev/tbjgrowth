@@ -4,6 +4,8 @@ import type { Permission } from "@/lib/permissions";
 import type { ContentType, PostStatus, Prisma } from "@/lib/generated/prisma/client";
 import { revalidatePath } from "next/cache";
 import { logAudit, type AuditCategory } from "@/lib/audit-log";
+import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
+import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
 
 const ENTITY_TYPE: Record<ContentType, string> = {
   POST: "Post",
@@ -63,6 +65,7 @@ type WorkflowRecord = {
   slug: string;
   status: PostStatus;
   publishedAt: Date | null;
+  isIndexable?: boolean;
   authorId?: string | null;
   reviewerId?: string | null;
   seoReviewerId?: string | null;
@@ -152,6 +155,14 @@ export async function transitionContent(
 
     for (const path of REVALIDATE_PATHS[contentType](updated.slug, id)) {
       revalidatePath(path);
+    }
+
+    // Search-engine notification fires exactly once, at the moment content
+    // newly becomes PUBLISHED (not on every subsequent edit of already-live
+    // content) — the sitemap itself updates automatically on every
+    // publish/update/delete since it's a live DB read with no cache layer.
+    if (transition.to === "PUBLISHED" && current.status !== "PUBLISHED" && updated.isIndexable !== false) {
+      await notifySearchEnginesOfUrl(PUBLIC_PATH_BUILDERS[contentType](updated.slug));
     }
 
     await logAudit({

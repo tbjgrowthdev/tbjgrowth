@@ -9,32 +9,37 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 /**
  * Builds a complete, explicit robots directive instead of leaving max-snippet/
  * max-image-preview/max-video-preview to search engines' implicit defaults.
- * Indexable production content gets unrestricted rich-result previews (what a
- * marketing site wants); noindex content gets a plain noindex/nofollow with no
- * preview directives, since those are moot once a page is excluded anyway.
+ * noindex content gets a plain noindex/nofollow with no preview directives,
+ * since those are moot once a page is excluded anyway. Indexable content
+ * always gets explicit preview directives — per Google's spec these govern
+ * how search results may render THIS page's own snippet/image/video, which
+ * is independent of `follow` (whether crawlers may follow this page's
+ * outbound links), so they apply whether or not `follow` is true.
  *
- * `follow` is the Unified SEO Engine's Robots "allow search engines to
- * follow links on this page" toggle — independent of `indexable` (a page
- * can be indexed but ask crawlers not to follow its outbound links, or
- * vice versa). Defaults to `true` so every pre-existing caller that
- * doesn't pass it keeps today's behavior unchanged.
+ * `follow`/`maxSnippet`/`maxImagePreview`/`maxVideoPreview` are the Unified
+ * SEO Engine's per-content Robots Control fields — each defaults to the
+ * value matching today's pre-existing behavior, so every caller that
+ * doesn't pass them keeps working unchanged.
  */
-export function buildRobotsMeta(indexable: boolean, follow: boolean = true): NonNullable<Metadata["robots"]> {
+export function buildRobotsMeta(
+  indexable: boolean,
+  follow: boolean = true,
+  maxSnippet: number = -1,
+  maxImagePreview: "none" | "standard" | "large" = "large",
+  maxVideoPreview: number = -1
+): NonNullable<Metadata["robots"]> {
   if (!indexable) {
     return { index: false, follow: false };
   }
-  if (!follow) {
-    return { index: true, follow: false };
-  }
   return {
     index: true,
-    follow: true,
+    follow,
     googleBot: {
       index: true,
-      follow: true,
-      "max-snippet": -1,
-      "max-image-preview": "large",
-      "max-video-preview": -1,
+      follow,
+      "max-snippet": maxSnippet,
+      "max-image-preview": maxImagePreview,
+      "max-video-preview": maxVideoPreview,
     },
   };
 }
@@ -116,7 +121,7 @@ export async function getPageMetadata(
   // always `fallback.path` regardless of locale. If no Page override row
   // exists at all, the lookup below naturally finds zero translations and
   // falls back to the generic always-available locale set.
-  const { languages } = await buildHreflangAlternates("PAGE", page?.id ?? `reserved:${slug}`, slug, () => canonicalPath);
+  const { languages } = await buildHreflangAlternates("PAGE", page?.id ?? `reserved:${slug}`, slug, () => canonicalPath, page?.canonicalUrl);
 
   if (!page || page.status !== "PUBLISHED") {
     return {
@@ -160,7 +165,7 @@ export async function getPageMetadata(
     title: social.title,
     description: social.description,
     alternates: { canonical: canonicalUrl, languages },
-    robots: buildRobotsMeta(page.isIndexable, page.allowFollow),
+    robots: buildRobotsMeta(page.isIndexable, page.allowFollow, page.maxSnippet, page.maxImagePreview as "none" | "standard" | "large", page.maxVideoPreview),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };

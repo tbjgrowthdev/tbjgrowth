@@ -9,7 +9,8 @@ import { cloudinaryUrl } from "@/lib/cloudinary-url";
 import { publiclyVisible, resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import ShareButton from "@/components/Blog/ShareButton";
 import JsonLd from "@/components/JsonLd";
-import { articleSchema, breadcrumbSchema } from "@/lib/schema";
+import { breadcrumbSchema } from "@/lib/schema";
+import { buildAutoSchema } from "@/lib/schema-engine";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates, localizeList } from "@/lib/translation";
@@ -58,7 +59,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Post Not Found" };
   }
 
-  const { languages } = await buildHreflangAlternates("POST", post.id, post.slug, (s) => `/blog/${s}`);
+  const { languages } = await buildHreflangAlternates("POST", post.id, post.slug, (s) => `/blog/${s}`, post.canonicalUrl);
   const canonical = post.canonicalUrl || `${baseUrl}${withLocalePrefix(locale.prefix, `/blog/${post.slug}`)}`;
   const settings = await getSiteSettings();
 
@@ -82,7 +83,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: social.title,
     description: social.description,
     alternates: { canonical, languages },
-    robots: buildRobotsMeta(post.isIndexable, post.allowFollow),
+    robots: buildRobotsMeta(post.isIndexable, post.allowFollow, post.maxSnippet, post.maxImagePreview as "none" | "standard" | "large", post.maxVideoPreview),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };
@@ -142,9 +143,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: post.schemaJson }} />
       ) : (
         <JsonLd
-          schema={articleSchema({
+          schema={buildAutoSchema({
+            contentType: "POST",
+            id: post.id,
             title: post.title,
-            path: `/blog/${post.slug}`,
+            slug: post.slug,
             excerpt: post.excerpt,
             featuredImage: post.featuredImage,
             authorName: post.author?.name,

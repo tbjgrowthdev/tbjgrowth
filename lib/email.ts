@@ -457,3 +457,65 @@ export async function sendLinkCheckNotification(params: {
     return { success: false, error };
   }
 }
+
+export async function sendSeoAuditNotification(params: {
+  findingCount: number;
+  categoryCounts: Record<string, number>;
+  notifyEmail?: string | null;
+}) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  if (!apiKey) {
+    console.log("RESEND_API_KEY not set — skipping SEO audit notification email");
+    return { success: false, skipped: true };
+  }
+  if (!params.notifyEmail) {
+    console.log("No notification email configured in Site Settings — skipping SEO audit email");
+    return { success: false, skipped: true };
+  }
+
+  const rows = Object.entries(params.categoryCounts)
+    .filter(([, count]) => count > 0)
+    .map(
+      ([category, count]) =>
+        `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">${escapeHtml(category)}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">${count}</td></tr>`
+    )
+    .join("");
+
+  const html = `
+    <h2>Automated SEO Audit found ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""}</h2>
+    <table style="border-collapse:collapse;width:100%;">
+      <thead><tr><th style="text-align:left;padding:4px 8px;">Category</th><th style="text-align:left;padding:4px 8px;">Count</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p>See Automated SEO Audits in the admin dashboard for the full findings list.</p>
+  `;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [params.notifyEmail],
+        subject: `⚠ Automated SEO Audit: ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""} found`,
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      return { success: false, error: errorText };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send SEO audit notification email:", error);
+    return { success: false, error };
+  }
+}

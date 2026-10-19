@@ -5,7 +5,8 @@ import { getServiceBySlug } from "@/app/(admin)/actions/services";
 import { fallbackServices } from "@/lib/fallback-services";
 import ServiceDetailClient from "./ServiceDetailClient";
 import JsonLd from "@/components/JsonLd";
-import { breadcrumbSchema, serviceSchema, faqPageSchema } from "@/lib/schema";
+import { breadcrumbSchema, faqPageSchema } from "@/lib/schema";
+import { buildAutoSchema } from "@/lib/schema-engine";
 import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
@@ -42,7 +43,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Service Not Found" };
   }
 
-  const { languages } = await buildHreflangAlternates("SERVICE", service.id, service.slug || slug, (s) => `/services/${s}`);
+  const { languages } = await buildHreflangAlternates(
+    "SERVICE",
+    service.id,
+    service.slug || slug,
+    (s) => `/services/${s}`,
+    "canonicalUrl" in service ? service.canonicalUrl : null
+  );
   // fallbackServices (shown when no real Service rows exist yet) predates
   // canonicalUrl/allowFollow/schemaJson, hence the "in" guards here and below.
   const canonical =
@@ -68,7 +75,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: social.title,
     description: social.description,
     alternates: { canonical, languages },
-    robots: buildRobotsMeta(service.isIndexable, "allowFollow" in service ? service.allowFollow : true),
+    robots: buildRobotsMeta(
+      service.isIndexable,
+      "allowFollow" in service ? service.allowFollow : true,
+      "maxSnippet" in service ? service.maxSnippet : -1,
+      "maxImagePreview" in service ? (service.maxImagePreview as "none" | "standard" | "large") : "large",
+      "maxVideoPreview" in service ? service.maxVideoPreview : -1
+    ),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };
@@ -96,9 +109,17 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
             { name: service.title, path: withLocalePrefix(locale.prefix, `/services/${service.slug || slug}`) },
           ]),
           // Service's own schemaJson (from the admin's Schema Builder) replaces
-          // the auto-generated serviceSchema when set — same override pattern
-          // as blog/[slug] and case-studies/[slug].
-          "schemaJson" in service && service.schemaJson ? null : serviceSchema(service),
+          // the engine's auto-generated Service schema when set — same
+          // override pattern as blog/[slug] and case-studies/[slug].
+          "schemaJson" in service && service.schemaJson
+            ? null
+            : buildAutoSchema({
+                contentType: "SERVICE",
+                id: service.id,
+                title: service.title,
+                slug: service.slug,
+                description: service.description,
+              }),
           faqs.length > 0 ? faqPageSchema(faqs) : null,
         ]}
       />

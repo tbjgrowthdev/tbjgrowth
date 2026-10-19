@@ -81,6 +81,9 @@ export async function createPage(data: any) {
         status: "DRAFT",
         isIndexable: data.isIndexable ?? true,
         allowFollow: data.allowFollow ?? true,
+        maxSnippet: data.maxSnippet ?? -1,
+        maxImagePreview: data.maxImagePreview || "large",
+        maxVideoPreview: data.maxVideoPreview ?? -1,
       },
     });
     revalidatePath("/admin/pages");
@@ -150,6 +153,9 @@ export async function updatePage(id: string, data: any) {
         schemaJson: data.schemaJson,
         isIndexable: data.isIndexable ?? true,
         allowFollow: data.allowFollow ?? true,
+        maxSnippet: data.maxSnippet ?? -1,
+        maxImagePreview: data.maxImagePreview || "large",
+        maxVideoPreview: data.maxVideoPreview ?? -1,
       },
     });
     revalidatePath("/admin/pages");

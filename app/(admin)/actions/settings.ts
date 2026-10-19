@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
+import { ensureIndexNowKey } from "@/lib/search-engine-ping";
 
 // Memoized per-request: the root layout, every detail page's generateMetadata,
 // and the page component itself all call this for the same incoming request —
@@ -53,6 +54,32 @@ export async function updateSiteSettings(id: string, data: any) {
       return { success: false, error: error.message };
     }
     console.error("Failed to update settings:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Key generation is deliberately its own action, separate from the general
+// Save Settings submit — lib/search-engine-ping.ts's notifySearchEnginesOfUrl
+// never generates a key itself (so a background publish never has the
+// surprising side effect of minting a new key); only this explicit admin
+// action does.
+export async function generateIndexNowKey() {
+  try {
+    await requirePermission("SETTINGS_MANAGEMENT");
+    const key = await ensureIndexNowKey(true);
+    revalidatePath("/admin/settings");
+    await logAudit({
+      action: "update",
+      category: "Integrations",
+      entityType: "SiteSetting",
+      entityLabel: "IndexNow key regenerated",
+    });
+    return { success: true, key };
+  } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+    console.error("Failed to generate IndexNow key:", error);
     return { success: false, error: error.message };
   }
 }

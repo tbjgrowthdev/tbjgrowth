@@ -7,13 +7,28 @@ import { getValidAccessToken, getGoogleIntegration } from "@/lib/google-oauth";
 // --- DataForSEO (Rank Tracking) ---
 type RankResult = { position: number | null; resultUrl: string | null };
 
+// This site's three target markets (see the keyword tracker's country field
+// and the i18n locale plan) — DataForSEO accepts a location_name string for
+// every endpoint below, so there's no numeric location_code table to keep in
+// sync. Unknown codes fall back to the UK, the site's primary market.
+const DATAFORSEO_LOCATION_NAMES: Record<string, string> = {
+  GB: "United Kingdom",
+  BD: "Bangladesh",
+  AE: "United Arab Emirates",
+};
+
+function resolveLocationName(country: string): string {
+  return DATAFORSEO_LOCATION_NAMES[country] || DATAFORSEO_LOCATION_NAMES.GB;
+}
+
 /**
- * Checks a keyword's Google (UK, en) organic ranking for the site's own domain
- * using DataForSEO's Live Advanced SERP endpoint. Returns null on any failure
- * (missing credentials, API error, network issue) rather than throwing, so a
- * failed check doesn't crash the admin UI — just shows as "unable to check".
+ * Checks a keyword's Google organic ranking (for the given market/language)
+ * for the site's own domain, using DataForSEO's Live Advanced SERP endpoint.
+ * Returns null on any failure (missing credentials, API error, network
+ * issue) rather than throwing, so a failed check doesn't crash the admin UI
+ * — just shows as "unable to check".
  */
-export const fetchKeywordRankings = async (keyword: string): Promise<RankResult | null> => {
+export const fetchKeywordRankings = async (keyword: string, country: string = "GB", language: string = "en"): Promise<RankResult | null> => {
   const login = process.env.DATAFORSEO_LOGIN;
   const password = process.env.DATAFORSEO_PASSWORD;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
@@ -36,8 +51,8 @@ export const fetchKeywordRankings = async (keyword: string): Promise<RankResult 
       body: JSON.stringify([
         {
           keyword,
-          location_code: 2826, // United Kingdom
-          language_code: "en",
+          location_name: resolveLocationName(country),
+          language_code: language,
           device: "desktop",
           depth: 100,
         },
@@ -158,6 +173,44 @@ export async function fetchSearchVolume(keywords: string[]): Promise<KeywordVolu
   }
 }
 
+export type KeywordDifficultyResult = { keyword: string; difficulty: number | null };
+
+/**
+ * 0-100 DataForSEO Labs keyword difficulty score for up to 1000 keywords in
+ * one call. Kept separate from fetchSearchVolume (a different API product
+ * under DataForSEO Labs, not the Google Ads keywords_data product) so a
+ * caller that only wants one metric doesn't pay for the other.
+ */
+export async function fetchKeywordDifficulty(keywords: string[], country: string = "GB", language: string = "en"): Promise<KeywordDifficultyResult[] | null> {
+  const login = process.env.DATAFORSEO_LOGIN;
+  const password = process.env.DATAFORSEO_PASSWORD;
+  if (!login || !password) {
+    console.error("DataForSEO credentials not configured");
+    return null;
+  }
+  if (keywords.length === 0) return [];
+  const auth = Buffer.from(`${login}:${password}`).toString("base64");
+
+  try {
+    const res = await fetch("https://api.dataforseo.com/v3/dataforseo_labs/google/bulk_keyword_difficulty/live", {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify([{ keywords: keywords.slice(0, 1000), location_name: resolveLocationName(country), language_code: language }]),
+    });
+    if (!res.ok) {
+      console.error(`DataForSEO keyword difficulty request failed: ${res.status}`);
+      return null;
+    }
+    type RawDifficultyItem = { keyword?: string; keyword_difficulty?: number };
+    const data = await res.json();
+    const items: RawDifficultyItem[] = data?.tasks?.[0]?.result?.[0]?.items || [];
+    return items.map((item) => ({ keyword: item.keyword ?? "", difficulty: item.keyword_difficulty ?? null }));
+  } catch (error) {
+    console.error("DataForSEO keyword difficulty call failed:", error);
+    return null;
+  }
+}
+
 // --- Google Analytics (GA4) ---
 type GA4Traffic = {
   sessions: number;
@@ -222,6 +275,58 @@ export const fetchGA4Traffic = async (): Promise<GA4Traffic | null> => {
   }
 };
 
+
+export type GA4LandingPageRow = { date: string; landingPage: string; sessions: number; engagedSessions: number; conversions: number };
+
+/**
+ * Every (date, landing page) combination for the Organic Search channel in
+ * the given range — the SEO -> Traffic -> Conversion dataset the GA4
+ * Analytics Integration import needs. Filtered to
+ * sessionDefaultChannelGroup == "Organic Search" so it reflects SEO-driven
+ * traffic specifically, not paid/social/direct/referral — unlike
+ * fetchGA4Traffic above, which is unfiltered site-wide totals. Capped at a
+ * 10,000-row single request (no pagination loop), same scope cut as
+ * fetchSearchConsoleRows's 25,000-row cap.
+ */
+export async function fetchGA4LandingPageRows(startDate: string, endDate: string): Promise<GA4LandingPageRow[] | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.ga4PropertyId) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${integration.ga4PropertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: "date" }, { name: "landingPage" }],
+        metrics: [{ name: "sessions" }, { name: "engagedSessions" }, { name: "conversions" }],
+        dimensionFilter: {
+          filter: { fieldName: "sessionDefaultChannelGroup", stringFilter: { value: "Organic Search", matchType: "EXACT" } },
+        },
+        limit: 10000,
+      }),
+    });
+    if (!res.ok) {
+      console.error(`GA4 landing page import request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    type Row = { dimensionValues?: { value?: string }[]; metricValues?: { value?: string }[] };
+    const rows: Row[] = data.rows || [];
+    return rows.map((r) => ({
+      date: r.dimensionValues?.[0]?.value ?? "",
+      landingPage: r.dimensionValues?.[1]?.value ?? "",
+      sessions: Number(r.metricValues?.[0]?.value || 0),
+      engagedSessions: Number(r.metricValues?.[1]?.value || 0),
+      conversions: Number(r.metricValues?.[2]?.value || 0),
+    }));
+  } catch (error) {
+    console.error("GA4 landing page import call failed:", error);
+    return null;
+  }
+}
 
 // --- Google Search Console ---
 type GSCStats = { clicks: number; impressions: number; ctr: number; position: number };
@@ -355,6 +460,65 @@ export async function fetchQueryPageOverlap(minImpressions = 5): Promise<QueryPa
       .filter((r) => r.impressions >= minImpressions);
   } catch (error) {
     console.error("GSC query/page overlap call failed:", error);
+    return null;
+  }
+}
+
+export type SearchConsoleRow = {
+  date: string;
+  query: string;
+  page: string;
+  country: string;
+  device: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+};
+
+/**
+ * Every (date, query, page, country, device) combination Search Console has
+ * data for in the given range, in one request — the full dimension set the
+ * GSC Integration import needs. Capped at GSC's own single-request maximum
+ * of 25,000 rows (no pagination loop here): for a very high-traffic site or
+ * a long range, a single import may not capture every row — narrowing the
+ * date range gets a more complete pull.
+ */
+export async function fetchSearchConsoleRows(startDate: string, endDate: string): Promise<SearchConsoleRow[] | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.gscSiteUrl) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(
+      `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(integration.gscSiteUrl)}/searchAnalytics/query`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ startDate, endDate, dimensions: ["date", "query", "page", "country", "device"], rowLimit: 25000 }),
+      }
+    );
+    if (!res.ok) {
+      console.error(`GSC import request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    type Row = { keys?: string[]; clicks?: number; impressions?: number; ctr?: number; position?: number };
+    const rows: Row[] = data.rows || [];
+    return rows.map((r) => ({
+      date: r.keys?.[0] ?? "",
+      query: r.keys?.[1] ?? "",
+      page: r.keys?.[2] ?? "",
+      country: r.keys?.[3] ?? "",
+      device: r.keys?.[4] ?? "",
+      clicks: r.clicks ?? 0,
+      impressions: r.impressions ?? 0,
+      ctr: r.ctr ?? 0,
+      position: r.position ?? 0,
+    }));
+  } catch (error) {
+    console.error("GSC import call failed:", error);
     return null;
   }
 }

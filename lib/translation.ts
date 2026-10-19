@@ -4,6 +4,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { checkStale } from "@/lib/stale-check";
 import { DEFAULT_LOCALE, PREFIXED_LOCALES, getLocaleByCode } from "@/lib/i18n";
+import { isSameOriginUrl } from "@/lib/canonical-validation";
 
 export type TranslatableKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE" | "CATEGORY" | "TAG";
 
@@ -114,15 +115,33 @@ export async function findContentIdBySlugInLocale(
  * exists — never advertise a URL that would 404 or silently show the
  * wrong language. `pathBuilder(slug)` returns the un-prefixed path for a
  * given slug, e.g. (slug) => `/blog/${slug}`.
+ *
+ * `canonicalOverride` is the content's own manual canonical override, if
+ * set. hreflang must always point at the CANONICAL version of each
+ * language, never a non-canonical duplicate — so a same-origin override
+ * replaces this content's own URL in the en-GB/x-default entry (the
+ * "reciprocal" half of canonical + hreflang: the two must never disagree
+ * about which URL is the real one). A cross-domain override means this
+ * content isn't the canonical source at all; mixing that with hreflang
+ * would be a contradictory signal to search engines, so hreflang is
+ * dropped entirely in that case — see lib/canonical-hreflang.ts, which
+ * audits for exactly this combination across the whole site.
  */
 export async function buildHreflangAlternates(
   contentType: TranslatableKind,
   contentId: string,
   defaultSlug: string,
-  pathBuilder: (slug: string) => string
+  pathBuilder: (slug: string) => string,
+  canonicalOverride?: string | null
 ): Promise<{ canonical: string; languages: Record<string, string> }> {
   const defaultPath = pathBuilder(defaultSlug);
-  const canonical = `${baseUrl}${defaultPath === "/" ? "" : defaultPath}`;
+  const selfUrl = `${baseUrl}${defaultPath === "/" ? "" : defaultPath}`;
+
+  if (canonicalOverride && !isSameOriginUrl(canonicalOverride)) {
+    return { canonical: canonicalOverride, languages: {} };
+  }
+
+  const canonical = canonicalOverride || selfUrl;
   const languages: Record<string, string> = { [DEFAULT_LOCALE.code]: canonical, "x-default": canonical };
 
   const translations = await getTranslationsForContent(contentType, contentId);

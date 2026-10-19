@@ -3,7 +3,8 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema } from "@/lib/schema";
-import { resolveSocialMeta } from "@/lib/seo-meta";
+import { buildAutoSchema } from "@/lib/schema-engine";
+import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates } from "@/lib/translation";
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Page Not Found" };
   }
 
-  const { languages } = await buildHreflangAlternates("PAGE", page.id, page.slug, (s) => `/${s}`);
+  const { languages } = await buildHreflangAlternates("PAGE", page.id, page.slug, (s) => `/${s}`, page.canonicalUrl);
   const canonical = page.canonicalUrl || `${baseUrl}${withLocalePrefix(locale.prefix, `/${page.slug}`)}`;
   const settings = await getSiteSettings();
 
@@ -59,10 +60,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: social.title,
     description: social.description,
     alternates: { canonical, languages },
-    robots: {
-      index: page.isIndexable,
-      follow: true,
-    },
+    robots: buildRobotsMeta(page.isIndexable, page.allowFollow, page.maxSnippet, page.maxImagePreview as "none" | "standard" | "large", page.maxVideoPreview),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };
@@ -90,8 +88,13 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-20">
-      {page.schemaJson && (
+      {page.schemaJson ? (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: page.schemaJson }} />
+      ) : (
+        // The engine has no automatic schema type for generic Page content
+        // (not Article-shaped) — buildAutoSchema always returns null here,
+        // so nothing renders unless an admin sets a manual override above.
+        <JsonLd schema={buildAutoSchema({ contentType: "PAGE", id: page.id, title: page.title, slug: page.slug })} />
       )}
       <JsonLd schema={breadcrumb} />
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

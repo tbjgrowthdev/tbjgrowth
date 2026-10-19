@@ -8,7 +8,8 @@ import { isValidImageSrc } from "@/lib/utils";
 import { cloudinaryUrl } from "@/lib/cloudinary-url";
 import ShareButton from "@/components/Blog/ShareButton";
 import JsonLd from "@/components/JsonLd";
-import { articleSchema, breadcrumbSchema } from "@/lib/schema";
+import { breadcrumbSchema } from "@/lib/schema";
+import { buildAutoSchema } from "@/lib/schema-engine";
 import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: "Case Study Not Found" };
   }
 
-  const { languages } = await buildHreflangAlternates("CASE_STUDY", study.id, study.slug, (s) => `/case-studies/${s}`);
+  const { languages } = await buildHreflangAlternates("CASE_STUDY", study.id, study.slug, (s) => `/case-studies/${s}`, study.canonicalUrl);
   const canonical = study.canonicalUrl || `${baseUrl}${withLocalePrefix(locale.prefix, `/case-studies/${study.slug}`)}`;
   const settings = await getSiteSettings();
 
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: social.title,
     description: social.description,
     alternates: { canonical, languages },
-    robots: buildRobotsMeta(study.isIndexable, study.allowFollow),
+    robots: buildRobotsMeta(study.isIndexable, study.allowFollow, study.maxSnippet, study.maxImagePreview as "none" | "standard" | "large", study.maxVideoPreview),
     openGraph: social.openGraph,
     twitter: social.twitter,
   };
@@ -105,9 +106,11 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: study.schemaJson }} />
       ) : (
         <JsonLd
-          schema={articleSchema({
+          schema={buildAutoSchema({
+            contentType: "CASE_STUDY",
+            id: study.id,
             title: study.title,
-            path: `/case-studies/${study.slug}`,
+            slug: study.slug,
             excerpt: study.excerpt,
             featuredImage: study.featuredImage,
             authorName: study.author?.name,

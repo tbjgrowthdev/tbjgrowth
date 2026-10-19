@@ -2,14 +2,34 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { updateSiteSettings } from "@/app/(admin)/actions/settings";
-import { Save, AlertCircle } from "lucide-react";
+import { updateSiteSettings, generateIndexNowKey } from "@/app/(admin)/actions/settings";
+import { Save, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function SettingsForm({ initialData = null }: { initialData?: any }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [indexNowKey, setIndexNowKey] = useState(initialData?.indexNowKey || "");
+  const [generatingKey, setGeneratingKey] = useState(false);
+
+  const handleGenerateKey = async () => {
+    setGeneratingKey(true);
+    setError(null);
+    try {
+      const result = await generateIndexNowKey();
+      if (result.success) {
+        setIndexNowKey(result.key);
+        setSuccessMsg("IndexNow key generated.");
+      } else {
+        setError(result.error);
+      }
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+    } finally {
+      setGeneratingKey(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     phone: initialData?.phone || "",
@@ -30,6 +50,7 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
     defaultOgImage: initialData?.defaultOgImage || "",
     usdPerGbp: initialData?.usdPerGbp?.toString() || "1.27",
     bdtPerGbp: initialData?.bdtPerGbp?.toString() || "148.0",
+    indexNowEnabled: initialData?.indexNowEnabled ?? false,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -298,6 +319,52 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
             placeholder={"Disallow: /thank-you\nCrawl-delay: 5"}
             className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground font-mono text-sm"
           />
+        </div>
+
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border md:col-span-2">
+          <h2 className="text-xl font-bold text-foreground mb-2">Search Engine Notifications (IndexNow)</h2>
+          <p className="text-sm text-caption mb-4">
+            When a Post, Page, Case Study, or Service is published, automatically push its URL to Bing, Yandex, and
+            other IndexNow-participating engines so they can re-crawl immediately instead of waiting for their next
+            scheduled crawl. The XML sitemap (always kept current from the live database) remains the way Google and
+            every other engine discover and re-crawl content regardless of this setting.
+          </p>
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              id="indexNowEnabled"
+              checked={formData.indexNowEnabled}
+              onChange={(e) => setFormData((prev) => ({ ...prev, indexNowEnabled: e.target.checked }))}
+              className="w-4 h-4 rounded border-border"
+            />
+            <label htmlFor="indexNowEnabled" className="text-sm text-muted">
+              Notify search engines when content is published
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-muted mb-1">IndexNow Key</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={indexNowKey || "No key generated yet"}
+                className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleGenerateKey}
+                disabled={generatingKey}
+                className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-background disabled:opacity-50 whitespace-nowrap"
+              >
+                <RefreshCw size={16} className={generatingKey ? "animate-spin" : ""} />
+                {indexNowKey ? "Regenerate" : "Generate Key"}
+              </button>
+            </div>
+            <p className="text-xs text-caption mt-1">
+              A key must exist before enabling notifications above. Served back to search engines at{" "}
+              <code>/indexnow-key.txt</code> to prove domain ownership — regenerating it takes effect immediately.
+            </p>
+          </div>
         </div>
       </div>
 

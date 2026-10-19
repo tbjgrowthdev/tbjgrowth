@@ -17,6 +17,7 @@ import { slugify } from "@/lib/utils";
 import { AlertCircle, X, Upload, FolderOpen, CalendarClock } from "lucide-react";
 import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
+import { buildAutoSchema } from "@/lib/schema-engine";
 import MediaAssetPicker from "./Media/MediaAssetPicker";
 
 const TIMEZONES = listTimezones();
@@ -59,6 +60,9 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
     schemaJson: initialData?.schemaJson || "",
     isIndexable: initialData?.isIndexable ?? true,
     allowFollow: initialData?.allowFollow ?? true,
+    maxSnippet: initialData?.maxSnippet ?? -1,
+    maxImagePreview: initialData?.maxImagePreview || "large",
+    maxVideoPreview: initialData?.maxVideoPreview ?? -1,
     isFeatured: initialData?.isFeatured ?? false,
   });
 
@@ -544,6 +548,14 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
         content={formData.content}
         slugPreviewPath={`case-studies/${formData.slug}`}
         contentLabel="case study"
+        autoSchema={buildAutoSchema({
+          contentType: "CASE_STUDY",
+          id: initialData?.id,
+          title: formData.title,
+          slug: formData.slug,
+          excerpt: formData.excerpt,
+          featuredImage: formData.featuredImage,
+        })}
       />
 
       <div className="space-y-2">

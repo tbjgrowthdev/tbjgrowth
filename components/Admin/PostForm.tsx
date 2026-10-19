@@ -11,6 +11,7 @@ import { AlertCircle, Upload, FolderOpen, CalendarClock } from "lucide-react";
 import MediaAssetPicker from "./Media/MediaAssetPicker";
 import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
+import { buildAutoSchema } from "@/lib/schema-engine";
 import WorkflowPanel from "./WorkflowPanel";
 import AssignmentPanel from "./AssignmentPanel";
 import VersionHistoryPanel from "./VersionHistoryPanel";
@@ -62,6 +63,9 @@ export default function PostForm({
     schemaJson: initialData?.schemaJson || "",
     isIndexable: initialData?.isIndexable ?? true,
     allowFollow: initialData?.allowFollow ?? true,
+    maxSnippet: initialData?.maxSnippet ?? -1,
+    maxImagePreview: initialData?.maxImagePreview || "large",
+    maxVideoPreview: initialData?.maxVideoPreview ?? -1,
     categoryIds: initialData?.categories?.map((c: any) => c.id) || [],
     tagIds: initialData?.tags?.map((t: any) => t.id) || [],
   });
@@ -416,6 +420,14 @@ export default function PostForm({
         content={formData.content}
         slugPreviewPath={`blog/${formData.slug}`}
         contentLabel="post"
+        autoSchema={buildAutoSchema({
+          contentType: "POST",
+          id: initialData?.id,
+          title: formData.title,
+          slug: formData.slug,
+          excerpt: formData.excerpt,
+          featuredImage: formData.featuredImage,
+        })}
       />
 
       <div className="space-y-2">

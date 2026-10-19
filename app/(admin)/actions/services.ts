@@ -6,6 +6,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 
 function serviceSnapshot(service: any) {
   return {
@@ -74,6 +75,12 @@ export async function createService(data: any) {
       entityLabel: service.title,
       after: serviceSnapshot(service),
     });
+    // Services have no draft/review workflow — creating an indexable one is
+    // the closest thing this content type has to Post/Page/CaseStudy's
+    // "publish" event, so it gets the same search-engine notification.
+    if (service.isIndexable && service.slug) {
+      await notifySearchEnginesOfUrl(`/services/${service.slug}`);
+    }
     return { success: true, service };
   } catch (error: any) {
     if (error instanceof AuthError) {
@@ -114,6 +121,12 @@ export async function updateService(id: string, data: any) {
       before: before ? serviceSnapshot(before) : undefined,
       after: serviceSnapshot(service),
     });
+    // Only the moment a service newly becomes indexable counts as its
+    // "publish" event — an edit to an already-indexable service is a
+    // routine update, not something to re-notify search engines about.
+    if (service.isIndexable && service.slug && !before.isIndexable) {
+      await notifySearchEnginesOfUrl(`/services/${service.slug}`);
+    }
     return { success: true, service };
   } catch (error: any) {
     if (error instanceof AuthError) {

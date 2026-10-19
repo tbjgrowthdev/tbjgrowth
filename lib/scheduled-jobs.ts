@@ -3,6 +3,8 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { sendScheduledJobFailureNotification } from "@/lib/email";
+import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
+import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
 import { revalidatePath } from "next/cache";
 import type { ContentType, ScheduledJobType, PostStatus, Prisma } from "@/lib/generated/prisma/client";
 
@@ -221,6 +223,12 @@ async function executeJob(job: Prisma.ScheduledJobGetPayload<object>) {
 
     for (const path of REVALIDATE_PATHS[job.contentType](updated.slug, job.contentId)) {
       revalidatePath(path);
+    }
+
+    // Same one-time-on-newly-PUBLISHED notification as the manual workflow
+    // path (lib/workflow.ts) — a scheduled publish is still a publish event.
+    if (toStatus === "PUBLISHED" && fromStatus !== "PUBLISHED" && current.isIndexable !== false) {
+      await notifySearchEnginesOfUrl(PUBLIC_PATH_BUILDERS[job.contentType](updated.slug));
     }
 
     await logAudit({

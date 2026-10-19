@@ -4,11 +4,18 @@ import { Plus, Trash2, Star } from 'lucide-react';
 interface SchemaBuilderProps {
   initialSchema: string;
   onChange: (schema: string) => void;
+  // What the Full Schema Engine (lib/schema-engine.ts) would generate
+  // automatically for this exact piece of content right now, from its live
+  // form fields — null when the content type has no automatic schema
+  // (generic Pages) or there isn't enough data yet (no title). Shown as a
+  // read-only reference so "manual override" means something: an admin can
+  // see the default before deciding whether to replace it.
+  autoSchema?: object | null;
 }
 
 const SCHEMA_TYPES = ['Organization', 'LocalBusiness', 'Service', 'Article', 'BlogPosting', 'FAQPage', 'Review'];
 
-export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilderProps) {
+export default function SchemaBuilder({ initialSchema, onChange, autoSchema }: SchemaBuilderProps) {
   const [schemaType, setSchemaType] = useState('Organization');
   const [schemaData, setSchemaData] = useState<any>({});
   const [jsonText, setJsonText] = useState(initialSchema || '');
@@ -101,6 +108,22 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
 
   const inputClass = "w-full px-3 py-1.5 border border-border rounded bg-background text-foreground";
   const labelClass = "block text-sm mb-1";
+
+  const hasOverride = jsonText.trim().length > 0;
+  const autoSchemaText = autoSchema ? JSON.stringify(autoSchema, null, 2) : null;
+
+  const applyAutoSchema = () => {
+    if (!autoSchemaText) return;
+    setJsonText(autoSchemaText);
+    onChange(autoSchemaText);
+    try {
+      const parsed = JSON.parse(autoSchemaText);
+      if (parsed['@type']) {
+        setSchemaType(parsed['@type']);
+        setSchemaData(parsed);
+      }
+    } catch (e) {}
+  };
 
   const renderVisualFields = () => {
     switch (schemaType) {
@@ -265,6 +288,38 @@ export default function SchemaBuilder({ initialSchema, onChange }: SchemaBuilder
 
   return (
     <div className="border border-border rounded-lg overflow-hidden bg-card">
+      <div className="px-4 py-3 border-b border-border bg-background/50 flex items-start justify-between gap-4">
+        <div className="text-xs text-caption">
+          {hasOverride ? (
+            <span>
+              A manual override is set below — it replaces the automatically generated schema on the live page.
+            </span>
+          ) : autoSchemaText ? (
+            <span>
+              No override set — the Full Schema Engine auto-generates <strong>{(autoSchema as { "@type"?: string })?.["@type"] || "schema"}</strong> JSON-LD for this content on the live page.
+            </span>
+          ) : (
+            <span>No override set — this content type has no automatic schema, so nothing renders unless you add one here.</span>
+          )}
+        </div>
+        {autoSchemaText && (
+          <button
+            type="button"
+            onClick={applyAutoSchema}
+            className="shrink-0 text-xs font-medium text-brand-orange-deep dark:text-brand-orange-light hover:underline whitespace-nowrap"
+          >
+            Start from auto-generated
+          </button>
+        )}
+      </div>
+      {autoSchemaText && (
+        <details className="border-b border-border">
+          <summary className="px-4 py-2 text-xs font-medium text-muted cursor-pointer hover:bg-background/50">
+            Preview auto-generated schema
+          </summary>
+          <pre className="px-4 pb-3 text-xs font-mono text-caption overflow-x-auto whitespace-pre-wrap">{autoSchemaText}</pre>
+        </details>
+      )}
       <div className="flex border-b border-border">
         <button
           type="button"

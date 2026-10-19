@@ -48,6 +48,9 @@ export default function PageForm({ initialData }: { initialData?: any }) {
     schemaJson: initialData?.schemaJson || "",
     isIndexable: initialData?.isIndexable ?? true,
     allowFollow: initialData?.allowFollow ?? true,
+    maxSnippet: initialData?.maxSnippet ?? -1,
+    maxImagePreview: initialData?.maxImagePreview || "large",
+    maxVideoPreview: initialData?.maxVideoPreview ?? -1,
   });
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
   const [changeSummary, setChangeSummary] = useState("");

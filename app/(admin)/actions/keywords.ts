@@ -2,9 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { fetchKeywordRankings } from "@/lib/seo-services";
+import { fetchKeywordRankings, fetchSearchVolume, fetchKeywordDifficulty } from "@/lib/seo-services";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
+import type { SearchIntent, KeywordStatus } from "@/lib/generated/prisma/client";
 
 export async function getTrackedKeywords() {
   try {
@@ -19,11 +20,25 @@ export async function getTrackedKeywords() {
   }
 }
 
-export async function createTrackedKeyword(data: { term: string; targetUrl?: string }) {
+export async function createTrackedKeyword(data: {
+  term: string;
+  targetUrl?: string;
+  searchIntent?: SearchIntent;
+  country?: string;
+  language?: string;
+  status?: KeywordStatus;
+}) {
   try {
     await requirePermission("SEO_MANAGEMENT");
     const keyword = await prisma.trackedKeyword.create({
-      data: { term: data.term.trim(), targetUrl: data.targetUrl?.trim() || null },
+      data: {
+        term: data.term.trim(),
+        targetUrl: data.targetUrl?.trim() || null,
+        searchIntent: data.searchIntent || "INFORMATIONAL",
+        country: data.country || "GB",
+        language: data.language || "en",
+        status: data.status || "ACTIVE",
+      },
     });
     revalidatePath("/admin/keywords");
     await logAudit({
@@ -32,7 +47,7 @@ export async function createTrackedKeyword(data: { term: string; targetUrl?: str
       entityType: "TrackedKeyword",
       entityId: keyword.id,
       entityLabel: keyword.term,
-      after: { term: keyword.term, targetUrl: keyword.targetUrl },
+      after: { term: keyword.term, targetUrl: keyword.targetUrl, searchIntent: keyword.searchIntent, country: keyword.country, language: keyword.language, status: keyword.status },
     });
     return { success: true, keyword };
   } catch (error: any) {
@@ -44,6 +59,46 @@ export async function createTrackedKeyword(data: { term: string; targetUrl?: str
       return { success: false, error: "This keyword + target URL combination is already tracked" };
     }
     return { success: false, error: "Failed to add keyword" };
+  }
+}
+
+export async function updateTrackedKeyword(
+  id: string,
+  data: { targetUrl?: string; searchIntent?: SearchIntent; country?: string; language?: string; status?: KeywordStatus }
+) {
+  try {
+    await requirePermission("SEO_MANAGEMENT");
+    const before = await prisma.trackedKeyword.findUnique({ where: { id } });
+    if (!before) {
+      return { success: false, error: "Keyword not found" };
+    }
+    const keyword = await prisma.trackedKeyword.update({
+      where: { id },
+      data: {
+        targetUrl: data.targetUrl !== undefined ? data.targetUrl.trim() || null : undefined,
+        searchIntent: data.searchIntent,
+        country: data.country,
+        language: data.language,
+        status: data.status,
+      },
+    });
+    revalidatePath("/admin/keywords");
+    await logAudit({
+      action: "update",
+      category: "SEO",
+      entityType: "TrackedKeyword",
+      entityId: keyword.id,
+      entityLabel: keyword.term,
+      before: { targetUrl: before.targetUrl, searchIntent: before.searchIntent, country: before.country, language: before.language, status: before.status },
+      after: { targetUrl: keyword.targetUrl, searchIntent: keyword.searchIntent, country: keyword.country, language: keyword.language, status: keyword.status },
+    });
+    return { success: true, keyword };
+  } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+    console.error(`Failed to update tracked keyword ${id}:`, error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -82,7 +137,7 @@ export async function runRankCheck(trackedKeywordId: string) {
       return { success: false, error: "Keyword not found" };
     }
 
-    const result = await fetchKeywordRankings(keyword.term);
+    const result = await fetchKeywordRankings(keyword.term, keyword.country, keyword.language);
     if (result === null) {
       return { success: false, error: "Rank check failed — check DataForSEO credentials" };
     }
@@ -99,6 +154,50 @@ export async function runRankCheck(trackedKeywordId: string) {
     }
     console.error(`Failed to run rank check for ${trackedKeywordId}:`, error);
     return { success: false, error: "Rank check failed" };
+  }
+}
+
+/**
+ * On-demand search volume + difficulty refresh for one keyword. Kept as its
+ * own explicit action (same reasoning as "Check Rank") rather than running
+ * automatically on create/edit, since every call costs real DataForSEO API
+ * credits. Either metric is left untouched (not nulled out) if its half of
+ * the DataForSEO call fails, so a transient failure in one never wipes out
+ * previously-known data for the other.
+ */
+export async function refreshKeywordMetrics(trackedKeywordId: string) {
+  try {
+    await requirePermission("SEO_MANAGEMENT");
+    const keyword = await prisma.trackedKeyword.findUnique({ where: { id: trackedKeywordId } });
+    if (!keyword) {
+      return { success: false, error: "Keyword not found" };
+    }
+
+    const [volumes, difficulties] = await Promise.all([
+      fetchSearchVolume([keyword.term]),
+      fetchKeywordDifficulty([keyword.term], keyword.country, keyword.language),
+    ]);
+
+    if (volumes === null && difficulties === null) {
+      return { success: false, error: "Metrics refresh failed — check DataForSEO credentials" };
+    }
+
+    const searchVolume = volumes?.[0]?.searchVolume ?? keyword.searchVolume;
+    const difficulty = difficulties?.[0]?.difficulty ?? keyword.difficulty;
+
+    const updated = await prisma.trackedKeyword.update({
+      where: { id: trackedKeywordId },
+      data: { searchVolume, difficulty },
+    });
+
+    revalidatePath("/admin/keywords");
+    return { success: true, keyword: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+    console.error(`Failed to refresh metrics for ${trackedKeywordId}:`, error);
+    return { success: false, error: "Metrics refresh failed" };
   }
 }
 

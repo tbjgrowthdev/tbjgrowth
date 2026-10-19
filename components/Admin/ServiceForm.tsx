@@ -10,6 +10,7 @@ import { slugify } from "@/lib/utils";
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
 import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
+import { buildAutoSchema } from "@/lib/schema-engine";
 import ContentLockBanner from "./ContentLockBanner";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
@@ -72,6 +73,9 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
     order: initialData?.order || 0,
     isIndexable: initialData?.isIndexable ?? true,
     allowFollow: initialData?.allowFollow ?? true,
+    maxSnippet: initialData?.maxSnippet ?? -1,
+    maxImagePreview: initialData?.maxImagePreview || "large",
+    maxVideoPreview: initialData?.maxVideoPreview ?? -1,
     metaTitle: initialData?.metaTitle || "",
     metaDescription: initialData?.metaDescription || "",
     focusKeyword: initialData?.focusKeyword || "",
@@ -309,6 +313,13 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
         content={formData.content || formData.detailIntro || formData.description}
         slugPreviewPath={`services/${formData.slug}`}
         contentLabel="service"
+        autoSchema={buildAutoSchema({
+          contentType: "SERVICE",
+          id: initialData?.id,
+          title: formData.title,
+          slug: formData.slug,
+          description: formData.description,
+        })}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
