@@ -8,14 +8,31 @@ import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 
+// SEO fields here are read back out by lib/seo-change-log to build the SEO
+// Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
 function serviceSnapshot(service: any) {
   return {
     title: service.title,
     slug: service.slug,
     subtitle: service.subtitle,
     isIndexable: service.isIndexable,
+    allowFollow: service.allowFollow,
     metaTitle: service.metaTitle,
     metaDescription: service.metaDescription,
+    focusKeyword: service.focusKeyword,
+    secondaryKeywords: service.secondaryKeywords,
+    canonicalUrl: service.canonicalUrl,
+    schemaJson: service.schemaJson,
+    ogImage: service.ogImage,
+    twitterCard: service.twitterCard,
+    ogTitle: service.ogTitle,
+    ogDescription: service.ogDescription,
+    twitterTitle: service.twitterTitle,
+    twitterDescription: service.twitterDescription,
+    twitterImage: service.twitterImage,
+    maxSnippet: service.maxSnippet,
+    maxImagePreview: service.maxImagePreview,
+    maxVideoPreview: service.maxVideoPreview,
     order: service.order,
   };
 }

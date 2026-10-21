@@ -10,14 +10,31 @@ import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
 
+// SEO fields here are read back out by lib/seo-change-log to build the SEO
+// Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
 function pageSnapshot(page: any) {
   return {
     title: page.title,
     slug: page.slug,
     status: page.status,
     isIndexable: page.isIndexable,
+    allowFollow: page.allowFollow,
     metaTitle: page.metaTitle,
     metaDescription: page.metaDescription,
+    focusKeyword: page.focusKeyword,
+    secondaryKeywords: page.secondaryKeywords,
+    canonicalUrl: page.canonicalUrl,
+    schemaJson: page.schemaJson,
+    ogImage: page.ogImage,
+    twitterCard: page.twitterCard,
+    ogTitle: page.ogTitle,
+    ogDescription: page.ogDescription,
+    twitterTitle: page.twitterTitle,
+    twitterDescription: page.twitterDescription,
+    twitterImage: page.twitterImage,
+    maxSnippet: page.maxSnippet,
+    maxImagePreview: page.maxImagePreview,
+    maxVideoPreview: page.maxVideoPreview,
     authorId: page.authorId,
     reviewerId: page.reviewerId,
     seoReviewerId: page.seoReviewerId,

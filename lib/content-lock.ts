@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { requireSession } from "@/lib/auth-guard";
 
-export type ContentKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE";
+export type ContentKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE" | "LOCATION";
 
 // A lock not refreshed within this window is treated as abandoned (tab
 // closed without a clean unmount) and can be silently reclaimed by anyone.

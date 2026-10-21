@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { fetchPageSearchTrend, fetchPageTrafficTrend } from "@/lib/seo-services";
+import { fetchPageConversionTrend, fetchPageSearchTrend, fetchPageTrafficTrend } from "@/lib/seo-services";
 import type { DetectedSignal, RefreshCandidate } from "./types";
 
 // All thresholds here are starting points, not tuned against real traffic
@@ -13,6 +13,8 @@ const TRAFFIC_DECLINE_RATIO = 0.7; // recent sessions below 70% of the prior win
 const TRAFFIC_DECLINE_MIN_PRIOR = 10; // ignore near-zero-traffic pages — noise, not a real decline
 const CTR_DECLINE_RATIO = 0.7;
 const CTR_DECLINE_MIN_PRIOR_CLICKS = 5;
+const CONVERSION_DECLINE_RATIO = 0.7; // recent conversion rate below 70% of the prior window's
+const CONVERSION_DECLINE_MIN_PRIOR_CONVERSIONS = 3; // ignore near-zero-conversion pages — noise, not a real decline
 
 const baseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -68,8 +70,18 @@ async function checkCtrDecline(publicUrl: string): Promise<DetectedSignal | null
   return { type: "CTR_DECLINE", detail: `CTR down ${pct}% (${(trend.priorCtr * 100).toFixed(1)}% → ${(trend.recentCtr * 100).toFixed(1)}%)` };
 }
 
+async function checkConversionDecline(publicPath: string): Promise<DetectedSignal | null> {
+  const trend = await fetchPageConversionTrend(publicPath);
+  if (!trend || trend.priorConversions < CONVERSION_DECLINE_MIN_PRIOR_CONVERSIONS || trend.priorSessions === 0) return null;
+  const priorRate = trend.priorConversions / trend.priorSessions;
+  const recentRate = trend.recentSessions > 0 ? trend.recentConversions / trend.recentSessions : 0;
+  if (priorRate <= 0 || recentRate >= priorRate * CONVERSION_DECLINE_RATIO) return null;
+  const pct = Math.round((1 - recentRate / priorRate) * 100);
+  return { type: "CONVERSION_DECLINE", detail: `Conversion rate down ${pct}% (${(priorRate * 100).toFixed(2)}% → ${(recentRate * 100).toFixed(2)}% of sessions over 30 days)` };
+}
+
 /**
- * Scans every published Post and CaseStudy for the five signals and
+ * Scans every published Post and CaseStudy for the six signals and
  * returns only the ones with at least one. Read-only — never writes a
  * ContentRefresh row itself; see lib/content-refresh/refresh.ts's
  * upsertDetectedCandidates() for that, so a plain "preview the scan"
@@ -89,10 +101,11 @@ export async function scanForRefreshCandidates(): Promise<RefreshCandidate[]> {
   const candidates: RefreshCandidate[] = [];
   for (const item of items) {
     const fullUrl = `${baseUrl()}${item.path}`;
-    const [ranking, traffic, ctr] = await Promise.all([
+    const [ranking, traffic, ctr, conversion] = await Promise.all([
       checkRankingDecline(item.path),
       checkTrafficDecline(item.path),
       checkCtrDecline(fullUrl),
+      checkConversionDecline(item.path),
     ]);
     const signals = [
       checkOldContent(item.record.publishedAt, item.record.updatedAt),
@@ -100,6 +113,7 @@ export async function scanForRefreshCandidates(): Promise<RefreshCandidate[]> {
       ranking,
       traffic,
       ctr,
+      conversion,
     ].filter((s): s is DetectedSignal => s !== null);
 
     if (signals.length > 0) {

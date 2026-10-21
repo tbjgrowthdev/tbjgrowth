@@ -569,6 +569,56 @@ export async function fetchPageTrafficTrend(pagePath: string): Promise<PageTraff
   }
 }
 
+export type PageConversionTrend = { recentConversions: number; priorConversions: number; recentSessions: number; priorSessions: number };
+
+/**
+ * Same two-named-dateRanges GA4 request as fetchPageTrafficTrend, just
+ * with the conversions metric alongside sessions — used by the Content
+ * Refresh Engine's conversion-decline check, which needs last-30-days vs.
+ * the 30 days before that rather than fetchPageConversions' single
+ * current-window snapshot.
+ */
+export async function fetchPageConversionTrend(pagePath: string): Promise<PageConversionTrend | null> {
+  const integration = await getGoogleIntegration();
+  if (!integration?.ga4PropertyId) return null;
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return null;
+
+  try {
+    const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${integration.ga4PropertyId}:runReport`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dateRanges: [
+          { startDate: "30daysAgo", endDate: "today", name: "recent" },
+          { startDate: "60daysAgo", endDate: "31daysAgo", name: "prior" },
+        ],
+        dimensions: [{ name: "pagePath" }, { name: "dateRange" }],
+        metrics: [{ name: "conversions" }, { name: "sessions" }],
+        dimensionFilter: { filter: { fieldName: "pagePath", stringFilter: { value: pagePath, matchType: "EXACT" } } },
+      }),
+    });
+    if (!res.ok) {
+      console.error(`GA4 page conversion trend request failed: ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    type Row = { dimensionValues?: { value?: string }[]; metricValues?: { value?: string }[] };
+    const rows: Row[] = data.rows || [];
+    const recent = rows.find((r) => r.dimensionValues?.[1]?.value === "recent");
+    const prior = rows.find((r) => r.dimensionValues?.[1]?.value === "prior");
+    return {
+      recentConversions: Number(recent?.metricValues?.[0]?.value || 0),
+      priorConversions: Number(prior?.metricValues?.[0]?.value || 0),
+      recentSessions: Number(recent?.metricValues?.[1]?.value || 0),
+      priorSessions: Number(prior?.metricValues?.[1]?.value || 0),
+    };
+  } catch (error) {
+    console.error("GA4 page conversion trend call failed:", error);
+    return null;
+  }
+}
+
 export type PageConversionStats = { conversions: number; sessions: number };
 
 /**

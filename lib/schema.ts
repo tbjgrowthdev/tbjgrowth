@@ -74,6 +74,48 @@ export function localBusinessSchema(settings: SiteSettings) {
   };
 }
 
+// Per-location LocalBusiness schema (Local SEO) — distinct from the
+// site-wide localBusinessSchema() above, which describes the single
+// GBP-configured business. Every field here comes straight off the
+// Location record (real NAP data an admin entered), never guessed —
+// areaServed is omitted entirely when no service areas were entered rather
+// than inventing a coverage claim.
+export function locationLocalBusinessSchema(location: {
+  name: string;
+  slug: string;
+  streetAddress: string;
+  addressLocality: string;
+  addressRegion?: string | null;
+  postalCode?: string | null;
+  addressCountry: string;
+  phone: string;
+  email?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}, serviceAreas: string[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": ["LocalBusiness", "ProfessionalService"],
+    name: location.name,
+    url: `${baseUrl}/locations/${location.slug}`,
+    telephone: location.phone,
+    email: location.email || undefined,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: location.streetAddress,
+      addressLocality: location.addressLocality,
+      addressRegion: location.addressRegion || undefined,
+      postalCode: location.postalCode || undefined,
+      addressCountry: location.addressCountry,
+    },
+    geo:
+      location.latitude != null && location.longitude != null
+        ? { "@type": "GeoCoordinates", latitude: location.latitude, longitude: location.longitude }
+        : undefined,
+    areaServed: serviceAreas.length > 0 ? serviceAreas.map((name) => ({ "@type": "City", name })) : undefined,
+  };
+}
+
 export function breadcrumbSchema(items: { name: string; path: string }[]) {
   return {
     "@context": "https://schema.org",

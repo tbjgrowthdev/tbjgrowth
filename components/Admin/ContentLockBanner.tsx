@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { acquireContentLock, takeOverContentLock, heartbeatContentLock, releaseContentLock } from "@/app/(admin)/actions/content-lock";
 import { AlertTriangle, Lock } from "lucide-react";
 
-type ContentKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE";
+type ContentKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE" | "LOCATION";
 
 const HEARTBEAT_INTERVAL_MS = 30_000;
 

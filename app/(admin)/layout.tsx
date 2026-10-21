@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink } from "lucide-react";
+import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink, Network, Layers, MapPin, FileStack, FlaskConical, GitCompare, Stethoscope, Plug, Zap, BarChart3 } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
@@ -28,6 +28,7 @@ export default async function AdminLayout({
   const canManageUsers = hasPermission(role, "USER_MANAGEMENT");
   const canManageSeo = hasPermission(role, "SEO_MANAGEMENT");
   const canManageSettings = hasPermission(role, "SETTINGS_MANAGEMENT");
+  const canManageIntegrations = hasPermission(role, "INTEGRATION_MANAGEMENT");
   const canManageMedia = hasPermission(role, "MEDIA_MANAGEMENT");
   const canExport = hasPermission(role, "EXPORT");
   const canTranslate = hasPermission(role, "EDIT");
@@ -69,6 +70,10 @@ export default async function AdminLayout({
           <Link href="/admin/cases" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <Briefcase size={20} />
             Case Studies
+          </Link>
+          <Link href="/admin/locations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+            <MapPin size={20} />
+            Locations
           </Link>
           <Link href="/admin/services" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <LayoutDashboard size={20} />
@@ -129,6 +134,18 @@ export default async function AdminLayout({
             </Link>
           )}
           {canTranslate && (
+            <Link href="/admin/seo-performance-feedback" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Stethoscope size={20} />
+              SEO Performance Feedback
+            </Link>
+          )}
+          {canTranslate && (
+            <Link href="/admin/automation" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Zap size={20} />
+              Automation Engine
+            </Link>
+          )}
+          {canTranslate && (
             <Link href="/admin/canonical-hreflang" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
               <Globe2 size={20} />
               Canonical &amp; Hreflang
@@ -178,6 +195,26 @@ export default async function AdminLayout({
                 <Unlink size={20} />
                 Orphan Page Detection
               </Link>
+              <Link href="/admin/link-graph" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <Network size={20} />
+                Internal Link Graph
+              </Link>
+              <Link href="/admin/topic-clusters" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <Layers size={20} />
+                Topic Clusters
+              </Link>
+              <Link href="/admin/programmatic-seo" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <FileStack size={20} />
+                Programmatic SEO
+              </Link>
+              <Link href="/admin/seo-experiments" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <FlaskConical size={20} />
+                SEO Experiments
+              </Link>
+              <Link href="/admin/seo-change-log" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <GitCompare size={20} />
+                SEO Change Impact
+              </Link>
               <Link href="/admin/gsc-import" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
                 <Download size={20} />
                 Search Console Import
@@ -202,7 +239,17 @@ export default async function AdminLayout({
                 <Settings size={20} />
                 Settings
               </Link>
+              <Link href="/admin/executive-analytics" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+                <BarChart3 size={20} />
+                Executive Analytics
+              </Link>
             </>
+          )}
+          {canManageIntegrations && (
+            <Link href="/admin/integrations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+              <Plug size={20} />
+              Integration Hub
+            </Link>
           )}
           {canExport && (
             <Link href="/admin/import-export" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">

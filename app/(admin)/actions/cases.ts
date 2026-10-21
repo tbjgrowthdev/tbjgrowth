@@ -10,15 +10,32 @@ import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
 
+// SEO fields here are read back out by lib/seo-change-log to build the SEO
+// Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
 function caseStudySnapshot(cs: any) {
   return {
     title: cs.title,
     slug: cs.slug,
     status: cs.status,
     isIndexable: cs.isIndexable,
+    allowFollow: cs.allowFollow,
     isFeatured: cs.isFeatured,
     metaTitle: cs.metaTitle,
     metaDescription: cs.metaDescription,
+    focusKeyword: cs.focusKeyword,
+    secondaryKeywords: cs.secondaryKeywords,
+    canonicalUrl: cs.canonicalUrl,
+    schemaJson: cs.schemaJson,
+    ogImage: cs.ogImage,
+    twitterCard: cs.twitterCard,
+    ogTitle: cs.ogTitle,
+    ogDescription: cs.ogDescription,
+    twitterTitle: cs.twitterTitle,
+    twitterDescription: cs.twitterDescription,
+    twitterImage: cs.twitterImage,
+    maxSnippet: cs.maxSnippet,
+    maxImagePreview: cs.maxImagePreview,
+    maxVideoPreview: cs.maxVideoPreview,
     authorId: cs.authorId,
     reviewerId: cs.reviewerId,
     seoReviewerId: cs.seoReviewerId,

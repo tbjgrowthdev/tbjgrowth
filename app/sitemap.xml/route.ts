@@ -15,6 +15,8 @@ export async function GET() {
     { url: `${baseUrl}/sitemap-posts.xml`, lastModified: now },
     { url: `${baseUrl}/sitemap-case-studies.xml`, lastModified: now },
     { url: `${baseUrl}/sitemap-services.xml`, lastModified: now },
+    { url: `${baseUrl}/sitemap-locations.xml`, lastModified: now },
+    { url: `${baseUrl}/sitemap-pseo.xml`, lastModified: now },
   ]);
   return new Response(xml, {
     headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=0, must-revalidate" },

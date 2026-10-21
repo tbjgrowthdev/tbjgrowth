@@ -36,6 +36,9 @@ export const STAGE_LABEL: Record<PipelineStage, string> = {
   // only a tag for AiJob rows that belong to a ContentRefresh cycle
   // instead of a ContentPipelineRun. See lib/content-refresh/.
   REFRESH: "Content Refresh",
+  // Same off-pipeline purpose as REFRESH, for AiJob rows that belong to a
+  // PerformanceFeedback diagnosis. See lib/seo-performance-feedback/.
+  PERFORMANCE_FEEDBACK: "Performance Feedback",
 };
 
 export function nextStage(stage: PipelineStage): PipelineStage | null {

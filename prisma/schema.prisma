@@ -289,6 +289,9 @@ enum PipelineStage {
   // created for a ContentRefresh cycle, so the Job Queue/Cost Dashboard
   // can show and price those jobs the same way as every other AI call.
   REFRESH
+  // Same off-state-machine purpose as REFRESH above, for the AI diagnosis
+  // call behind PerformanceFeedback.
+  PERFORMANCE_FEEDBACK
 }
 
 // Tracks one run of the AI content pipeline (Brief -> Search Intent ->
@@ -369,16 +372,19 @@ enum AiJobStatus {
 model AiJob {
   id               String              @id @default(cuid())
   idempotencyKey   String              @unique
-  // Exactly one of pipelineRunId/contentRefreshId is set — a job always
-  // belongs to either a ContentPipelineRun or a ContentRefresh cycle,
-  // never both and never neither. Optional (not a discriminated union)
-  // because Prisma has no native way to express "exactly one of two FKs,"
-  // same pragmatic tradeoff as elsewhere in this schema.
-  pipelineRunId    String?
-  pipelineRun      ContentPipelineRun? @relation(fields: [pipelineRunId], references: [id], onDelete: Cascade)
-  contentRefreshId String?
-  contentRefresh   ContentRefresh?     @relation(fields: [contentRefreshId], references: [id], onDelete: Cascade)
-  contentId        String? // the real Post/CaseStudy id, once known (unset for pre-Draft stages)
+  // Exactly one of pipelineRunId/contentRefreshId/performanceFeedbackId is
+  // set — a job always belongs to exactly one of a ContentPipelineRun, a
+  // ContentRefresh cycle, or a PerformanceFeedback diagnosis, never more
+  // than one and never none. Optional (not a discriminated union) because
+  // Prisma has no native way to express "exactly one of N FKs," same
+  // pragmatic tradeoff as elsewhere in this schema.
+  pipelineRunId         String?
+  pipelineRun           ContentPipelineRun?  @relation(fields: [pipelineRunId], references: [id], onDelete: Cascade)
+  contentRefreshId      String?
+  contentRefresh        ContentRefresh?      @relation(fields: [contentRefreshId], references: [id], onDelete: Cascade)
+  performanceFeedbackId String?
+  performanceFeedback   PerformanceFeedback? @relation(fields: [performanceFeedbackId], references: [id], onDelete: Cascade)
+  contentId             String? // the real Post/CaseStudy id, once known (unset for pre-Draft stages)
   stage            PipelineStage
   provider         String // "anthropic"
   model            String // actual model id used, e.g. "claude-sonnet-5-5"
@@ -406,6 +412,7 @@ model AiJob {
 
   @@index([pipelineRunId])
   @@index([contentRefreshId])
+  @@index([performanceFeedbackId])
   @@index([status])
   @@index([contentId])
 }
@@ -959,6 +966,238 @@ model ServiceFaq {
   @@index([serviceId])
 }
 
+// Local SEO: one row per physical location/office. Deliberately structured
+// (no free-form `content` field, unlike AgencyService/Page) — every location
+// page renders the same fixed template (intro, NAP, service areas, FAQ) so
+// LocalBusiness schema and layout stay consistent across locations. `market`
+// is a plain string matching lib/i18n.ts's Market union ("uk" | "bangladesh"
+// | "gulf") rather than a DB enum, same lightweight-constraint convention as
+// TrackedKeyword.country — a location only ever renders under a locale whose
+// market matches (enforced in the public route, not here).
+model Location {
+  id     String  @id @default(cuid())
+  name   String // business name as shown for this location, e.g. "TBJ Growth Tech — Dhaka"
+  slug   String  @unique
+  market String // "uk" | "bangladesh" | "gulf"
+  intro  String? @db.Text // optional intro paragraph shown on the location page
+
+  // NAP — kept as separate schema.org PostalAddress fields (not one free-text
+  // blob) so locationLocalBusinessSchema() in lib/schema.ts can emit a real
+  // structured address instead of guessing how to split one.
+  streetAddress   String
+  addressLocality String // city
+  addressRegion   String? // state/county/division, optional
+  postalCode      String?
+  addressCountry  String // ISO 3166-1 alpha-2, e.g. "GB"
+  phone           String
+  email           String?
+  latitude        Float?
+  longitude       Float?
+
+  serviceAreas String? @db.Text // JSON string[] of area/city names served from this location — see lib/seo-fields.ts-style parsing
+
+  order       Int     @default(0)
+  isIndexable Boolean @default(true)
+
+  // SEO Fields — same set as AgencyService, for SeoPanel parity.
+  metaTitle         String?
+  metaDescription   String?
+  focusKeyword      String?
+  secondaryKeywords String? @db.Text // JSON string[] — see lib/seo-fields.ts
+  canonicalUrl      String?
+  schemaJson        String? @db.Text
+  ogImage           String?
+  twitterCard       String?
+  allowFollow       Boolean @default(true)
+  maxSnippet        Int     @default(-1)
+  maxImagePreview   String  @default("large")
+  maxVideoPreview   Int     @default(-1)
+
+  ogTitle            String?
+  ogDescription      String? @db.Text
+  twitterTitle       String?
+  twitterDescription String? @db.Text
+  twitterImage       String?
+
+  faqs      LocationFaq[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([market])
+}
+
+model LocationFaq {
+  id         String   @id @default(cuid())
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  question   String
+  answer     String   @db.Text
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([locationId])
+}
+
+// ------------------------------------------------------
+// Programmatic SEO: Template + Dataset -> controlled landing pages.
+// A Template defines {{column}}-placeholder title/meta/body text and the
+// quality bar a generated page must clear; a Dataset is one CSV upload of
+// rows (each row = one page's variables) against that Template; a
+// PSeoPage is the materialized, rendered result for one row, carrying the
+// guardrail outcome that decided whether it's actually indexable. Pages
+// that fail a guardrail are still created (so there's something concrete
+// to review) but forced into NEEDS_REVIEW/noindex rather than silently
+// skipped or silently published — see lib/programmatic-seo/.
+// ------------------------------------------------------
+model PSeoTemplate {
+  id           String @id @default(cuid())
+  name         String // admin label, e.g. "Service in City"
+  slugTemplate String // e.g. "{{service}}-in-{{city}}" — rendered then slugified per row
+
+  titleTemplate           String
+  metaDescriptionTemplate String? @db.Text
+  h1Template              String? // falls back to titleTemplate when empty
+  bodyTemplate            String  @db.Text // HTML with {{column}} placeholders — row values are escaped on render, this markup is not
+
+  requiredColumns String @db.Text // JSON string[] — columns that must be non-empty for a row to even attempt generation (the "low-value" guardrail)
+
+  minWordCount                 Int   @default(300) // thin-content guardrail
+  duplicateSimilarityThreshold Float @default(0.5) // same Jaccard-overlap bar as lib/content-pipeline/quality-gate.ts's duplicate-content check
+
+  isIndexable Boolean @default(true) // template-level master switch — off takes every one of this template's pages out of the index regardless of per-page guardrail status
+
+  datasets PSeoDataset[]
+  pages    PSeoPage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PSeoDataset {
+  id         String       @id @default(cuid())
+  templateId String
+  template   PSeoTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  name    String // admin label for this upload, e.g. "UK Cities - Jan 2026"
+  columns String @db.Text // JSON string[] of the CSV's header row, as uploaded
+  rowCount Int    @default(0)
+
+  rows  PSeoDatasetRow[]
+  pages PSeoPage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+}
+
+model PSeoDatasetRow {
+  id        String      @id @default(cuid())
+  datasetId String
+  dataset   PSeoDataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  data     String @db.Text // JSON object of column -> value, exactly as uploaded
+  rowIndex Int // original CSV row order — kept for stable re-generation and debugging
+
+  page PSeoPage?
+
+  createdAt DateTime @default(now())
+
+  @@index([datasetId])
+}
+
+enum PSeoPageStatus {
+  PUBLISHED // passed every guardrail — indexable (subject to the template's own master switch)
+  NEEDS_REVIEW // failed one or more guardrails — forced noindex until a human overrides
+  OVERRIDDEN // a human explicitly published a page despite a guardrail flag
+}
+
+model PSeoPage {
+  id         String       @id @default(cuid())
+  templateId String
+  template   PSeoTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  datasetId  String
+  dataset    PSeoDataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  rowId      String       @unique
+  row        PSeoDatasetRow @relation(fields: [rowId], references: [id], onDelete: Cascade)
+
+  slug            String  @unique
+  title           String
+  metaDescription String? @db.Text
+  h1              String
+  bodyHtml        String  @db.Text // the template rendered against this row's data, sanitized — real stored content, not re-rendered per request
+
+  wordCount         Int
+  status            PSeoPageStatus @default(NEEDS_REVIEW)
+  guardrailFindings String         @db.Text // JSON GuardrailFinding[] — which checks failed and why; see lib/programmatic-seo/guardrails.ts
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@index([datasetId])
+  @@index([status])
+}
+
+// ------------------------------------------------------
+// SEO Experimentation: sequential before/after testing on real content —
+// not a live visitor-bucketed split test (this site has no traffic-
+// splitting infrastructure, and simultaneously serving two versions of a
+// page risks a cloaking penalty). Launching an experiment snapshots the
+// current field value, writes the new one to the actual content record
+// (one version live at a time, same as any other edit), then compares a
+// baseline window before that change against an evaluation window after
+// it, using the SearchConsoleMetric/AnalyticsLandingPageMetric rows
+// already imported — no new tracking is needed. See lib/seo-experiments/.
+// contentType is a plain string ("POST" | "PAGE" | "CASE_STUDY" |
+// "SERVICE") rather than the Prisma ContentType enum, because that enum
+// has no SERVICE value — Location is deliberately excluded here, since it
+// has no rich body for CTA/Internal Links/Content Section to target.
+// ------------------------------------------------------
+enum SeoExperimentVariable {
+  TITLE
+  META_DESCRIPTION
+  CTA
+  INTERNAL_LINKS
+  CONTENT_SECTION
+}
+
+enum SeoExperimentStatus {
+  DRAFT // created, not yet applied to the live content
+  RUNNING // applied — collecting the evaluation window
+  COMPLETED // evaluation window elapsed, results computed
+  REVERTED // a human reverted to the before value before completion
+}
+
+model SeoExperiment {
+  id          String @id @default(cuid())
+  name        String // admin label, e.g. "Shorter title on /blog/foo"
+  contentType String // POST | PAGE | CASE_STUDY | SERVICE
+  contentId   String
+
+  variable SeoExperimentVariable
+
+  beforeValue String @db.Text
+  afterValue  String @db.Text
+
+  baselineWindowDays   Int @default(28)
+  evaluationWindowDays Int @default(28)
+
+  status      SeoExperimentStatus @default(DRAFT)
+  startedAt   DateTime?
+  completedAt DateTime?
+  revertedAt  DateTime?
+
+  results String? @db.Text // JSON { before: {...}, after: {...}, deltas: {...} } — see lib/seo-experiments/types.ts
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contentType, contentId])
+  @@index([status])
+}
+
 model Testimonial {
   id         String   @id @default(cuid())
   clientName String
@@ -1127,6 +1366,49 @@ enum CannibalizationStatus {
   DISMISSED
 }
 
+enum PerformanceFeedbackSeverity {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum PerformanceFeedbackStatus {
+  OPEN
+  DISMISSED
+}
+
+// Computed by lib/seo-performance-feedback/ — synthesizes signals already
+// detected elsewhere (ContentRefresh's ranking/CTR/traffic/conversion
+// decline and content-decay signals; ContentCannibalization's pairs) into
+// one AI-written diagnosis + recommendation list per page, so an admin
+// sees one unified "here's what's wrong and what to do" view instead of
+// piecing it together across three separate admin sections themselves.
+// Entirely advisory, same convention as ContentCannibalization/OrphanPage
+// just below: nothing here is ever applied automatically — acting on a
+// signal still happens through Content Refresh's draft-and-approve flow
+// or the Cannibalization manager, whichever signal is actually behind it.
+model PerformanceFeedback {
+  id          String      @id @default(cuid())
+  contentType ContentType // POST | CASE_STUDY
+  contentId   String
+
+  signals  String                      @db.Text // JSON PerformanceSignal[] (lib/seo-performance-feedback/types.ts)
+  severity PerformanceFeedbackSeverity
+
+  aiSummary         String @db.Text
+  aiRecommendations String @db.Text // JSON string[]
+
+  status    PerformanceFeedbackStatus @default(OPEN)
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+
+  jobs AiJob[]
+
+  @@unique([contentType, contentId])
+  @@index([status])
+  @@index([severity])
+}
+
 // Computed by lib/content-cannibalization/ — a pair of published Post/
 // CaseStudy rows that appear to be competing for the same search intent.
 // contentIdA/contentIdB are stored in a canonical sort order (string
@@ -1237,6 +1519,224 @@ model GoogleIntegration {
   gscSiteUrl     String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+enum IntegrationProvider {
+  GOOGLE_BUSINESS_PROFILE
+  META
+  CRM
+  SLACK
+  WORDPRESS
+  WEBHOOKS
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+// The Integration Hub's own credential store — one singleton row per
+// provider, same shape as GoogleIntegration just above but generic across
+// several very different vendors (see lib/integrations/registry.ts for
+// each provider's credential fields and live-test logic).
+//
+// Deliberately NOT the home for every integration this site has: Google
+// Search Console/Analytics already have a dedicated OAuth flow
+// (GoogleIntegration above), and the AI text/image providers and the
+// Resend email provider are already configured via environment variable
+// API keys read at call time (lib/content-pipeline/providers, lib/email.ts).
+// The Integration Hub admin page reads those three sources' status
+// directly (lib/integrations/mirror.ts) rather than migrating working
+// credential storage into this table for no functional gain. This table
+// only owns the providers that had no home before it: Google Business
+// Profile, Meta, a generic CRM, Slack, WordPress, and outbound webhooks.
+model Integration {
+  id       String              @id @default(cuid())
+  provider IntegrationProvider @unique
+
+  // AES-256-GCM ciphertext of a provider-specific JSON object (the exact
+  // fields are in lib/integrations/registry.ts) — "<iv>:<authTag>:<ciphertext>",
+  // each base64, see lib/integrations/crypto.ts. Decrypted only in memory,
+  // only when a call actually needs it; never logged or sent to the client.
+  encryptedCredentials String? @db.Text
+
+  status        IntegrationStatus @default(DISCONNECTED)
+  lastError     String?           @db.Text
+  lastCheckedAt DateTime?
+  connectedAt   DateTime?
+
+  // Small, non-secret JSON surfaced in the admin UI without decrypting
+  // credentials (e.g. {"team": "TBJ Growth"} for Slack, {"siteName": "..."}
+  // for WordPress) — never anything that could itself be used to authenticate.
+  metadata String? @db.Text
+
+  connectedById String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+}
+
+// ------------------------------------------------------
+// Webhook & Automation Engine — Event -> Condition -> Action chains.
+// Events either come from the publishing workflow (CONTENT_PUBLISHED, see
+// lib/workflow.ts's transitionContent) or from the SEO Performance
+// Feedback scan newly detecting a signal on a piece of content (the other
+// six events share PerformanceSignalType's values, see
+// lib/seo-performance-feedback/types.ts). Every action a rule can run
+// reuses an already-built primitive (runSeoAudit, generateRefreshDraft,
+// assignUser, the Integration Hub's Slack/Webhooks credentials, etc.)
+// rather than re-implementing any of them — this engine is purely the
+// wiring between "something happened" and "run these existing things."
+// ------------------------------------------------------
+
+enum AutomationEvent {
+  CONTENT_PUBLISHED
+  RANKING_DECLINE
+  CTR_DECLINE
+  TRAFFIC_DECLINE
+  CONVERSION_DECLINE
+  CONTENT_DECAY
+  CANNIBALIZATION
+}
+
+enum AutomationActionType {
+  GENERATE_SCHEMA
+  UPDATE_SITEMAP
+  RUN_SEO_AUDIT
+  GENERATE_SOCIAL_DRAFT
+  NOTIFY_TEAM
+  CREATE_PERFORMANCE_ANALYSIS
+  CREATE_REFRESH_DRAFT
+  ASSIGN_REVIEWER
+}
+
+enum AutomationRunStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+  AWAITING_APPROVAL
+  REJECTED
+}
+
+enum AutomationStepStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  AWAITING_APPROVAL
+  REJECTED
+}
+
+// A rule's own definition — one event, optional simple conditions, and an
+// ordered chain of actions. Conditions/actions are JSON, not normalized
+// tables: both are small, rule-owned lists with no independent identity of
+// their own (nothing else ever references "step 2 of rule X"), the same
+// reasoning as ContentRefresh.signals or PerformanceFeedback.signals being
+// JSON rather than a child table.
+model AutomationRule {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+  event       AutomationEvent
+  enabled     Boolean @default(true)
+
+  // JSON: { contentTypes?: ContentType[]; severities?: PerformanceFeedbackSeverity[] }
+  // Both are optional allow-lists (empty/absent = no filter on that field).
+  // severities only means anything for the six signal events — ignored
+  // for CONTENT_PUBLISHED.
+  conditions String? @db.Text
+
+  // JSON: { type: AutomationActionType; config: Record<string, string>; requiresApproval: boolean }[],
+  // run strictly in array order by lib/automation/engine.ts.
+  actions String @db.Text
+
+  // Plain user-id pointer, no Prisma relation — same lightweight pattern
+  // as PromptTemplate.createdById above.
+  createdById String?
+
+  runs AutomationRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([event, enabled])
+}
+
+// One row per time a rule actually fired for one piece of content.
+// `payload` is a frozen snapshot of the event data at fire time — the
+// rule or the content can change later without altering what this run
+// says it reacted to.
+model AutomationRun {
+  id          String         @id @default(cuid())
+  ruleId      String
+  rule        AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  event       AutomationEvent
+  contentType ContentType
+  contentId   String
+  payload     String         @db.Text
+
+  status AutomationRunStatus @default(RUNNING)
+  steps  AutomationStepRun[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([status])
+  @@index([ruleId])
+}
+
+// One row per action in a run's chain, in stepIndex order. A step that
+// needs approval stops the run at AWAITING_APPROVAL and leaves every
+// later step PENDING, untouched, until a human with APPROVE decides —
+// same "flag, never silently skip" principle as the rest of this
+// codebase's advisory features.
+model AutomationStepRun {
+  id         String               @id @default(cuid())
+  runId      String
+  run        AutomationRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  stepIndex  Int
+  actionType AutomationActionType
+  config     String               @db.Text // JSON: Record<string, string>
+
+  requiresApproval Boolean               @default(false)
+  status           AutomationStepStatus  @default(PENDING)
+  output           String?               @db.Text // JSON — what the action produced, shown in the run detail view
+  error            String?               @db.Text
+
+  approvedById String?
+  approvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([runId, stepIndex])
+}
+
+enum SocialDraftStatus {
+  DRAFT
+  DISMISSED
+}
+
+// Output of the GENERATE_SOCIAL_DRAFT action — always human-reviewed
+// copy-paste text, never auto-posted: no provider in the Integration Hub
+// is wired for actually publishing a social post (Meta's stored
+// credentials are read-only Graph API access in this build), so posting
+// stays a manual, deliberate action outside this system.
+model SocialDraft {
+  id           String            @id @default(cuid())
+  contentType  ContentType
+  contentId    String
+  linkedinText String            @db.Text
+  twitterText  String            @db.Text
+  status       SocialDraftStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([contentType, contentId])
 }
 
 // One row per (date, query, page, country, device) combination pulled from

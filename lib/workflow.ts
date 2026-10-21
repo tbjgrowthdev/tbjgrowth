@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { logAudit, type AuditCategory } from "@/lib/audit-log";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
+import { fireAutomationEvent } from "@/lib/automation/engine";
 
 const ENTITY_TYPE: Record<ContentType, string> = {
   POST: "Post",
@@ -63,6 +64,7 @@ const TRANSITIONS: Record<WorkflowAction, Transition> = {
 type WorkflowRecord = {
   id: string;
   slug: string;
+  title?: string;
   status: PostStatus;
   publishedAt: Date | null;
   isIndexable?: boolean;
@@ -163,6 +165,9 @@ export async function transitionContent(
     // publish/update/delete since it's a live DB read with no cache layer.
     if (transition.to === "PUBLISHED" && current.status !== "PUBLISHED" && updated.isIndexable !== false) {
       await notifySearchEnginesOfUrl(PUBLIC_PATH_BUILDERS[contentType](updated.slug));
+      // Fire-and-forget (fireAutomationEvent swallows its own errors) —
+      // a misbehaving automation rule must never block a publish.
+      await fireAutomationEvent("CONTENT_PUBLISHED", contentType, id, { title: updated.title ?? updated.slug, slug: updated.slug });
     }
 
     await logAudit({

@@ -13,7 +13,7 @@
  * changes, the very next sitemap request reflects it.
  */
 import prisma from "@/lib/prisma";
-import { PREFIXED_LOCALES } from "@/lib/i18n";
+import { LOCALES, PREFIXED_LOCALES } from "@/lib/i18n";
 import { buildHreflangAlternates, type TranslatableKind } from "@/lib/translation";
 
 export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
@@ -134,6 +134,46 @@ export async function getServiceEntries(): Promise<SitemapUrlEntry[]> {
       services.map((s) => contentEntries("SERVICE", s.id, s.slug!, (slug) => `/services/${slug}`, s.updatedAt, 0.7, "monthly"))
     )
   ).flat();
+}
+
+// Only pages that actually render publicly (see the matching gate in
+// app/(public)/[locale]/pSEO/[slug]/page.tsx) and whose template hasn't
+// been switched off — a NEEDS_REVIEW page was never meant to be found,
+// let alone submitted to Search Console.
+export async function getPSeoEntries(): Promise<SitemapUrlEntry[]> {
+  const pages = await prisma.pSeoPage.findMany({
+    where: { status: { in: ["PUBLISHED", "OVERRIDDEN"] }, template: { isIndexable: true } },
+    select: { slug: true, updatedAt: true },
+  });
+  return pages.map((p) => ({ url: `${baseUrl}/pSEO/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "monthly" as ChangeFrequency, priority: 0.5 }));
+}
+
+// Locations aren't a TranslatableKind (see lib/translation.ts) — there's no
+// per-locale translation row to check for, so this doesn't go through
+// contentEntries()/buildHreflangAlternates. Instead a location is only ever
+// a legitimate sitemap entry under the locales that share its own market
+// (the same gating app/(public)/[locale]/locations/[slug]/page.tsx
+// enforces as a 404) — a Dhaka office has no en-GB or ar-AE URL to list.
+export async function getLocationEntries(): Promise<SitemapUrlEntry[]> {
+  const locations = await prisma.location.findMany({
+    where: { isIndexable: true },
+    select: { slug: true, market: true, updatedAt: true },
+  });
+
+  return locations.flatMap((location) => {
+    const marketLocales = LOCALES.filter((l) => l.market === location.market);
+    const languages: Record<string, string> = {};
+    for (const l of marketLocales) {
+      languages[l.code] = l.prefix ? `${baseUrl}/${l.prefix}/locations/${location.slug}` : `${baseUrl}/locations/${location.slug}`;
+    }
+    return marketLocales.map((l) => ({
+      url: languages[l.code],
+      lastModified: location.updatedAt,
+      changeFrequency: "monthly" as ChangeFrequency,
+      priority: 0.7,
+      languages,
+    }));
+  });
 }
 
 function escapeXml(value: string): string {

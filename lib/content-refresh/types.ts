@@ -1,6 +1,6 @@
 import type { ContentType } from "@/lib/generated/prisma/client";
 
-export type RefreshSignalType = "OLD_CONTENT" | "OUTDATED_MENTION" | "RANKING_DECLINE" | "TRAFFIC_DECLINE" | "CTR_DECLINE";
+export type RefreshSignalType = "OLD_CONTENT" | "OUTDATED_MENTION" | "RANKING_DECLINE" | "TRAFFIC_DECLINE" | "CTR_DECLINE" | "CONVERSION_DECLINE";
 
 export interface DetectedSignal {
   type: RefreshSignalType;
@@ -22,4 +22,5 @@ export const SIGNAL_LABEL: Record<RefreshSignalType, string> = {
   RANKING_DECLINE: "Ranking decline",
   TRAFFIC_DECLINE: "Traffic decline",
   CTR_DECLINE: "CTR decline",
+  CONVERSION_DECLINE: "Conversion decline",
 };

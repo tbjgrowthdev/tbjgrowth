@@ -160,6 +160,24 @@ export async function createRefreshJob(contentRefreshId: string, contentId: stri
   return { id: created.id };
 }
 
+/** Same shape as createRefreshJob, for the AI diagnosis call behind PerformanceFeedback. */
+export async function createPerformanceFeedbackJob(performanceFeedbackId: string, contentId: string | null): Promise<{ id: string }> {
+  const provider = getActiveProvider();
+  const created = await prisma.aiJob.create({
+    data: {
+      idempotencyKey: `${performanceFeedbackId}:PERFORMANCE_FEEDBACK:${crypto.randomUUID()}`,
+      performanceFeedbackId,
+      contentId,
+      stage: "PERFORMANCE_FEEDBACK",
+      provider: provider.name,
+      model: provider.model,
+      status: "PROCESSING",
+      startedAt: new Date(),
+    },
+  });
+  return { id: created.id };
+}
+
 export async function getJobsForRun(pipelineRunId: string) {
   try {
     await requirePermission("CREATE");

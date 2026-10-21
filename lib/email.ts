@@ -519,3 +519,22 @@ export async function sendSeoAuditNotification(params: {
     return { success: false, error };
   }
 }
+
+/** Generic plain-text notification — used by the automation engine's NOTIFY_TEAM action, whose message varies by event/rule and so has no dedicated template like the other functions above. Throws (rather than returning {success:false}) so the caller records it as a failed step, same contract as postSlackMessage/sendWebhookEvent. */
+export async function sendAutomationNotification(subject: string, message: string, notifyEmail: string | null | undefined): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+  if (!apiKey) throw new Error("RESEND_API_KEY is not set");
+  if (!notifyEmail) throw new Error("No notification email configured in Site Settings");
+
+  const html = `<p>${escapeHtml(message).replace(/\n/g, "<br/>")}</p>`;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to: [notifyEmail], subject, html }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Resend email failed: ${res.status} ${errorText}`);
+  }
+}

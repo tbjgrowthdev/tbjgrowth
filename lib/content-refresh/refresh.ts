@@ -20,6 +20,34 @@ function fail(error: string): StageResult<never> {
 const ACTIVE_STATUSES = ["DETECTED", "DRAFTING", "DRAFTED", "APPROVED"] as const;
 
 /**
+ * An existing ACTIVE cycle (not yet applied or rejected) for the same
+ * content gets its signals refreshed in place rather than duplicated;
+ * content with no active cycle gets a brand new DETECTED row. A cycle
+ * that was already APPLIED or REJECTED is left alone — if the content
+ * still has signals after that, the next call starts a genuinely new
+ * cycle rather than reopening the old one. Shared by the full scan below
+ * and by the automation engine's CREATE_REFRESH_DRAFT action, which needs
+ * the same upsert for a single piece of content without re-scanning
+ * everything.
+ */
+export async function upsertRefreshCandidate(
+  contentType: "POST" | "CASE_STUDY",
+  contentId: string,
+  signals: DetectedSignal[],
+  createdById: string | null
+) {
+  const existing = await prisma.contentRefresh.findFirst({
+    where: { contentType, contentId, status: { in: [...ACTIVE_STATUSES] } },
+  });
+  if (existing) {
+    return prisma.contentRefresh.update({ where: { id: existing.id }, data: { signals: JSON.stringify(signals) } });
+  }
+  return prisma.contentRefresh.create({
+    data: { contentType, contentId, signals: JSON.stringify(signals), status: "DETECTED", createdById },
+  });
+}
+
+/**
  * The actual scan+persist logic, with no auth check — callable from a
  * cron context (app/api/cron/content-refresh-scan) where there's no
  * session at all, same reason lib/link-monitor.ts's runLinkCheck has none
@@ -27,34 +55,12 @@ const ACTIVE_STATUSES = ["DETECTED", "DRAFTING", "DRAFTED", "APPROVED"] as const
  * schema comment); scanAndUpsertCandidates() below is the real entry
  * point for a human clicking "Scan Now" and is the one that checks
  * permission.
- *
- * An existing ACTIVE cycle (not yet applied or rejected) for the same
- * content gets its signals refreshed in place rather than duplicated;
- * content with no active cycle and at least one signal gets a brand new
- * DETECTED row. A cycle that was already APPLIED or REJECTED is left
- * alone — if the content still has signals after that, the next scan
- * starts a genuinely new cycle rather than reopening the old one.
  */
 export async function runRefreshScan(createdById: string | null): Promise<{ flagged: number }> {
   const candidates = await scanForRefreshCandidates();
 
   for (const candidate of candidates) {
-    const existing = await prisma.contentRefresh.findFirst({
-      where: { contentType: candidate.contentType, contentId: candidate.contentId, status: { in: [...ACTIVE_STATUSES] } },
-    });
-    if (existing) {
-      await prisma.contentRefresh.update({ where: { id: existing.id }, data: { signals: JSON.stringify(candidate.signals) } });
-    } else {
-      await prisma.contentRefresh.create({
-        data: {
-          contentType: candidate.contentType,
-          contentId: candidate.contentId,
-          signals: JSON.stringify(candidate.signals),
-          status: "DETECTED",
-          createdById,
-        },
-      });
-    }
+    await upsertRefreshCandidate(candidate.contentType, candidate.contentId, candidate.signals, createdById);
   }
 
   revalidatePath("/admin/content-refresh");

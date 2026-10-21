@@ -1,0 +1,63 @@
+import { getLocations, deleteLocation } from "../../actions/locations";
+import Link from "next/link";
+import { Plus, Edit, ExternalLink } from "lucide-react";
+import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
+
+const MARKET_LABEL: Record<string, string> = { uk: "UK", bangladesh: "Bangladesh", gulf: "Gulf (UAE)" };
+
+export default async function LocationsList() {
+  const locations = await getLocations();
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Locations</h1>
+        <Link href="/admin/locations/new" className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors">
+          <Plus size={18} />
+          Add Location
+        </Link>
+      </div>
+
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-background border-b border-border">
+              <th className="px-6 py-4 font-medium text-caption">Name</th>
+              <th className="px-6 py-4 font-medium text-caption">Market</th>
+              <th className="px-6 py-4 font-medium text-caption">City</th>
+              <th className="px-6 py-4 font-medium text-caption">Order</th>
+              <th className="px-6 py-4 font-medium text-caption text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {locations.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-caption">
+                  No locations found. Add your first one!
+                </td>
+              </tr>
+            ) : (
+              locations.map((location) => (
+                <tr key={location.id} className="hover:bg-background transition-colors">
+                  <td className="px-6 py-4 font-medium text-foreground">{location.name}</td>
+                  <td className="px-6 py-4 text-caption">{MARKET_LABEL[location.market] || location.market}</td>
+                  <td className="px-6 py-4 text-caption">{location.addressLocality}</td>
+                  <td className="px-6 py-4 text-caption">{location.order}</td>
+                  <td className="px-6 py-4 text-right flex justify-end gap-3">
+                    <Link href={`/locations/${location.slug}`} target="_blank" title="View live page" className="text-caption hover:text-foreground">
+                      <ExternalLink size={18} />
+                    </Link>
+                    <Link href={`/admin/locations/${location.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
+                      <Edit size={18} />
+                    </Link>
+                    <ContentDeleteButton id={location.id} kind="LOCATION" onDelete={deleteLocation} entityName="location" />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

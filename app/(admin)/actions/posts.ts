@@ -10,15 +10,32 @@ import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 
-// Metadata only — excludes content/schemaJson so the audit log doesn't bloat.
+// Metadata only — excludes content so the audit log doesn't bloat. The SEO
+// fields here are read back out by lib/seo-change-log to build the SEO
+// Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
 function postSnapshot(post: any) {
   return {
     title: post.title,
     slug: post.slug,
     status: post.status,
     isIndexable: post.isIndexable,
+    allowFollow: post.allowFollow,
     metaTitle: post.metaTitle,
     metaDescription: post.metaDescription,
+    focusKeyword: post.focusKeyword,
+    secondaryKeywords: post.secondaryKeywords,
+    canonicalUrl: post.canonicalUrl,
+    schemaJson: post.schemaJson,
+    ogImage: post.ogImage,
+    twitterCard: post.twitterCard,
+    ogTitle: post.ogTitle,
+    ogDescription: post.ogDescription,
+    twitterTitle: post.twitterTitle,
+    twitterDescription: post.twitterDescription,
+    twitterImage: post.twitterImage,
+    maxSnippet: post.maxSnippet,
+    maxImagePreview: post.maxImagePreview,
+    maxVideoPreview: post.maxVideoPreview,
     authorId: post.authorId,
     reviewerId: post.reviewerId,
     seoReviewerId: post.seoReviewerId,

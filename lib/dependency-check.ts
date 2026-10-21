@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { getTranslationsForContent } from "@/lib/translation";
 import { getLocaleByCode } from "@/lib/i18n";
 
-export type ContentKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE";
+export type ContentKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE" | "LOCATION";
 
 export type DependencyCategory = "Internal Links" | "Menus" | "Related Content" | "Schema References" | "Redirects" | "Translations";
 
@@ -30,6 +30,8 @@ function getPublicPath(kind: ContentKind, slug: string): string {
       return `/case-studies/${slug}`;
     case "SERVICE":
       return `/services/${slug}`;
+    case "LOCATION":
+      return `/locations/${slug}`;
   }
 }
 
@@ -145,6 +147,9 @@ async function findRelatedContent(kind: ContentKind, id: string): Promise<Depend
 // content type — see lib/translation.ts's schema comment) rather than
 // cascading, so this is purely a warning, not a blocker.
 async function findTranslationDependencies(kind: ContentKind, id: string): Promise<DependencyFinding[]> {
+  // Locations aren't a translatable content type (see lib/translation.ts's
+  // TranslatableKind) — no ContentTranslation rows can exist for one.
+  if (kind === "LOCATION") return [];
   const translations = await getTranslationsForContent(kind, id);
   return translations.map((t) => {
     const locale = getLocaleByCode(t.locale);
@@ -176,6 +181,11 @@ export async function findDependencies(kind: ContentKind, id: string): Promise<D
     }
     case "SERVICE": {
       const r = await prisma.agencyService.findUnique({ where: { id }, select: { slug: true } });
+      slug = r?.slug;
+      break;
+    }
+    case "LOCATION": {
+      const r = await prisma.location.findUnique({ where: { id }, select: { slug: true } });
       slug = r?.slug;
       break;
     }
