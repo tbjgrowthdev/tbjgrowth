@@ -1962,6 +1962,41 @@ model ErrorLog {
   @@index([createdAt])
 }
 
+// One row per query that took longer than the threshold in lib/prisma.ts's
+// $extends query-timing wrapper (currently 1000ms — the Neon HTTP adapter's
+// per-query fetch overhead already runs higher than a persistent connection,
+// so a lower bar would mostly log transport latency rather than a genuinely
+// slow query). Only the slow ones are written — logging every query would
+// turn this table into a firehose for no observability benefit. Fire-and-
+// forget from inside the extension: never awaited, never allowed to throw
+// back into the query that triggered it.
+model SlowQueryLog {
+  id         String   @id @default(cuid())
+  model      String? // null for raw/non-model queries, which this app has none of
+  action     String // Prisma operation name, e.g. "findMany", "groupBy"
+  durationMs Int
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// One row per outbound email send attempt — every lib/email.ts function
+// funnels through deliverResendEmail, which writes here on both the success
+// and failure path. Existed as silent console.error-only failures before
+// this (see lib/email.ts's header comment); this is the first durable,
+// queryable record of them, same self-reporting pattern as ErrorLog.
+model EmailLog {
+  id        String   @id @default(cuid())
+  type      String // e.g. "contact", "booking", "scheduled-job-failure", "automation" — matches the sending function
+  to        String
+  success   Boolean
+  error     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([success, createdAt])
+  @@index([createdAt])
+}
+
 // One row per scheduled or manual crawl — the running history is what makes
 // this a "monitor" rather than a one-off button, same reasoning as every
 // other audit-style table in this schema (AuditLog, ApprovalHistory):

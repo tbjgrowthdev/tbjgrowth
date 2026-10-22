@@ -99,7 +99,11 @@ export async function bulkSchedule(postIds: string[], date: string, time: string
 // Assign category / tags — additive (connect), never replaces a post's
 // existing categories/tags, so running this on an already-tagged batch
 // can't accidentally wipe anything. Needs per-post update calls (Prisma's
-// updateMany can't do relation connects), batched into one transaction.
+// updateMany can't do relation connects) — run concurrently via Promise.all,
+// same as bulkChangeStatus/bulkSchedule above, not $transaction(): the HTTP
+// Neon adapter (lib/prisma.ts) rejects any multi-statement transaction, and
+// a connect is idempotent/retry-safe so partial completion on a rare
+// mid-batch failure isn't a correctness problem.
 export async function bulkAssignCategory(postIds: string[], categoryId: string) {
   if (tooMany(postIds)) return { success: false, error: `Select between 1 and ${MAX_BULK_SELECTION} posts` };
   try {
@@ -107,7 +111,7 @@ export async function bulkAssignCategory(postIds: string[], categoryId: string) 
     const category = await prisma.category.findUnique({ where: { id: categoryId } });
     if (!category) return { success: false, error: "Category not found" };
 
-    await prisma.$transaction(
+    await Promise.all(
       postIds.map((id) => prisma.post.update({ where: { id }, data: { categories: { connect: { id: categoryId } } } }))
     );
 
@@ -133,7 +137,7 @@ export async function bulkAssignTags(postIds: string[], tagIds: string[]) {
   try {
     await requirePermission("EDIT");
 
-    await prisma.$transaction(
+    await Promise.all(
       postIds.map((id) =>
         prisma.post.update({ where: { id }, data: { tags: { connect: tagIds.map((tagId) => ({ id: tagId })) } } })
       )
@@ -169,7 +173,9 @@ export async function bulkReassignAuthor(postIds: string[], authorId: string) {
     const author = await prisma.user.findUnique({ where: { id: authorId } });
     if (!author) return { success: false, error: "User not found" };
 
-    await prisma.post.updateMany({ where: { id: { in: postIds } }, data: { authorId } });
+    // Not updateMany() — the HTTP-based Neon adapter (lib/prisma.ts) rejects
+    // it the same way it rejects createMany/multi-op $transaction arrays.
+    await Promise.all(postIds.map((id) => prisma.post.update({ where: { id }, data: { authorId } })));
 
     await logAudit({
       action: "bulk-reassign-author",
@@ -204,7 +210,8 @@ export async function bulkUpdateSeo(postIds: string[], data: { isIndexable?: boo
     if (data.isIndexable !== undefined) updateData.isIndexable = data.isIndexable;
     if (data.twitterCard) updateData.twitterCard = data.twitterCard;
 
-    await prisma.post.updateMany({ where: { id: { in: postIds } }, data: updateData });
+    // Not updateMany() — see bulkReassignAuthor's comment above.
+    await Promise.all(postIds.map((id) => prisma.post.update({ where: { id }, data: updateData })));
 
     await logAudit({
       action: "bulk-update-seo",

@@ -119,7 +119,10 @@ export async function getExecutiveAnalytics(days: number = 30): Promise<Executiv
     prisma.contentHealthScore.findMany({ select: { grade: true, overallScore: true } }),
     getLatestSeoAuditRun(),
     prisma.aiJob.findMany({ where: { queuedAt: dateWindow }, select: { status: true, stage: true } }),
-    prisma.$transaction([
+    // Not $transaction() — the HTTP-based Neon adapter (lib/prisma.ts)
+    // rejects any transaction with more than one operation. These are
+    // independent reads with no atomicity requirement anyway.
+    Promise.all([
       prisma.post.count({ where: { status: "PUBLISHED", publishedAt: dateWindow } }),
       prisma.page.count({ where: { status: "PUBLISHED", publishedAt: dateWindow } }),
       prisma.caseStudy.count({ where: { status: "PUBLISHED", publishedAt: dateWindow } }),

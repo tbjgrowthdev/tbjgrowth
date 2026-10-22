@@ -2,7 +2,68 @@
  * Email sending via Resend's REST API (no SDK dependency — a simple authenticated fetch).
  * Requires RESEND_API_KEY. Falls back to logging (no throw) when unconfigured, so a
  * missing key never breaks the form submission it's attached to.
+ *
+ * Every send funnels through deliverResendEmail below, which records the
+ * outcome to EmailLog — the "failed email" signal for the Observability
+ * dashboard. Before this, a failed send was only a console.error with no
+ * durable record.
  */
+
+import prisma from "@/lib/prisma";
+
+// Awaited by its callers (not fire-and-forget) — a Cloudflare Workers
+// invocation isn't guaranteed to keep running an un-awaited promise after
+// the response it belongs to is sent, same reasoning as lib/prisma.ts's
+// slow-query logger. A failure here must never surface as a failure of
+// the email send it's recording, so it's swallowed after logging.
+async function logEmailAttempt(type: string, to: string, success: boolean, error: string | null) {
+  try {
+    await prisma.emailLog.create({ data: { type, to, success, error } });
+  } catch (err) {
+    console.error("Failed to write EmailLog:", err);
+  }
+}
+
+type ResendSendResult = { success: boolean; skipped?: true; error?: string };
+
+/** The one place that actually calls Resend — every exported function below builds its subject/html and calls this. */
+async function deliverResendEmail(params: { type: string; to: string; subject: string; html: string; replyTo?: string }): Promise<ResendSendResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: [params.to],
+        ...(params.replyTo ? { reply_to: params.replyTo } : {}),
+        subject: params.subject,
+        html: params.html,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Resend email failed:", res.status, errorText);
+      await logEmailAttempt(params.type, params.to, false, errorText);
+      return { success: false, error: errorText };
+    }
+
+    await logEmailAttempt(params.type, params.to, true, null);
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Failed to send ${params.type} email:`, error);
+    await logEmailAttempt(params.type, params.to, false, message);
+    return { success: false, error: message };
+  }
+}
+
+export async function getEmailLogHistory(limit = 50) {
+  return prisma.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: limit });
+}
 
 type ContactSubmission = {
   name: string;
@@ -24,7 +85,6 @@ function escapeHtml(value: string) {
 
 export async function sendContactNotification(submission: ContactSubmission, notifyEmail: string | null | undefined) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping email notification for lead:", submission.email);
@@ -46,33 +106,7 @@ export async function sendContactNotification(submission: ContactSubmission, not
     <p>${escapeHtml(submission.message).replace(/\n/g, "<br/>")}</p>
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [notifyEmail],
-        reply_to: submission.email,
-        subject: `New lead: ${submission.name}`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send contact notification email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({ type: "contact", to: notifyEmail, replyTo: submission.email, subject: `New lead: ${submission.name}`, html });
 }
 
 type BookingNotification = {
@@ -87,7 +121,6 @@ type BookingNotification = {
 
 export async function sendBookingNotification(booking: BookingNotification, notifyEmail: string | null | undefined) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   const when = booking.startsAt.toLocaleString("en-GB", {
     weekday: "long",
@@ -117,33 +150,7 @@ export async function sendBookingNotification(booking: BookingNotification, noti
     ${booking.message ? `<p><strong>Message:</strong></p><p>${escapeHtml(booking.message).replace(/\n/g, "<br/>")}</p>` : ""}
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [notifyEmail],
-        reply_to: booking.email,
-        subject: `New booking: ${booking.name} — ${when}`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send booking notification email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({ type: "booking", to: notifyEmail, replyTo: booking.email, subject: `New booking: ${booking.name} — ${when}`, html });
 }
 
 type ScheduledJobFailure = {
@@ -159,7 +166,6 @@ type ScheduledJobFailure = {
 
 export async function sendScheduledJobFailureNotification(failure: ScheduledJobFailure) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping scheduled job failure email:", failure);
@@ -183,37 +189,16 @@ export async function sendScheduledJobFailureNotification(failure: ScheduledJobF
     <pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap;">${escapeHtml(failure.error)}</pre>
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [failure.notifyEmail],
-        subject: `⚠ Scheduled ${failure.jobType.toLowerCase()} failed — ${failure.willRetry ? "will retry" : "gave up"}`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send scheduled job failure email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({
+    type: "scheduled-job-failure",
+    to: failure.notifyEmail,
+    subject: `⚠ Scheduled ${failure.jobType.toLowerCase()} failed — ${failure.willRetry ? "will retry" : "gave up"}`,
+    html,
+  });
 }
 
 export async function sendAccountLockedNotification(params: { email: string; windowMinutes: number }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping account-locked email for:", params.email);
@@ -226,27 +211,7 @@ export async function sendAccountLockedNotification(params: { email: string; win
     <p>Sign-ins for this account are blocked for ${params.windowMinutes} minutes from the most recent failed attempt. If this wasn't you, consider changing your password once you're back in.</p>
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from,
-        to: [params.email],
-        subject: "⚠ Your admin account was temporarily locked",
-        html,
-      }),
-    });
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send account-locked email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({ type: "account-locked", to: params.email, subject: "⚠ Your admin account was temporarily locked", html });
 }
 
 export async function sendErrorAlertNotification(params: {
@@ -256,7 +221,6 @@ export async function sendErrorAlertNotification(params: {
   notifyEmail?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping error alert email:", params.message);
@@ -275,28 +239,7 @@ export async function sendErrorAlertNotification(params: {
     <p>Repeat occurrences of the same error won't trigger another email for 30 minutes — check the Monitoring tab in admin for the full log.</p>
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from,
-        to: [params.notifyEmail],
-        subject: `⚠ New error: ${params.message.slice(0, 80)}`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send error alert email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({ type: "error-alert", to: params.notifyEmail, subject: `⚠ New error: ${params.message.slice(0, 80)}`, html });
 }
 
 export async function sendBackupAlertNotification(params: {
@@ -306,7 +249,6 @@ export async function sendBackupAlertNotification(params: {
   notifyEmail?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping backup alert email");
@@ -327,22 +269,7 @@ export async function sendBackupAlertNotification(params: {
     <p>See the Monitoring tab in admin, or the "Database Backup" GitHub Actions run, for full logs.</p>
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [params.notifyEmail], subject, html }),
-    });
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send backup alert email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({ type: "backup-alert", to: params.notifyEmail, subject, html });
 }
 
 export async function sendUptimeAlertNotification(params: {
@@ -353,7 +280,6 @@ export async function sendUptimeAlertNotification(params: {
   notifyEmail?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping uptime alert email");
@@ -372,22 +298,7 @@ export async function sendUptimeAlertNotification(params: {
     ${params.error ? `<pre style="background:#f4f4f4;padding:12px;border-radius:6px;white-space:pre-wrap;">${escapeHtml(params.error)}</pre>` : ""}
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [params.notifyEmail], subject, html }),
-    });
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send uptime alert email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({ type: "uptime-alert", to: params.notifyEmail, subject, html });
 }
 
 type LinkCheckFindingSummary = {
@@ -403,7 +314,6 @@ export async function sendLinkCheckNotification(params: {
   notifyEmail?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping link check notification email");
@@ -430,32 +340,12 @@ export async function sendLinkCheckNotification(params: {
     ${params.findingCount > params.findings.length ? `<p>...and ${params.findingCount - params.findings.length} more. See the Link Monitor in the admin dashboard for the full list.</p>` : ""}
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [params.notifyEmail],
-        subject: `⚠ Link Monitor: ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""} found`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send link check notification email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({
+    type: "link-check",
+    to: params.notifyEmail,
+    subject: `⚠ Link Monitor: ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""} found`,
+    html,
+  });
 }
 
 export async function sendSeoAuditNotification(params: {
@@ -464,7 +354,6 @@ export async function sendSeoAuditNotification(params: {
   notifyEmail?: string | null;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.log("RESEND_API_KEY not set — skipping SEO audit notification email");
@@ -492,49 +381,21 @@ export async function sendSeoAuditNotification(params: {
     <p>See Automated SEO Audits in the admin dashboard for the full findings list.</p>
   `;
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [params.notifyEmail],
-        subject: `⚠ Automated SEO Audit: ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""} found`,
-        html,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend email failed:", res.status, errorText);
-      return { success: false, error: errorText };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to send SEO audit notification email:", error);
-    return { success: false, error };
-  }
+  return deliverResendEmail({
+    type: "seo-audit",
+    to: params.notifyEmail,
+    subject: `⚠ Automated SEO Audit: ${params.findingCount} issue${params.findingCount > 1 ? "s" : ""} found`,
+    html,
+  });
 }
 
 /** Generic plain-text notification — used by the automation engine's NOTIFY_TEAM action, whose message varies by event/rule and so has no dedicated template like the other functions above. Throws (rather than returning {success:false}) so the caller records it as a failed step, same contract as postSlackMessage/sendWebhookEvent. */
 export async function sendAutomationNotification(subject: string, message: string, notifyEmail: string | null | undefined): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
   if (!apiKey) throw new Error("RESEND_API_KEY is not set");
   if (!notifyEmail) throw new Error("No notification email configured in Site Settings");
 
   const html = `<p>${escapeHtml(message).replace(/\n/g, "<br/>")}</p>`;
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [notifyEmail], subject, html }),
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Resend email failed: ${res.status} ${errorText}`);
-  }
+  const result = await deliverResendEmail({ type: "automation", to: notifyEmail, subject, html });
+  if (!result.success) throw new Error(`Resend email failed: ${result.error}`);
 }

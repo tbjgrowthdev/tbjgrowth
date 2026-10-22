@@ -18,10 +18,13 @@ export async function replaceLocationFaqs(locationId: string, faqs: { question: 
       orderBy: { order: "asc" },
       select: { question: true, answer: true },
     });
-    await prisma.$transaction([
-      prisma.locationFaq.deleteMany({ where: { locationId } }),
-      ...(faqs.length > 0 ? [prisma.locationFaq.createMany({ data: faqs.map((faq, index) => ({ ...faq, locationId, order: index })) })] : []),
-    ]);
+    // Not createMany(), and not a $transaction() array — the HTTP-based Neon
+    // adapter (see lib/prisma.ts) rejects both createMany and any
+    // $transaction array with more than one operation in it. deleteMany on
+    // its own is a single statement and works fine; the creates that follow
+    // just can't share a transaction with it or with each other.
+    await prisma.locationFaq.deleteMany({ where: { locationId } });
+    await Promise.all(faqs.map((faq, index) => prisma.locationFaq.create({ data: { ...faq, locationId, order: index } })));
     revalidatePath("/locations/[slug]", "page");
     revalidatePath("/admin/locations");
     await logAudit({

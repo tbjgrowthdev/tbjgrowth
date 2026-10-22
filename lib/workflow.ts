@@ -140,20 +140,23 @@ export async function transitionContent(
     // publishedAt is left untouched on unpublish/archive — it records when
     // content last went live, not whether it's live now (status covers that).
 
-    const [updated] = await prisma.$transaction([
-      model.update({ where: { id }, data: updateData }),
-      prisma.approvalHistory.create({
-        data: {
-          contentType,
-          contentId: id,
-          fromStatus: current.status,
-          toStatus: transition.to,
-          action,
-          comment: comment?.trim() || null,
-          actorId: session.user.id,
-        },
-      }),
-    ]);
+    // Not $transaction() — the HTTP-based Neon adapter (see lib/prisma.ts)
+    // rejects any transaction with more than one operation in it. Sequential
+    // awaits instead: the status update is the change that matters, and it
+    // happens first, so a failure writing the history row (rare) leaves the
+    // transition itself intact rather than silently losing it.
+    const updated = await model.update({ where: { id }, data: updateData });
+    await prisma.approvalHistory.create({
+      data: {
+        contentType,
+        contentId: id,
+        fromStatus: current.status,
+        toStatus: transition.to,
+        action,
+        comment: comment?.trim() || null,
+        actorId: session.user.id,
+      },
+    });
 
     for (const path of REVALIDATE_PATHS[contentType](updated.slug, id)) {
       revalidatePath(path);
@@ -233,20 +236,19 @@ export async function assignUser(
 
     const field = ASSIGNMENT_FIELD[role];
     const previousValue = (current as Record<string, unknown>)[field];
-    const [updated] = await prisma.$transaction([
-      model.update({ where: { id }, data: { [field]: userId } }),
-      prisma.approvalHistory.create({
-        data: {
-          contentType,
-          contentId: id,
-          fromStatus: current.status,
-          toStatus: current.status,
-          action: `assign:${role}`,
-          comment: userId ? null : `Unassigned ${role}`,
-          actorId: session.user.id,
-        },
-      }),
-    ]);
+    // Not $transaction() — see transitionContent's comment above.
+    const updated = await model.update({ where: { id }, data: { [field]: userId } });
+    await prisma.approvalHistory.create({
+      data: {
+        contentType,
+        contentId: id,
+        fromStatus: current.status,
+        toStatus: current.status,
+        action: `assign:${role}`,
+        comment: userId ? null : `Unassigned ${role}`,
+        actorId: session.user.id,
+      },
+    });
 
     revalidatePath(`/admin/${contentType === "CASE_STUDY" ? "case-studies" : contentType === "PAGE" ? "pages" : "posts"}/${id}`);
 
@@ -281,20 +283,19 @@ export async function setReviewDeadline(contentType: ContentType, id: string, de
 
     const parsed = deadline ? new Date(deadline) : null;
     const previousDeadline = current.reviewDeadline;
-    const [updated] = await prisma.$transaction([
-      model.update({ where: { id }, data: { reviewDeadline: parsed } }),
-      prisma.approvalHistory.create({
-        data: {
-          contentType,
-          contentId: id,
-          fromStatus: current.status,
-          toStatus: current.status,
-          action: "setDeadline",
-          comment: parsed ? `Deadline set to ${parsed.toLocaleDateString()}` : "Deadline cleared",
-          actorId: session.user.id,
-        },
-      }),
-    ]);
+    // Not $transaction() — see transitionContent's comment above.
+    const updated = await model.update({ where: { id }, data: { reviewDeadline: parsed } });
+    await prisma.approvalHistory.create({
+      data: {
+        contentType,
+        contentId: id,
+        fromStatus: current.status,
+        toStatus: current.status,
+        action: "setDeadline",
+        comment: parsed ? `Deadline set to ${parsed.toLocaleDateString()}` : "Deadline cleared",
+        actorId: session.user.id,
+      },
+    });
 
     await logAudit({
       action: "setDeadline",

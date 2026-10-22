@@ -33,7 +33,10 @@ export async function importSearchConsoleData(startDate: string, endDate: string
   const CHUNK = 200;
   for (let i = 0; i < rows.length; i += CHUNK) {
     const chunk = rows.slice(i, i + CHUNK);
-    await prisma.$transaction(
+    // Not $transaction() — the HTTP-based Neon adapter (lib/prisma.ts)
+    // rejects any transaction with more than one operation. Upserts are
+    // idempotent and keyed independently, so concurrent + retry-safe is fine.
+    await Promise.all(
       chunk.map((row) => {
         const match = contentMap.get(pathForUrl.get(row.page)!) ?? null;
         if (match) mappedToContent++;

@@ -67,19 +67,13 @@ export async function createBooking(data: unknown) {
       return { success: false, error: "This slot is in the past. Please choose another time." };
     }
 
-    // Not a single interactive transaction — the HTTP-based Neon adapter
-    // (required so connections aren't reused across Worker requests, see
-    // lib/prisma.ts) only supports the batched array form of $transaction,
-    // not interactive callbacks. Claim the slot first, then create the
-    // booking; if that second step fails, best-effort release the slot
-    // back rather than leaving it stuck "booked" with no booking record.
-    const claimed = await prisma.availableSlot.updateMany({
-      where: { id: input.slotId, isBooked: false },
-      data: { isBooked: true },
-    });
-    if (claimed.count === 0) {
-      return { success: false, error: "This slot was just booked by someone else. Please choose another time." };
-    }
+    // Not updateMany() — the HTTP-based Neon adapter (see lib/prisma.ts)
+    // rejects it unconditionally, so there's no atomic "claim only if not
+    // already booked" update available here. Booking.slotId's @unique
+    // constraint is the real race guard now: two requests can both pass the
+    // isBooked check above, but only one booking.create() below can ever
+    // succeed for a given slot — the loser hits P2002, caught further down.
+    await prisma.availableSlot.update({ where: { id: input.slotId }, data: { isBooked: true } });
 
     let booking;
     try {
@@ -93,11 +87,15 @@ export async function createBooking(data: unknown) {
           message: input.message || null,
         },
       });
-    } catch (error) {
-      await prisma.availableSlot.updateMany({
-        where: { id: input.slotId },
-        data: { isBooked: false },
-      });
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        // Lost the race — someone else's create() for this exact slotId won
+        // first, so the slot is legitimately booked now. Don't release it.
+        return { success: false, error: "This slot was just booked by someone else. Please choose another time." };
+      }
+      // Any other failure means no booking exists for our own claim — safe
+      // to release it back.
+      await prisma.availableSlot.update({ where: { id: input.slotId }, data: { isBooked: false } }).catch(() => {});
       throw error;
     }
 
@@ -185,7 +183,13 @@ export async function createSlotsBulk(data: {
       return { success: false, error: "No slots generated for that time range." };
     }
 
-    await prisma.availableSlot.createMany({ data: slots });
+    // Not createMany(), and not $transaction() either — the HTTP-based Neon
+    // adapter (see lib/prisma.ts) rejects both: createMany always needs more
+    // than one underlying statement, and $transaction needs a real
+    // BEGIN/COMMIT as soon as its array has more than one operation in it —
+    // neither of which this adapter can do. Concurrent individual creates
+    // (no shared transaction) is the only form of "many writes" it supports.
+    await Promise.all(slots.map((slot) => prisma.availableSlot.create({ data: slot })));
 
     revalidatePath("/admin/booking");
     revalidatePath("/book-a-call");
