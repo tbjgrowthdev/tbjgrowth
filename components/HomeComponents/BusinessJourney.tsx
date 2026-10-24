@@ -1,465 +1,154 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
-import {
-  CheckCircle2,
-  Wrench,
-  TrendingUp,
-  Target,
-  Bot,
-  Rocket,
-  Monitor,
-  Search,
-  Users,
-  BarChart3,
-  Workflow,
-  Zap,
-  Globe,
-  Smartphone,
-  Palette,
-  MousePointerClick,
-  LineChart,
-  Mail,
-  MessageSquare,
-  BrainCircuit,
-  Network,
-  Shield,
-  Eye,
-  ArrowUpRight,
-  Layers,
-  Settings,
-  Activity,
-} from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import Reveal from "@/components/home/Reveal";
 
-// Stage definitions with their content
 const stages = [
   {
     id: "build",
     label: "Build",
-    icon: Wrench,
-    color: "from-brand-orange-deep to-brand-orange",
-    glowColor: "shadow-brand-orange/30",
-    bgGradient: "from-brand-orange/10 to-brand-orange/5",
-    description: "We design and launch your website, brand, and digital foundation first, because sending paid traffic to a weak site burns budget.",
-    dashboardItems: [
-      { icon: Monitor, label: "Website Design", value: "Responsive & Fast" },
-      { icon: Palette, label: "Brand Identity", value: "Cohesive & Memorable" },
-      { icon: Layers, label: "UX Architecture", value: "User-Centered" },
-      { icon: Smartphone, label: "Mobile-First", value: "All Devices" },
+    description:
+      "We design and launch your website, brand and digital foundation first, because sending paid traffic to a weak site burns budget.",
+    items: [
+      ["Website design", "Responsive and fast"],
+      ["Brand identity", "Cohesive and memorable"],
+      ["UX architecture", "User-centred"],
+      ["Mobile-first", "Every device"],
     ],
-    metrics: { primary: "48hrs", secondary: "Avg. Launch Time" },
+    metric: { value: "48hrs", label: "Average launch time" },
   },
   {
     id: "attract",
     label: "Attract",
-    icon: TrendingUp,
-    color: "from-charcoal to-off-black",
-    glowColor: "shadow-charcoal/30",
-    bgGradient: "from-charcoal/10 to-off-black/5",
-    description: "We drive qualified traffic through SEO, social content, and paid campaigns once there's somewhere good for that traffic to land.",
-    dashboardItems: [
-      { icon: Search, label: "SEO Strategy", value: "Top 3 Rankings" },
-      { icon: Globe, label: "Paid Ads", value: "ROAS 4.5x" },
-      { icon: Users, label: "Social Media", value: "2.5M+ Reach" },
-      { icon: Eye, label: "Content Marketing", value: "10k+ Visitors" },
+    description:
+      "We drive qualified traffic through SEO, social content and paid campaigns once there is somewhere good for that traffic to land.",
+    items: [
+      ["SEO strategy", "Top 3 rankings"],
+      ["Paid ads", "ROAS 4.5x"],
+      ["Social media", "2.5M+ reach"],
+      ["Content marketing", "10k+ visitors"],
     ],
-    metrics: { primary: "+245%", secondary: "Traffic Increase" },
+    metric: { value: "+245%", label: "Traffic increase" },
   },
   {
     id: "convert",
     label: "Convert",
-    icon: Target,
-    color: "from-brand-orange-deep to-brand-orange",
-    glowColor: "shadow-brand-orange/30",
-    bgGradient: "from-brand-orange/10 to-brand-orange/5",
-    description: "We optimise the on-page and on-call experience so visitors and leads actually become customers, not just numbers in a dashboard.",
-    dashboardItems: [
-      { icon: MousePointerClick, label: "Landing Pages", value: "4.2% Conv. Rate" },
-      { icon: BarChart3, label: "CRM Setup", value: "Automated Pipeline" },
-      { icon: Mail, label: "Lead Capture", value: "500+ Leads/mo" },
-      { icon: Activity, label: "A/B Testing", value: "Continuous Opt." },
+    description:
+      "We optimise the on-page and on-call experience so visitors and leads actually become customers, not just numbers in a dashboard.",
+    items: [
+      ["Landing pages", "4.2% conversion rate"],
+      ["CRM setup", "Automated pipeline"],
+      ["Lead capture", "500+ leads a month"],
+      ["A/B testing", "Continuous"],
     ],
-    metrics: { primary: "+180%", secondary: "Lead Growth" },
+    metric: { value: "+180%", label: "Lead growth" },
   },
   {
     id: "automate",
     label: "Automate",
-    icon: Bot,
-    color: "from-charcoal to-off-black",
-    glowColor: "shadow-charcoal/30",
-    bgGradient: "from-charcoal/10 to-off-black/5",
-    description: "We connect CRM, follow-up sequences, and AI systems so no lead sits untouched for more than a few minutes.",
-    dashboardItems: [
-      { icon: BrainCircuit, label: "AI Workflows", value: "Smart Automation" },
-      { icon: MessageSquare, label: "Chatbot", value: "24/7 Support" },
-      { icon: Workflow, label: "Email Sequences", value: "42% Open Rate" },
-      { icon: Network, label: "Integration", value: "50+ Tools" },
+    description:
+      "We connect CRM, follow-up sequences and AI systems so no lead sits untouched for more than a few minutes.",
+    items: [
+      ["AI workflows", "Smart automation"],
+      ["Chatbot", "24/7 support"],
+      ["Email sequences", "42% open rate"],
+      ["Integrations", "50+ tools"],
     ],
-    metrics: { primary: "85%", secondary: "Time Saved" },
+    metric: { value: "85%", label: "Time saved" },
   },
   {
     id: "scale",
     label: "Scale",
-    icon: Rocket,
-    color: "from-brand-orange-deep to-brand-orange",
-    glowColor: "shadow-brand-orange/30",
-    bgGradient: "from-brand-orange/10 to-brand-orange/5",
-    description: "We double down on what the data shows is working and cut what isn't, on a monthly reporting cycle.",
-    dashboardItems: [
-      { icon: LineChart, label: "Analytics Suite", value: "Real-time Data" },
-      { icon: Shield, label: "BI Reports", value: "Monthly Insights" },
-      { icon: Settings, label: "Growth Strategy", value: "Custom Roadmap" },
-      { icon: Zap, label: "Performance", value: "99.9% Uptime" },
+    description:
+      "We double down on what the data shows is working and cut what isn't, on a monthly reporting cycle.",
+    items: [
+      ["Analytics suite", "Real-time data"],
+      ["BI reports", "Monthly insights"],
+      ["Growth strategy", "Custom roadmap"],
+      ["Performance", "99.9% uptime"],
     ],
-    metrics: { primary: "+320%", secondary: "Revenue Growth" },
+    metric: { value: "+320%", label: "Revenue growth" },
   },
 ];
 
 export default function BusinessJourney() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const dashboardRef = useRef<HTMLDivElement>(null);
-  const [activeStage, setActiveStage] = useState(0);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  const isInView = useInView(sectionRef, { amount: 0.3 });
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  const dashboardY = useTransform(scrollYProgress, [0, 1], [50, -50]);
-  const dashboardRotateX = useTransform(scrollYProgress, [0, 1], [5, -5]);
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
-
-  // Mouse parallax for dashboard
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (dashboardRef.current) {
-      const rect = dashboardRef.current.getBoundingClientRect();
-      setMousePosition({
-        x: ((e.clientX - rect.left) / rect.width - 0.5) * 15,
-        y: ((e.clientY - rect.top) / rect.height - 0.5) * 15,
-      });
-    }
-  };
-
-  // Auto-advance stages
-  useEffect(() => {
-    if (!isInView) return;
-    const interval = setInterval(() => {
-      setActiveStage((prev) => (prev + 1) % stages.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [isInView]);
-
-  const currentStage = stages[activeStage];
-  const StageIcon = currentStage.icon;
+  const [active, setActive] = useState(0);
+  const stage = stages[active];
 
   return (
-    <section
-      id="business-journey"
-      ref={sectionRef}
-      className="relative min-h-screen bg-background py-14 sm:py-20 lg:py-28 overflow-hidden transition-colors duration-500"
-    >
-      {/* Background Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_40%,transparent_100%)]" />
-        
-        {/* Animated gradient orbs */}
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br ${currentStage.bgGradient}`}
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className={`absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl bg-gradient-to-br ${currentStage.bgGradient}`}
-        />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-10 sm:mb-16 lg:mb-20"
-        >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-              Business Journey
-            </span>
+    <section id="journey" className="bg-charcoal py-24 text-[#F2ECE8] lg:py-36">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <Reveal className="max-w-3xl">
+          <p className="eyebrow mb-5 !text-white/50">How we work</p>
+          <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl lg:text-6xl">
+            Your business <span className="serif-accent !text-brand-300">journey</span>, in order.
           </h2>
-          <p className="text-lg text-muted max-w-2xl mx-auto">
-            This isn't a slogan — it's the actual sequence we run for every client, in this order, because skipping a step is the most common reason marketing spend gets wasted.
+          <p className="mt-6 text-lg leading-relaxed text-white/60">
+            This isn&apos;t a slogan. It&apos;s the sequence we run for every client, because skipping a step is the most
+            common reason marketing spend gets wasted.
           </p>
-        </motion.div>
+        </Reveal>
 
-        {/* Pipeline / Progress Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="relative mb-10 sm:mb-16 lg:mb-24"
-        >
-          {/* Background Line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-border -translate-y-1/2 rounded-full" />
+        <div className="mt-16 grid gap-10 lg:mt-24 lg:grid-cols-12 lg:gap-16">
+          <div
+            role="tablist"
+            aria-label="Journey stages"
+            className="-mx-5 flex gap-1 overflow-x-auto px-5 sm:mx-0 sm:px-0 lg:col-span-4 lg:flex-col lg:overflow-visible"
+          >
+            {stages.map((s, i) => (
+              <button
+                key={s.id}
+                role="tab"
+                aria-selected={active === i}
+                onClick={() => setActive(i)}
+                className={`group flex shrink-0 items-baseline gap-4 border-b py-4 text-left transition-colors lg:py-5 ${
+                  active === i ? "border-brand-400 text-white" : "border-white/10 text-white/40 hover:text-white/70"
+                }`}
+              >
+                <span className="font-mono text-xs">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-heading text-2xl font-medium tracking-tight lg:text-4xl">{s.label}</span>
+              </button>
+            ))}
+          </div>
 
-          {/* Active Progress Line */}
-          <motion.div
-            className="hidden lg:block absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light -translate-y-1/2 rounded-full"
-            style={{ width: `${((activeStage + 1) / stages.length) * 100}%` }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-          />
+          <div className="lg:col-span-8">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={stage.id}
+                role="tabpanel"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
+                  <p className="max-w-xl text-xl leading-relaxed text-white/85 lg:text-2xl">{stage.description}</p>
+                  <div className="shrink-0 sm:text-right">
+                    <div className="font-heading text-6xl font-semibold tracking-tight text-brand-300 lg:text-7xl">
+                      {stage.metric.value}
+                    </div>
+                    <div className="mt-1 text-sm text-white/50">{stage.metric.label}</div>
+                  </div>
+                </div>
 
-          {/* Stage Buttons */}
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-0 lg:gap-0">
-            {stages.map((stage, index) => {
-              const Icon = stage.icon;
-              const isActive = index === activeStage;
-              const isCompleted = index < activeStage;
-
-              return (
-                <div key={stage.id} className="w-full lg:contents">
-                  <motion.button
-                    onClick={() => setActiveStage(index)}
-                    className={`relative z-10 w-full lg:w-auto flex items-center gap-3 lg:flex-col lg:gap-2 px-5 py-3.5 lg:px-6 lg:py-3 rounded-2xl transition-all duration-500 cursor-pointer ${
-                      isActive
-                        ? "bg-gradient-to-r " + stage.color + " text-white shadow-2xl " + stage.glowColor + " scale-[1.02] lg:scale-110"
-                        : isCompleted
-                        ? "bg-card text-foreground"
-                        : "bg-background text-caption hover:bg-card"
-                    }`}
-                    whileHover={{ scale: isActive ? 1.03 : 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <motion.div
-                      animate={isActive ? { rotate: [0, 10, -10, 0] } : {}}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className={`flex-shrink-0 p-2 rounded-xl ${
-                        isActive
-                          ? "bg-white/20"
-                          : isCompleted
-                          ? "bg-gradient-to-r " + stage.color + " text-white"
-                          : "bg-card"
+                <dl className="mt-12 grid border-t border-white/10 sm:grid-cols-2">
+                  {stage.items.map(([label, value], i) => (
+                    <div
+                      key={label}
+                      className={`flex items-baseline justify-between gap-4 border-b border-white/10 py-5 ${
+                        i % 2 === 0 ? "sm:pr-8" : "sm:border-l sm:pl-8"
                       }`}
                     >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <Icon className="w-5 h-5" />
-                      )}
-                    </motion.div>
-                    <span className={`text-sm font-semibold whitespace-nowrap ${
-                      isActive ? "text-white" : ""
-                    }`}>
-                      {stage.label}
-                    </span>
-                  </motion.button>
-
-                  {/* Connector between steps on mobile */}
-                  {index < stages.length - 1 && (
-                    <div className="lg:hidden w-0.5 h-4 bg-border mx-auto" />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Interactive Dashboard */}
-        <motion.div
-          ref={dashboardRef}
-          onMouseMove={handleMouseMove}
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.7 }}
-          style={{
-            y: dashboardY,
-            rotateX: dashboardRotateX,
-            transformStyle: "preserve-3d",
-          }}
-          className="relative max-w-5xl mx-auto"
-        >
-          {/* Dashboard Container */}
-          <div className="relative bg-card rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/40 border border-border overflow-hidden">
-            {/* Dashboard inner gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${currentStage.bgGradient} opacity-50 dark:opacity-30`} />
-
-            {/* Dashboard Content */}
-            <div className="relative p-4 sm:p-6 lg:p-8">
-              {/* Dashboard Header */}
-              <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    <div className="w-3 h-3 rounded-full bg-red-400" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                    <div className="w-3 h-3 rounded-full bg-green-400" />
-                  </div>
-                  <span className="text-xs sm:text-sm text-caption ml-1 sm:ml-2 truncate">
-                    tbj-growth-dashboard
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-caption flex-shrink-0">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  Live
-                </div>
-              </div>
-
-              {/* Dashboard Body */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStage.id}
-                  initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                  style={{
-                    x: mousePosition.x,
-                    y: mousePosition.y,
-                  }}
-                >
-                  {/* Stage Title & Description */}
-                  <div className="flex flex-col items-start lg:flex-row lg:items-center gap-5 sm:gap-6 mb-8">
-                    <motion.div
-                      animate={{ rotate: [0, 5, -5, 0] }}
-                      transition={{ duration: 3, repeat: Infinity }}
-                      className={`inline-flex p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br ${currentStage.color} text-white shadow-lg ${currentStage.glowColor}`}
-                    >
-                      <StageIcon className="w-7 h-7 sm:w-8 sm:h-8" />
-                    </motion.div>
-                    <div className="flex-1 w-full">
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2">
-                        {currentStage.label} Phase
-                      </h3>
-                      <p className="text-sm sm:text-base text-muted">
-                        {currentStage.description}
-                      </p>
+                      <dt className="font-medium">{label}</dt>
+                      <dd className="text-sm text-white/50">{value}</dd>
                     </div>
-                    {/* Metric Card */}
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.2, type: "spring" }}
-                      className="w-full lg:w-auto flex-shrink-0 bg-stat rounded-2xl p-5 sm:p-6 text-center border border-border"
-                    >
-                      <div
-                        className={
-                          currentStage.color === "from-charcoal to-off-black"
-                            ? "text-2xl sm:text-3xl font-bold text-foreground"
-                            : `text-2xl sm:text-3xl font-bold bg-gradient-to-r ${currentStage.color} bg-clip-text text-transparent`
-                        }
-                      >
-                        {currentStage.metrics.primary}
-                      </div>
-                      <div className="text-sm text-caption mt-1">
-                        {currentStage.metrics.secondary}
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  {/* Dashboard Grid Items */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {currentStage.dashboardItems.map((item, index) => {
-                      const ItemIcon = item.icon;
-                      return (
-                        <motion.div
-                          key={item.label}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1 * index, duration: 0.4 }}
-                          className="group relative bg-card/80 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-border hover:border-accent-border transition-all duration-300 cursor-pointer"
-                          whileHover={{ y: -4, scale: 1.02 }}
-                        >
-                          <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${currentStage.bgGradient} mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                            <ItemIcon className={`w-5 h-5 text-muted`} />
-                          </div>
-                          <div className="text-sm font-semibold text-foreground mb-1">
-                            {item.label}
-                          </div>
-                          <div className="text-xs text-caption flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-brand-orange" />
-                            {item.value}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Bottom Progress Indicator */}
-                  <div className="mt-8 flex items-center gap-2">
-                    {stages.map((stage, index) => (
-                      <motion.div
-                        key={stage.id}
-                        className={`h-1 rounded-full transition-all duration-500 ${
-                          index === activeStage
-                            ? `bg-gradient-to-r ${currentStage.color} flex-1`
-                            : index < activeStage
-                            ? "bg-brand-orange w-8"
-                            : "bg-border w-8"
-                        }`}
-                        animate={
-                          index === activeStage
-                            ? { scaleX: [0.8, 1, 0.8] }
-                            : {}
-                        }
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    ))}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                  ))}
+                </dl>
+              </motion.div>
+            </AnimatePresence>
           </div>
-
-          {/* Floating Elements */}
-          <motion.div
-            animate={{
-              y: [0, -15, 0],
-              rotate: [0, 5, 0],
-            }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            className="hidden sm:flex absolute -top-6 -right-6 lg:-top-8 lg:-right-8 bg-card rounded-xl shadow-lg border border-border p-3 items-center gap-3"
-          >
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-orange-deep to-brand-orange rounded-lg flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-foreground">Live</div>
-              <div className="text-xs text-caption">Processing</div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            animate={{
-              y: [0, 10, 0],
-              rotate: [0, -3, 0],
-            }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="hidden sm:flex absolute -bottom-4 -left-6 lg:-bottom-6 lg:-left-8 bg-card rounded-xl shadow-lg border border-border p-3 items-center gap-3"
-          >
-            <div className="w-8 h-8 bg-gradient-to-br from-charcoal to-off-black rounded-lg flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-foreground">Growth</div>
-              <div className="text-xs text-caption">+{activeStage * 60 + 45}%</div>
-            </div>
-          </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

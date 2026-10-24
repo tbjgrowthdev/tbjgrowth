@@ -1,7 +1,7 @@
 
 
 import type { Metadata } from "next";
-import { Inter, Syne } from "next/font/google";
+import { Inter, Bricolage_Grotesque, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -10,9 +10,16 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const syne = Syne({
-  variable: "--font-syne",
+const display = Bricolage_Grotesque({
+  variable: "--font-display",
   subsets: ["latin"],
+});
+
+const serif = Instrument_Serif({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -26,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${syne.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${display.variable} ${serif.variable}`}>
       <body className="min-h-full flex flex-col font-body antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"

@@ -1,21 +1,11 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Building2, Star, TrendingUp } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { isValidImageSrc } from "@/lib/utils";
 import { cloudinaryUrl } from "@/lib/cloudinary-url";
-
-const CARD_THEMES = [
-  { gradient: "from-brand-orange-deep to-brand-orange", bgGradient: "from-brand-orange/10 to-brand-orange/10", shadowGlow: "shadow-brand-orange/25" },
-  { gradient: "from-charcoal to-off-black", bgGradient: "from-charcoal/10 to-off-black/10", shadowGlow: "shadow-charcoal/25" },
-  { gradient: "from-brand-orange-deep to-brand-orange", bgGradient: "from-brand-orange/10 to-brand-orange/10", shadowGlow: "shadow-brand-orange/25" },
-  { gradient: "from-charcoal to-off-black", bgGradient: "from-charcoal/10 to-off-black/10", shadowGlow: "shadow-charcoal/25" },
-  { gradient: "from-brand-orange-deep to-brand-orange", bgGradient: "from-brand-orange/10 to-brand-orange/10", shadowGlow: "shadow-brand-orange/25" },
-  { gradient: "from-charcoal to-off-black", bgGradient: "from-charcoal/10 to-off-black/10", shadowGlow: "shadow-charcoal/25" },
-];
+import Reveal from "@/components/home/Reveal";
 
 type CaseStudy = {
   id: string;
@@ -31,179 +21,83 @@ type CaseStudy = {
 };
 
 function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(cardRef, { once: true, amount: 0.3 });
-  const theme = CARD_THEMES[index % CARD_THEMES.length];
-
   return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.1, duration: 0.6 }}
-      className="group"
-    >
-      <Link
-        href={`/case-studies/${study.slug}`}
-        className={`relative flex flex-col h-full bg-card border border-border hover:border-accent-border rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl ${theme.shadowGlow} hover:-translate-y-1 transition-all duration-500`}
-      >
-        {/* Image */}
-        <div className="relative h-48 w-full overflow-hidden bg-background">
+    <Reveal delay={(index % 3) * 0.07}>
+      <Link href={`/case-studies/${study.slug}`} className="group block">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-card">
           {isValidImageSrc(study.featuredImage) ? (
             <Image
               src={cloudinaryUrl(study.featuredImage)}
               alt={study.featuredImageAlt || study.title}
               fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             />
           ) : (
-            <div className={`absolute inset-0 bg-gradient-to-br ${theme.bgGradient} flex items-center justify-center`}>
-              <Building2 className="w-10 h-10 text-caption" />
+            <div className="absolute inset-0 flex items-end bg-charcoal p-6">
+              <span className="font-heading text-3xl font-semibold tracking-tight text-white/90">{study.clientName}</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-          {/* <span
-            className={`absolute top-4 left-4 text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${theme.gradient} text-white shadow-lg`}
-          >
-            {study.serviceType}
-          </span> */}
+          {study.results && (
+            <span className="absolute bottom-4 left-4 rounded-full bg-background px-3.5 py-1.5 text-sm font-semibold text-foreground">
+              {study.results}
+            </span>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="relative flex-1 flex flex-col p-6">
-          <div
-            className={`absolute inset-0 bg-gradient-to-br ${theme.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-          />
-          <div className="relative">
-            <p className="text-xs font-semibold text-caption uppercase tracking-wide mb-2">
-              {study.industry}
+        <div className="mt-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow mb-2">
+              {study.industry} · {study.clientName}
             </p>
-            <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-brand-orange-deep group-hover:to-brand-orange transition-all duration-300">
+            <h3 className="text-xl font-medium leading-snug tracking-tight text-foreground transition-colors group-hover:text-brand-500">
               {study.title}
             </h3>
-            <p className="text-sm text-muted leading-relaxed line-clamp-3 mb-4 flex-1">
-              {study.excerpt || "Click to see the full growth story."}
-            </p>
-
-            {study.results && (
-              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-stat">
-                <div className={`p-1.5 rounded-lg bg-gradient-to-br ${theme.bgGradient} flex-shrink-0`}>
-                  <TrendingUp className="w-4 h-4 text-muted" />
-                </div>
-                <span
-                  className={
-                    theme.gradient === "from-charcoal to-off-black"
-                      ? "text-sm font-bold text-foreground"
-                      : `text-sm font-bold bg-gradient-to-r ${theme.gradient} bg-clip-text text-transparent`
-                  }
-                >
-                  {study.results}
-                </span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-caption">{study.clientName}</span>
-              <span className="inline-flex items-center gap-1 text-sm font-semibold text-caption group-hover:text-brand-orange-deep dark:group-hover:text-brand-orange-light transition-colors">
-                View Story
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </span>
-            </div>
+            {study.excerpt && <p className="mt-2 line-clamp-2 text-[15px] leading-relaxed text-muted">{study.excerpt}</p>}
           </div>
+          <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-caption transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-brand-500" />
         </div>
       </Link>
-    </motion.div>
+    </Reveal>
   );
 }
 
 export default function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] }) {
-  const sectionRef = useRef<HTMLDivElement>(null);
-
   return (
-    <section
-      id="case-studies"
-      ref={sectionRef}
-      className="relative py-20 lg:py-28 bg-background transition-colors duration-500 overflow-hidden"
-    >
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_40%,transparent_100%)]" />
-        <motion.div
-          animate={{ x: [0, 50, -30, 0], y: [0, -30, 40, 0], scale: [1, 1.2, 0.9, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 right-1/4 w-96 h-96 rounded-full blur-3xl bg-brand-orange/5"
-        />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12 lg:mb-16"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
+    <section id="case-studies" className="bg-background py-24 lg:py-36">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <Reveal className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <p className="eyebrow mb-5">Selected work</p>
+            <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-5xl lg:text-6xl">
+              Real results from <span className="serif-accent">real</span> clients.
+            </h2>
+          </div>
+          <Link
+            href="/case-studies"
+            className="group inline-flex items-center gap-1.5 self-start text-sm font-semibold text-foreground underline decoration-border decoration-2 underline-offset-[6px] transition-colors hover:decoration-brand-500 lg:self-auto"
           >
-            <Star className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
-            <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">Featured Projects</span>
-          </motion.div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Case{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-              Studies
-            </span>
-          </h2>
-          <p className="text-lg text-muted max-w-2xl mx-auto">
-            Real results from real clients. See how we&apos;ve helped businesses transform their digital presence and achieve measurable growth.
-          </p>
-        </motion.div>
+            All case studies
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
+        </Reveal>
 
-        {/* Grid or Empty State */}
         {caseStudies.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="max-w-lg mx-auto text-center py-16 px-8 rounded-3xl bg-card border border-dashed border-border"
-          >
-            <Building2 className="w-10 h-10 text-caption mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">New Success Stories Coming Soon</h3>
-            <p className="text-sm text-caption">
-              We're putting the finishing touches on our latest client results — check back shortly.
+          <Reveal className="mt-14 rounded-2xl border border-dashed border-border px-8 py-20 text-center">
+            <h3 className="font-heading text-2xl font-medium tracking-tight text-foreground">
+              New success stories coming soon
+            </h3>
+            <p className="mx-auto mt-3 max-w-md text-muted">
+              We&apos;re putting the finishing touches on our latest client results. Check back shortly.
             </p>
-          </motion.div>
+          </Reveal>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-14 grid gap-x-8 gap-y-14 md:grid-cols-2 lg:mt-20 lg:grid-cols-3">
             {caseStudies.map((study, index) => (
               <CaseStudyCard key={study.id} study={study} index={index} />
             ))}
           </div>
         )}
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-12 lg:mt-16"
-        >
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
-            <Link
-              href="/case-studies"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-2xl shadow-xl shadow-brand-orange/25 hover:shadow-2xl hover:shadow-brand-orange/40 transition-shadow duration-300"
-            >
-              <span>View All Case Studies</span>
-              <ArrowUpRight className="w-5 h-5" />
-            </Link>
-          </motion.div>
-        </motion.div>
       </div>
     </section>
   );

@@ -36,7 +36,7 @@
   --color-tint: var(--tint-bg);
 
   /* Typography */
-  --font-heading: var(--font-syne);
+  --font-heading: var(--font-display);
   --font-body: var(--font-inter);
 }
 
@@ -83,9 +83,30 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight;
   }
+
+  ::selection {
+    background: var(--color-brand-500);
+    color: #fff;
+  }
 }
 
 @layer utilities {
+  /* Editorial accent: one italic serif word per headline, in brand orange. */
+  .serif-accent {
+    font-family: var(--font-serif), Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    padding-right: 0.08em;
+    @apply text-brand-500 dark:text-brand-300;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-caption;
+  }
+  .hairline {
+    @apply border-border;
+  }
+
   .glass {
     @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-lg dark:bg-black/20 dark:border-white/10;
   }

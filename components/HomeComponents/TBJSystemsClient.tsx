@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
-import {
-  Rocket,
-  Clock,
-  ChevronRight,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUpRight, X } from "lucide-react";
 import { getIcon } from "@/components/ui/IconRenderer";
+import Reveal from "@/components/home/Reveal";
 
-// Fallback future products data
+// Shown until an admin adds real systems in the CMS.
 const fallbackProducts = [
   {
     id: "ai-analytics",
-    icon: "BrainCircuit",
+    iconName: "BrainCircuit",
     title: "TBJ Intelligence",
     tagline: "AI Analytics Suite",
     description:
-      "A revolutionary analytics platform that uses machine learning to predict trends, identify opportunities, and automate reporting — giving you insights before your competition does.",
+      "An analytics platform that uses machine learning to predict trends, identify opportunities and automate reporting, giving you insights before your competition does.",
     features: [
       "Predictive analytics & forecasting",
       "Automated anomaly detection",
@@ -27,48 +24,27 @@ const fallbackProducts = [
     ],
     status: "Beta Q4 2026",
     progress: 75,
-    gradient: "from-orange-600 to-orange-400",
-    bgLight: "from-orange-50 to-orange-100",
-    bgDark: "from-orange-500/10 to-orange-500/10",
-    textGradient: "from-orange-600 to-orange-600",
-    borderColor: "border-orange-200 dark:border-orange-500/30",
-    glowColor: "shadow-orange-500/25",
-    accentColor: "bg-orange-500",
-    shape: "Circle",
     quarterly: "Q4 2026",
-    availability: "Closed Beta",
+    availability: "Closed beta",
   },
 ];
 
-// Helper to calculate derived colors based on gradient
-function processProduct(product: any) {
-  const gradient = product.gradient || "from-orange-600 to-orange-400";
-  const colorName = gradient.split('-')[1] || "orange";
-
+function normalise(product: any) {
   return {
     ...product,
-    bgLight: `from-${colorName}-50 to-${colorName}-100`, // Approximation
-    bgDark: `from-${colorName}-500/10 to-${colorName}-500/10`,
-    textGradient: `from-${colorName}-600 to-${colorName}-600`,
-    borderColor: `border-${colorName}-200 dark:border-${colorName}-500/30`,
-    glowColor: `shadow-${colorName}-500/25`,
-    accentColor: `bg-${colorName}-500`,
-    features: typeof product.features === 'string' ? JSON.parse(product.features) : product.features,
-    shapeName: product.shapeName || "Circle",
+    features: typeof product.features === "string" ? JSON.parse(product.features) : product.features || [],
     iconName: product.iconName || "BrainCircuit",
   };
 }
 
-// Detailed Product View Component
-function ProductDetail({
-  product,
-  onClose,
-}: {
-  product: any;
-  onClose: () => void;
-}) {
-  const ShapeIcon = getIcon(product.shapeName);
-  const ProductIcon = getIcon(product.iconName);
+function ProductDetail({ product, onClose }: { product: any; onClose: () => void }) {
+  const Icon = getIcon(product.iconName);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   return (
     <motion.div
@@ -76,333 +52,102 @@ function ProductDetail({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 30 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={product.title}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 16 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-card rounded-3xl shadow-2xl border border-border"
+        className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-background p-8"
       >
-        {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 z-10 p-2 bg-background rounded-full hover:scale-110 transition-transform"
+          aria-label="Close"
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-card hover:text-foreground"
         >
-          <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X size={18} />
         </button>
+        <Icon className="h-7 w-7 text-brand-500" />
+        <h3 className="mt-5 text-3xl font-semibold tracking-tight text-foreground">{product.title}</h3>
+        <p className="mt-1 text-caption">{product.tagline}</p>
+        <p className="mt-5 leading-relaxed text-muted">{product.description}</p>
 
-        {/* Gradient header */}
-        <div className={`relative p-8 lg:p-10 bg-gradient-to-br ${product.bgLight} dark:bg-gradient-to-br ${product.bgDark}`}>
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${product.gradient} text-white shadow-lg ${product.glowColor}`}>
-              <ProductIcon className="w-7 h-7" />
-            </div>
-            <div>
-              <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${product.gradient} text-white mb-1`}>
-                {product.status}
-              </span>
-              <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
-                {product.title}
-              </h2>
-            </div>
-          </div>
-          <p className="text-sm text-caption font-medium mb-2">
-            {product.tagline}
-          </p>
-          <p className="text-muted leading-relaxed">
-            {product.description}
-          </p>
+        <ul className="mt-6 divide-y divide-border border-y border-border text-sm">
+          {product.features.map((f: string) => (
+            <li key={f} className="py-3 text-foreground">
+              {f}
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-6 flex items-center justify-between text-sm">
+          <span className="text-muted">{product.status}</span>
+          {typeof product.progress === "number" && <span className="font-mono text-foreground">{product.progress}%</span>}
         </div>
-
-        {/* Content */}
-        <div className="p-8 lg:p-10 space-y-8">
-          {/* Progress */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <span className="text-sm font-semibold text-foreground">Development Progress</span>
-              <span className={`text-sm font-bold bg-gradient-to-r ${product.textGradient} bg-clip-text text-transparent`}>
-                {product.progress}%
-              </span>
-            </div>
-            <div className="h-2.5 bg-background rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${product.progress}%` }}
-                transition={{ duration: 1.2, ease: "easeOut" }}
-                className={`h-full bg-gradient-to-r ${product.gradient} rounded-full`}
-              />
-            </div>
+        {typeof product.progress === "number" && (
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-card">
+            <div className="h-full bg-brand-500" style={{ width: `${product.progress}%` }} />
           </div>
-
-          {/* Features */}
-          <div>
-            <h4 className="text-lg font-bold text-foreground mb-4">Key Features</h4>
-            <div className="space-y-3">
-              {product.features && product.features.map((feature: any, i: number) => {
-                const featureText = typeof feature === 'string' ? feature : feature.text;
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-background border border-border"
-                  >
-                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${product.gradient} flex items-center justify-center flex-shrink-0`}>
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="text-sm text-muted">{featureText}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Info grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-background border border-border">
-              <Clock className="w-5 h-5 text-caption mb-2" />
-              <div className="text-sm text-caption">Expected Release</div>
-              <div className="font-bold text-foreground">{product.quarterly}</div>
-            </div>
-            <div className="p-4 rounded-xl bg-background border border-border">
-              <Rocket className="w-5 h-5 text-caption mb-2" />
-              <div className="text-sm text-caption">Availability</div>
-              <div className="font-bold text-foreground">{product.availability}</div>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`w-full py-4 bg-gradient-to-r ${product.gradient} text-white font-semibold rounded-2xl shadow-lg ${product.glowColor} flex items-center justify-center gap-2 text-lg`}
-          >
-            <span>Join Early Access</span>
-            <Rocket className="w-5 h-5" />
-          </motion.button>
-        </div>
+        )}
       </motion.div>
     </motion.div>
   );
 }
 
-// Product Card
-function ProductCard({
-  product,
-  index,
-  onSelect,
-}: {
-  product: any;
-  index: number;
-  onSelect: (product: any) => void;
-}) {
-  const ShapeIcon = getIcon(product.shapeName);
-  const ProductIcon = getIcon(product.iconName);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(cardRef, { once: true, amount: 0.3 });
-
-  return (
-    <motion.div
-      key={product.id || index}
-      ref={cardRef}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.12, duration: 0.5 }}
-      onClick={() => onSelect(product)}
-      className="group relative cursor-pointer"
-    >
-      {/* Card */}
-      <div className={`relative h-full bg-card rounded-2xl border ${product.borderColor} overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-black/50 hover:-translate-y-2`}>
-        {/* Top accent bar */}
-        <div className={`h-1.5 bg-gradient-to-r ${product.gradient}`} />
-
-        <div className="p-6">
-          {/* Shape & Icon */}
-          <div className="flex items-center justify-between mb-5">
-            <motion.div
-              whileHover={{ rotate: 15 }}
-              className={`p-3 rounded-xl bg-gradient-to-br ${product.bgLight} dark:bg-gradient-to-br ${product.bgDark}`}
-            >
-              <ProductIcon className={`w-6 h-6 text-transparent bg-clip-text bg-gradient-to-br ${product.textGradient}`} />
-            </motion.div>
-            <ShapeIcon className={`w-5 h-5 text-caption group-hover:text-muted transition-colors`} />
-          </div>
-
-          {/* Status badge */}
-          <div className="mb-3">
-            <span className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gradient-to-r ${product.gradient} text-white`}>
-              {product.status}
-            </span>
-          </div>
-
-          {/* Title */}
-          <h3 className="text-lg font-bold text-foreground mb-1.5">
-            {product.title}
-          </h3>
-          <p className="text-sm text-caption mb-4">
-            {product.tagline}
-          </p>
-
-          {/* Progress */}
-          <div className="mb-4">
-            <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-caption">Progress</span>
-              <span className={`font-bold bg-gradient-to-r ${product.textGradient} bg-clip-text text-transparent`}>
-                {product.progress}%
-              </span>
-            </div>
-            <div className="h-1.5 bg-background rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={isInView ? { width: `${product.progress}%` } : {}}
-                transition={{ duration: 1, delay: 0.3 + index * 0.1 }}
-                className={`h-full bg-gradient-to-r ${product.gradient} rounded-full`}
-              />
-            </div>
-          </div>
-
-          {/* Hover CTA */}
-          <div className={`flex items-center gap-2 text-sm font-semibold bg-gradient-to-r ${product.textGradient} bg-clip-text text-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
-            <span>Learn More</span>
-            <ChevronRight className="w-4 h-4" />
-          </div>
-        </div>
-      </div>
-
-      {/* Glow on hover */}
-      <div className={`absolute -inset-1 rounded-2xl bg-gradient-to-br ${product.gradient} opacity-0 group-hover:opacity-20 blur-lg transition-opacity duration-500 -z-10`} />
-    </motion.div>
-  );
-}
-
-// Main Section
 export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
-  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  const rawProducts = dbSystems && dbSystems.length > 0 ? dbSystems : fallbackProducts;
-  const products = rawProducts.map(processProduct);
+  const [selected, setSelected] = useState<any | null>(null);
+  const products = (dbSystems && dbSystems.length > 0 ? dbSystems : fallbackProducts).map(normalise);
 
   return (
     <>
-      <section
-        id="tbj-systems"
-        ref={sectionRef}
-        className="relative py-20 lg:py-28 bg-background transition-colors duration-500 overflow-hidden"
-      >
-        {/* Background */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Grid */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_30%,transparent_100%)]" />
-
-          {/* Gradient blobs */}
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 10, repeat: Infinity }}
-            className="absolute top-1/4 -left-20 w-96 h-96 rounded-full blur-3xl bg-brand-orange/10 dark:bg-brand-orange/5"
-          />
-          <motion.div
-            animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
-            transition={{ duration: 12, repeat: Infinity, delay: 2 }}
-            className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full blur-3xl bg-charcoal/10 dark:bg-white/5"
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16 lg:mb-20"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4"
-            >
-              <Rocket className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
-              <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
-                What's Coming Next
-              </span>
-            </motion.div>
-
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              {/* TBJ{" "} */}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-                AI Tools{" "}
-              </span>
-              We're Building
+      <section id="tbj-systems" className="bg-background py-24 lg:py-36">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <Reveal className="max-w-3xl">
+            <p className="eyebrow mb-5">In development</p>
+            <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-5xl lg:text-6xl">
+              The <span className="serif-accent">AI tools</span> we&apos;re building.
             </h2>
-            <p className="text-lg text-muted max-w-2xl mx-auto">
-               We're building AI-powered tools for the businesses we already serve — an early look at what's coming.
+            <p className="mt-6 text-lg leading-relaxed text-muted">
+              AI-powered tools for the businesses we already serve. An early look at what&apos;s coming.
             </p>
-          </motion.div>
+          </Reveal>
 
-          {/* Product Cards Grid - Unique Design */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product, index) => (
-              <ProductCard
-                key={product.id || index}
-                product={product}
-                index={index}
-                onSelect={setSelectedProduct}
-              />
-            ))}
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
+            {products.map((p, i) => {
+              const Icon = getIcon(p.iconName);
+              return (
+                <Reveal key={p.id || i} delay={(i % 3) * 0.07}>
+                  <button
+                    onClick={() => setSelected(p)}
+                    className="group flex h-full w-full flex-col rounded-2xl border border-border bg-card p-7 text-left transition-colors hover:border-foreground"
+                  >
+                    <div className="flex items-start justify-between">
+                      <Icon className="h-6 w-6 text-brand-500" />
+                      <span className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted">
+                        {p.status || p.availability}
+                      </span>
+                    </div>
+                    <h3 className="mt-10 text-2xl font-medium tracking-tight text-foreground">{p.title}</h3>
+                    <p className="mt-1 text-sm text-caption">{p.tagline}</p>
+                    <p className="mt-4 line-clamp-3 flex-1 text-[15px] leading-relaxed text-muted">{p.description}</p>
+                    <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                      Learn more
+                      <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </span>
+                  </button>
+                </Reveal>
+              );
+            })}
           </div>
-
-          {/* Bottom timeline info */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="mt-14 lg:mt-18 flex flex-wrap items-center justify-center gap-6 lg:gap-10"
-          >
-            {[
-              { label: "Products in Development", value: products.length.toString() },
-              { label: "First Release", value: products.length > 0 ? products[0].quarterly || "Q4 2026" : "Q4 2026" },
-              { label: "Early Access Spots", value: "Limited" },
-              { label: "Integration Partners", value: "100+" },
-            ].map((item, i) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.6 + i * 0.1 }}
-                className="text-center"
-              >
-                <div className="text-2xl lg:text-3xl font-bold text-foreground">
-                  {item.value}
-                </div>
-                <div className="text-sm text-caption mt-1">
-                  {item.label}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
-      {/* Product Detail Modal */}
       <AnimatePresence>
-        {selectedProduct && (
-          <ProductDetail
-            product={selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-          />
-        )}
+        {selected && <ProductDetail product={selected} onClose={() => setSelected(null)} />}
       </AnimatePresence>
     </>
   );

@@ -1,24 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Send,
-  Mail,
-  Phone,
-  MapPin,
-  Linkedin,
-  Twitter,
-  Instagram,
-  Facebook,
-  Sparkles,
-  Heart,
-  Shield,
-  Zap,
-  ChevronRight,
-  ArrowUp,
-} from "lucide-react";
+import { ArrowRight, ArrowUp, Linkedin, Twitter, Instagram, Facebook } from "lucide-react";
 import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 import Link from "next/link";
 import Image from "next/image";
@@ -107,249 +90,119 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const columns = Object.values(footerLinks);
+
   return (
-    <footer className="relative bg-card border-t border-border transition-colors duration-500">
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-12 lg:gap-8">
-          {/* Brand Column - Spans 2 */}
-          <div className="lg:col-span-2">
-            {/* Logo */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mb-6"
-            >
-              <Link href={withLocalePrefix(locale.prefix, "/")} className="flex items-center group">
-                <div className="relative">
-                  <Image
-                    src="/primarylogo.png"
-                    alt="TBJ Growth Tech"
-                    width={1000}
-                    height={200}
-                    className="h-9 w-auto dark:hidden"
-                  />
-                  <Image
-                    src="/primary-logo-dark.png"
-                    alt="TBJ Growth Tech"
-                    width={1000}
-                    height={200}
-                    className="hidden h-9 w-auto dark:block"
-                  />
-                </div>
-              </Link>
-            </motion.div>
+    <footer className="bg-background">
+      <div className="mx-auto max-w-7xl px-5 pb-8 pt-20 sm:px-8 lg:pt-28">
+        <div className="grid gap-16 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <Link href={withLocalePrefix(locale.prefix, "/")} className="inline-block">
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} className="h-8 w-auto dark:hidden" />
+              <Image src="/primary-logo-dark.png" alt="TBJ Growth Tech" width={1000} height={200} className="hidden h-8 w-auto dark:block" />
+            </Link>
+            <p className="mt-6 max-w-sm leading-relaxed text-muted">
+              Websites, ads and AI automation for businesses that want their growth to be measurable.
+            </p>
 
-            {/* Description */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-sm text-muted leading-relaxed mb-6 max-w-sm"
-            >
-              We help UK businesses grow with design that converts, marketing
-              that attracts, and AI that scales. From strategy to automation,
-              we're your complete growth partner.
-            </motion.p>
-
-            {/* Contact Info */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="space-y-3 mb-6"
-            >
-              <a
-                href={`mailto:${contactEmail}`}
-                className="flex items-center gap-3 text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors group"
-              >
-                <div className="p-1.5 rounded-lg bg-background group-hover:bg-tint transition-colors">
-                  <Mail className="w-4 h-4" />
-                </div>
-                {contactEmail}
-              </a>
-              <a
-                href={phoneHref}
-                className="flex items-center gap-3 text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors group"
-              >
-                <div className="p-1.5 rounded-lg bg-background group-hover:bg-tint transition-colors">
-                  <Phone className="w-4 h-4" />
-                </div>
-                {contactPhone}
-              </a>
-              <div className="flex items-center gap-3 text-sm text-muted">
-                <div className="p-1.5 rounded-lg bg-background">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                {contactAddress}
+            <form onSubmit={handleSubscribe} className="mt-8 max-w-sm">
+              <label htmlFor="footer-email" className="eyebrow mb-3 block">
+                Growth notes, occasionally
+              </label>
+              <div className="flex items-center border-b border-foreground pb-2">
+                <input
+                  id="footer-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-caption"
+                />
+                <button type="submit" aria-label="Subscribe" className="text-foreground transition-colors hover:text-brand-500">
+                  <ArrowRight size={20} />
+                </button>
               </div>
-            </motion.div>
+              {isSubscribed && <p className="mt-3 text-sm text-brand-500">Thanks, you&apos;re on the list.</p>}
+            </form>
+          </div>
 
-            {/* Social Links */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="flex items-center gap-2"
-            >
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:col-span-7 lg:pl-8">
+            {columns.map((col) => (
+              <div key={col.title}>
+                <h3 className="eyebrow mb-5 !font-semibold">{col.title}</h3>
+                <ul className="space-y-3">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={localizedHref(link.href)}
+                        className="text-[15px] text-muted transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-20 flex flex-col gap-6 border-t border-border pt-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-muted">
+            <a href={`mailto:${contactEmail}`} className="transition-colors hover:text-foreground">
+              {contactEmail}
+            </a>
+            <a href={phoneHref} className="transition-colors hover:text-foreground">
+              {contactPhone}
+            </a>
+            <span>{contactAddress}</span>
+          </div>
+          {socialLinks.length > 0 && (
+            <div className="flex items-center gap-4 text-caption">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
                 return (
-                  <motion.a
+                  <a
                     key={social.label}
                     href={social.href}
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-2.5 rounded-xl bg-background text-muted hover:bg-gradient-to-br hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={social.label}
+                    className="transition-colors hover:text-brand-500"
                   >
-                    <Icon className="w-4 h-4" />
-                  </motion.a>
+                    <Icon className="h-[18px] w-[18px]" />
+                  </a>
                 );
               })}
-            </motion.div>
-          </div>
-
-          {/* Quick Links - 3 columns */}
-          {Object.values(footerLinks).map((section, sectionIndex) => (
-            <motion.div
-              key={section.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 + sectionIndex * 0.1 }}
-              className="lg:col-span-1"
-            >
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
-                {section.title}
-              </h3>
-              <ul className="space-y-2.5">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={localizedHref(link.href)}
-                      className="text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors flex items-center gap-1 group"
-                    >
-                      <ChevronRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
-
-          {/* Newsletter Column - Spans 1 */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-            className="lg:col-span-1"
-          >
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
-              Newsletter
-            </h3>
-            <p className="text-sm text-muted mb-4">
-              Get growth tips, AI insights, and exclusive offers delivered to
-              your inbox.
-            </p>
-
-            {/* Subscription Form */}
-            <form onSubmit={handleSubscribe} className="relative">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-                className="w-full px-4 py-3 pr-12 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent text-foreground placeholder-muted transition-all"
-              />
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white rounded-lg hover:shadow-lg hover:shadow-brand-orange/25 transition-shadow"
-              >
-                {isSubscribed ? (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring" }}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </motion.button>
-            </form>
-
-            {/* Success message */}
-            {isSubscribed && (
-              <motion.p
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium"
-              >
-                Thanks for subscribing! 🎉
-              </motion.p>
-            )}
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Bottom Bar */}
-      <div className="border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Copyright */}
-            <p className="text-sm text-caption flex items-center gap-1">
-              © {new Date().getFullYear()} TBJ Growth Ltd. All rights reserved.
-              <span className="hidden sm:inline">·</span>
-              <br className="sm:hidden" />
-              Made with{" "}
-              <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 inline-block mx-0.5 animate-pulse" />{" "}
-              in London
-            </p>
-
-            {/* Legal Links */}
-            <div className="flex items-center gap-6">
-              <a
-                href="#"
-                className="text-sm text-caption hover:text-foreground transition-colors"
-              >
-                Privacy Policy
-              </a>
-              <a
-                href="#"
-                className="text-sm text-caption hover:text-foreground transition-colors"
-              >
-                Terms of Service
-              </a>
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent("tbj-open-cookie-preferences"))}
-                className="text-sm text-caption hover:text-foreground transition-colors"
-              >
-                Cookie Policy
-              </button>
             </div>
+          )}
+        </div>
 
-            {/* Back to Top Button */}
-            <motion.button
-              onClick={scrollToTop}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 rounded-xl bg-background text-muted hover:bg-gradient-to-br hover:from-brand-orange-deep hover:to-brand-orange hover:text-white transition-all duration-300 shadow-sm"
-              aria-label="Back to top"
+        <div className="mt-8 flex flex-col items-start justify-between gap-4 text-sm text-caption sm:flex-row sm:items-center">
+          <p>&copy; {new Date().getFullYear()} TBJ Growth Ltd. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <a href="#" className="transition-colors hover:text-foreground">
+              Privacy Policy
+            </a>
+            <a href="#" className="transition-colors hover:text-foreground">
+              Terms of Service
+            </a>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("tbj-open-cookie-preferences"))}
+              className="transition-colors hover:text-foreground"
             >
-              <ArrowUp className="w-4 h-4" />
-            </motion.button>
+              Cookie Policy
+            </button>
+            <button
+              type="button"
+              onClick={scrollToTop}
+              aria-label="Back to top"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted transition-colors hover:border-foreground hover:text-foreground"
+            >
+              <ArrowUp className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>

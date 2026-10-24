@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { HelpCircle, ChevronDown, Calendar, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Plus } from "lucide-react";
+import Reveal from "@/components/home/Reveal";
 
 interface FaqItem {
   id: string;
@@ -13,96 +14,73 @@ interface FaqItem {
 
 export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
   const faqs = dbFaqs || [];
-  const hasFaqs = faqs.length > 0;
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative py-20 lg:py-28 bg-card transition-colors duration-500">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {hasFaqs ? (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-14"
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4">
-                <HelpCircle className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
-                <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
-                  Good to Know
-                </span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground">
-                Frequently Asked Questions
-              </h2>
-            </motion.div>
-
-            <div className="divide-y divide-border">
-              {faqs.map((faq, i) => (
-                <motion.div
-                  key={faq.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                    className="w-full flex items-center justify-between gap-4 py-6 text-left"
-                  >
-                    <span className="font-semibold text-foreground">{faq.question}</span>
-                    <ChevronDown
-                      className={`w-5 h-5 flex-shrink-0 text-brand-orange-deep dark:text-brand-orange-light transition-transform duration-300 ${
-                        openIndex === i ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  <motion.div
-                    initial={false}
-                    animate={{ height: openIndex === i ? "auto" : 0, opacity: openIndex === i ? 1 : 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="overflow-hidden"
-                  >
-                    <p className="pb-6 text-muted leading-relaxed whitespace-pre-line">{faq.answer}</p>
-                  </motion.div>
-                </motion.div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-6">
-              <HelpCircle className="w-4 h-4 text-brand-orange-deep dark:text-brand-orange-light" />
-              <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">
-                Got Questions?
-              </span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Ask Us Directly</h2>
-            <p className="text-lg text-muted leading-relaxed mb-8 max-w-xl mx-auto">
-              We&apos;re still building out our FAQ — in the meantime, book a free call and
-              we&apos;ll answer whatever you&apos;re wondering about.
+    <section id="faq" className="bg-card py-24 lg:py-36">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+          <Reveal className="lg:col-span-4">
+            <p className="eyebrow mb-5">FAQ</p>
+            <h2 className="text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-foreground sm:text-5xl">
+              Good to <span className="serif-accent">know</span>.
+            </h2>
+            <p className="mt-6 text-muted">
+              Something we haven&apos;t covered?{" "}
+              <Link href="/contact" className="font-medium text-foreground underline underline-offset-4 hover:text-brand-500">
+                Ask us directly
+              </Link>
+              .
             </p>
-            <motion.a
-              href="/book-a-call"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-xl shadow-lg shadow-brand-orange/25 hover:shadow-xl hover:shadow-brand-orange/35 transition-shadow group"
-            >
-              <Calendar className="w-4 h-4" />
-              Book a Call
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </motion.a>
-          </motion.div>
-        )}
+          </Reveal>
+
+          <div className="lg:col-span-8">
+            {faqs.length > 0 ? (
+              <ul className="border-t border-border">
+                {faqs.map((faq, i) => {
+                  const open = openIndex === i;
+                  return (
+                    <li key={faq.id} className="border-b border-border">
+                      <button
+                        type="button"
+                        aria-expanded={open}
+                        onClick={() => setOpenIndex(open ? null : i)}
+                        className="flex w-full items-center justify-between gap-6 py-6 text-left"
+                      >
+                        <span className="text-lg font-medium tracking-tight text-foreground">{faq.question}</span>
+                        <Plus
+                          className={`h-5 w-5 shrink-0 text-caption transition-transform duration-300 ${open ? "rotate-45 text-brand-500" : ""}`}
+                        />
+                      </button>
+                      <div
+                        className={`grid transition-all duration-300 ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+                      >
+                        <div className="overflow-hidden">
+                          <p className="max-w-2xl whitespace-pre-line pb-6 leading-relaxed text-muted">{faq.answer}</p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <Reveal className="rounded-2xl border border-dashed border-border p-10">
+                <h3 className="font-heading text-2xl font-medium tracking-tight text-foreground">Ask us directly</h3>
+                <p className="mt-3 max-w-md text-muted">
+                  We&apos;re still building out our FAQ. In the meantime, book a free call and we&apos;ll answer whatever
+                  you&apos;re wondering about.
+                </p>
+                <Link
+                  href="/book-a-call"
+                  className="group mt-6 inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-brand-500"
+                >
+                  Book a call
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Reveal>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
