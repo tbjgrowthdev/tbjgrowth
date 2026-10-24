@@ -62,6 +62,12 @@ async function startRun(ruleId: string, payload: AutomationEventPayload): Promis
   const steps = parseActionSteps(rule.actions);
   if (steps.length === 0) return null;
 
+  // Not a nested create (steps: { create: [...] }) — the HTTP-based Neon
+  // adapter (see lib/prisma.ts) rejects that the same way it rejects
+  // createMany/updateMany/multi-op $transaction, since Prisma compiles a
+  // one-to-many nested create as more than one statement under the hood.
+  // The run has to exist before its steps can reference runId anyway, so
+  // this is sequential-then-concurrent rather than a style choice.
   const run = await prisma.automationRun.create({
     data: {
       ruleId: rule.id,
@@ -69,16 +75,22 @@ async function startRun(ruleId: string, payload: AutomationEventPayload): Promis
       contentType: payload.contentType,
       contentId: payload.contentId,
       payload: JSON.stringify(payload.data),
-      steps: {
-        create: steps.map((step, index) => ({
+    },
+  });
+
+  await Promise.all(
+    steps.map((step, index) =>
+      prisma.automationStepRun.create({
+        data: {
+          runId: run.id,
           stepIndex: index,
           actionType: step.type,
           config: JSON.stringify(step.config ?? {}),
           requiresApproval: step.requiresApproval,
-        })),
-      },
-    },
-  });
+        },
+      })
+    )
+  );
 
   await advanceRun(run.id);
   return run.id;

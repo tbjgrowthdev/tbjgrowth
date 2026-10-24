@@ -1,4 +1,4 @@
-name: App cron (scheduled jobs + link check + content refresh + content recommendations + content cannibalization + content health)
+name: App cron (scheduled jobs + link check + content refresh + content recommendations + content cannibalization + content health + orphan pages + SEO audit)
 
 # vercel.json's "crons" config only fires when the app is actually hosted on
 # Vercel — it has had no effect since the app moved to Cloudflare Workers,
@@ -13,6 +13,8 @@ on:
     - cron: "0 5 * * 1" # content-recommendations-scan: weekly (Monday) keyword-gap scan
     - cron: "0 6 * * 1" # content-cannibalization-scan: weekly (Monday) overlapping-content scan
     - cron: "0 7 * * 1" # content-health-scan: weekly (Monday) health score recompute
+    - cron: "0 8 * * 1" # orphan-pages-scan: weekly (Monday) orphan page detection
+    - cron: "0 9 * * 1" # seo-audit-scan: weekly (Monday) technical SEO audit
   workflow_dispatch: {}
 
 jobs:
@@ -83,6 +85,30 @@ jobs:
       - name: Trigger content health score recompute
         run: |
           curl -fsS -X GET "${PRODUCTION_URL}/api/cron/content-health-scan" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  orphan-pages-scan:
+    if: github.event.schedule == '0 8 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger orphan page detection scan
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/orphan-pages-scan" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  seo-audit-scan:
+    if: github.event.schedule == '0 9 * * 1' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger technical SEO audit
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/seo-audit-scan" \
             -H "Authorization: Bearer ${CRON_SECRET}"
         env:
           PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}

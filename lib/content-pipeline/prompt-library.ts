@@ -94,6 +94,10 @@ export async function savePromptVersion(
     const nextVersionNumber = (existing?.versions[0]?.versionNumber ?? 0) + 1;
 
     if (!existing) {
+      // Not a nested create (versions: { create: {...} }) — the HTTP-based
+      // Neon adapter (see lib/prisma.ts) rejects that the same way it
+      // rejects createMany/updateMany/multi-op $transaction, since Prisma
+      // compiles a nested relational create as more than one statement.
       const template = await prisma.promptTemplate.create({
         data: {
           category,
@@ -101,19 +105,19 @@ export async function savePromptVersion(
           description: data.description || null,
           createdById: session.user.id,
           updatedById: session.user.id,
-          versions: {
-            create: {
-              versionNumber: 1,
-              systemPrompt: data.systemPrompt || null,
-              bodyTemplate: data.bodyTemplate,
-              changeNote: data.changeNote || "Initial version",
-              createdById: session.user.id,
-            },
-          },
         },
-        include: { versions: true },
       });
-      const versionId = template.versions[0].id;
+      const version = await prisma.promptTemplateVersion.create({
+        data: {
+          templateId: template.id,
+          versionNumber: 1,
+          systemPrompt: data.systemPrompt || null,
+          bodyTemplate: data.bodyTemplate,
+          changeNote: data.changeNote || "Initial version",
+          createdById: session.user.id,
+        },
+      });
+      const versionId = version.id;
       await prisma.promptTemplate.update({ where: { id: template.id }, data: { activeVersionId: versionId } });
       await logAudit({ action: "create", category: "Settings", entityType: "PromptTemplate", entityId: template.id, entityLabel: data.name });
       return { success: true, data: { templateId: template.id, versionId } };

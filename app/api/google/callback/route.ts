@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { exchangeCodeForTokens, fetchGoogleUserEmail } from "@/lib/google-oauth";
+import { requirePermission, AuthError } from "@/lib/auth-guard";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // Same permission as the rest of Google integration management
+  // (app/(admin)/actions/google.ts) — SUPER_ADMIN-only, not a plain ADMIN
+  // check (see lib/permissions.ts's comment on INTEGRATION_MANAGEMENT).
+  try {
+    await requirePermission("INTEGRATION_MANAGEMENT");
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    throw error;
   }
 
   const { searchParams } = req.nextUrl;

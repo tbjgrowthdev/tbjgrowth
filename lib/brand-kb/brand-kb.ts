@@ -70,23 +70,23 @@ export async function saveBrandSectionVersion(
     const nextVersionNumber = (existing?.versions[0]?.versionNumber ?? 0) + 1;
 
     if (!existing) {
+      // Not a nested create (versions: { create: {...} }) — the HTTP-based
+      // Neon adapter (see lib/prisma.ts) rejects that the same way it
+      // rejects createMany/updateMany/multi-op $transaction, since Prisma
+      // compiles a nested relational create as more than one statement.
       const section = await prisma.brandKnowledgeSection.create({
-        data: {
-          key,
-          createdById: session.user.id,
-          updatedById: session.user.id,
-          versions: {
-            create: {
-              versionNumber: 1,
-              content: data.content,
-              changeNote: data.changeNote || "Initial version",
-              createdById: session.user.id,
-            },
-          },
-        },
-        include: { versions: true },
+        data: { key, createdById: session.user.id, updatedById: session.user.id },
       });
-      const versionId = section.versions[0].id;
+      const version = await prisma.brandKnowledgeVersion.create({
+        data: {
+          sectionId: section.id,
+          versionNumber: 1,
+          content: data.content,
+          changeNote: data.changeNote || "Initial version",
+          createdById: session.user.id,
+        },
+      });
+      const versionId = version.id;
       await prisma.brandKnowledgeSection.update({ where: { id: section.id }, data: { activeVersionId: versionId } });
       await logAudit({ action: "create", category: "Settings", entityType: "BrandKnowledgeSection", entityId: section.id, entityLabel: key });
       return { success: true, data: { sectionId: section.id, versionId } };
