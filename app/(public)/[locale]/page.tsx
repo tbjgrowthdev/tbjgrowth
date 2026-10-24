@@ -36,9 +36,9 @@ export default async function Home() {
   return (
     <main className="relative bg-background transition-colors duration-500">
       <Hero settings={settings} />
+      <CaseStudies caseStudies={featuredCaseStudies} />
       <Services></Services>
       <BusinessJourney></BusinessJourney>
-      <CaseStudies caseStudies={featuredCaseStudies} />
       <WhyChooseTBJ></WhyChooseTBJ>
       <TBJSystems></TBJSystems>
       {/* <Testimonials></Testimonials> */}

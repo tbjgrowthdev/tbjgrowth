@@ -91,17 +91,12 @@
 }
 
 @layer utilities {
-  /* Editorial accent: one italic serif word per headline, in brand orange. */
+  /* Kept as hooks in markup; intentionally unstyled so headlines read as plain type. */
   .serif-accent {
-    font-family: var(--font-serif), Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-    padding-right: 0.08em;
-    @apply text-brand-500 dark:text-brand-300;
+    font-style: normal;
   }
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-caption;
+    @apply text-sm font-medium text-muted;
   }
   .hairline {
     @apply border-border;
