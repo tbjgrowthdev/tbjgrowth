@@ -4,53 +4,57 @@ import { createOpenAiProvider } from "./openai";
 import { createGeminiProvider } from "./gemini";
 import { createOpenAiImageProvider } from "./openai-image";
 import { createGeminiImageProvider } from "./gemini-image";
+import { resolveAiConfig } from "./config";
 
 export type { AiProvider, AiImageProvider };
 export { AiProviderError } from "./types";
 
-const PROVIDER_FACTORIES: Record<string, () => AiProvider> = {
+const PROVIDER_FACTORIES: Record<string, (model?: string) => AiProvider> = {
   anthropic: createAnthropicProvider,
   openai: createOpenAiProvider,
   gemini: createGeminiProvider,
 };
 
-/**
- * The single switch that decides which AI provider/model every pipeline
- * stage actually calls. Set AI_PROVIDER ("anthropic" | "openai" | "gemini")
- * in the environment and every stage picks it up on its next call, with
- * zero changes to lib/content-pipeline/stages.ts or prompts.ts — those
- * only ever ask for "the active provider" through callAiForJson() (see
- * ../ai.ts), never a named one. Swapping providers, or just swapping
- * models via ANTHROPIC_MODEL/OPENAI_MODEL/GEMINI_MODEL, is a config
- * change, not a code change.
- *
- * Adding a new provider later: write providers/<name>.ts exporting a
- * createXProvider() that returns an AiProvider (one method, `complete`),
- * register it in PROVIDER_FACTORIES above, and it's available the same way.
- */
-export function getActiveProvider(): AiProvider {
-  const name = (process.env.AI_PROVIDER || "anthropic").toLowerCase();
-  const factory = PROVIDER_FACTORIES[name];
-  if (!factory) {
-    throw new Error(`Unknown AI_PROVIDER "${name}" — expected one of: ${Object.keys(PROVIDER_FACTORIES).join(", ")}`);
-  }
-  return factory();
-}
-
-// Separate registry/env var from the text provider above — Anthropic has
-// no image-generation API, so "the active text provider" can never double
-// as "the active image provider." Set AI_IMAGE_PROVIDER ("openai" |
-// "gemini") independently of AI_PROVIDER.
-const IMAGE_PROVIDER_FACTORIES: Record<string, () => AiImageProvider> = {
+// Separate registry from the text providers above — Anthropic has no
+// image-generation API, so "the active text provider" can never double as
+// "the active image provider."
+const IMAGE_PROVIDER_FACTORIES: Record<string, (model?: string) => AiImageProvider> = {
   openai: createOpenAiImageProvider,
   gemini: createGeminiImageProvider,
 };
 
-export function getActiveImageProvider(): AiImageProvider {
-  const name = (process.env.AI_IMAGE_PROVIDER || "openai").toLowerCase();
+/** A specific text provider/model, regardless of what's active — for Settings' "Test connection" before saving. */
+export function buildTextProvider(name: string, model?: string | null): AiProvider {
+  const factory = PROVIDER_FACTORIES[name];
+  if (!factory) throw new Error(`Unknown AI provider "${name}" — expected one of: ${Object.keys(PROVIDER_FACTORIES).join(", ")}`);
+  return factory(model ?? undefined);
+}
+
+export function buildImageProvider(name: string, model?: string | null): AiImageProvider {
   const factory = IMAGE_PROVIDER_FACTORIES[name];
-  if (!factory) {
-    throw new Error(`Unknown AI_IMAGE_PROVIDER "${name}" — expected one of: ${Object.keys(IMAGE_PROVIDER_FACTORIES).join(", ")}`);
-  }
-  return factory();
+  if (!factory) throw new Error(`Unknown AI image provider "${name}" — expected one of: ${Object.keys(IMAGE_PROVIDER_FACTORIES).join(", ")}`);
+  return factory(model ?? undefined);
+}
+
+/**
+ * The single switch that decides which AI provider/model every pipeline
+ * stage actually calls. Selection comes from Settings → AI Provider when a
+ * Super Admin has set one, otherwise from the AI_PROVIDER / *_MODEL env
+ * vars (see ./config.ts). Stages never name a provider themselves — they
+ * only ever ask for "the active provider" through callAiForJson() (../ai.ts)
+ * — so switching is a settings change, not a code change.
+ *
+ * Adding a new provider later: write providers/<name>.ts exporting a
+ * createXProvider(model?) that returns an AiProvider (one method,
+ * `complete`), register it in PROVIDER_FACTORIES above and TEXT_PROVIDERS
+ * in ./config.ts, and it's selectable the same way.
+ */
+export async function getActiveProvider(): Promise<AiProvider> {
+  const { text } = await resolveAiConfig();
+  return buildTextProvider(text.provider, text.model);
+}
+
+export async function getActiveImageProvider(): Promise<AiImageProvider> {
+  const { image } = await resolveAiConfig();
+  return buildImageProvider(image.provider, image.model);
 }

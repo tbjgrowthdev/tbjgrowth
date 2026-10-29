@@ -29,6 +29,39 @@ Several architectural decisions elsewhere in this codebase exist *because* the t
 
 Set directly in **Cloudflare dashboard → Workers & Pages → the Worker → Settings → Variables and Secrets** — never in `wrangler.jsonc`, never in Cloudflare's "Build variables" (build-time-only, invisible at runtime; this exact distinction caused a `NEXTAUTH_SECRET` incident previously). Full variable list: `docs/environment-variables.md`.
 
+## Database migrations
+
+`npm run deploy` does **not** touch the database. Schema changes are applied separately, by hand, with `npx prisma migrate deploy` — which uses `DIRECT_URL` (Neon's unpooled endpoint) via `prisma.config.ts`, not the app's pooled `DATABASE_URL`. Apply migrations **before** deploying code that depends on them; a deploy that runs ahead of its migration crashes on the missing column/table (this happened in production on 2026-10-21 — see `docs/troubleshooting.md`).
+
+Never run `prisma migrate dev` or `prisma db push` against production. `migrate dev` targets whatever `DIRECT_URL` points at — in this repo's `.env`, that's production.
+
+### ⚠️ Staging first: `20261021000000_sync_missing_enum_values` + `20261021000001_sync_missing_models`
+
+**These two migrations must be tested on a staging database before being applied to production.**
+
+What they are: a baseline for the ~40 models that were originally created with `prisma db push` and never recorded in migration history. Before they existed, replaying `prisma/migrations` on an empty database failed at `sync_schema_drift` (`type "PipelineStage" does not exist`), so any fresh database — staging, a restore target, local dev — couldn't be built from migrations alone. They're dated *between* `second` and `sync_schema_drift` deliberately, because the drift migration modifies tables they create.
+
+They're written to be safe on a database that already has these tables (every statement is `IF NOT EXISTS` or wrapped in a `DO` block that ignores "already exists"), and were rehearsed locally on 2026-10-28 against three cases: an empty database, a production-like `db push`'d database with existing rows and `second`/`sync_schema_drift` already recorded as applied, and an old database still at `second`'s state with data in `Redirect.permanent` (which is copied into `statusCode` — `true` → 301, `false` → 302 — before that column is dropped). All three ended with `migrate diff` reporting no difference and seeded data intact. A local rehearsal is not a substitute for staging: production's real data, Neon's Postgres version, and anything changed by hand in production aren't covered by it.
+
+Known limitation: `CREATE TABLE IF NOT EXISTS` skips a table that already exists **in an older shape** rather than fixing it. That's why step 4 below matters.
+
+**Procedure:**
+
+1. **Make a staging copy of production.** Neon console → the project → **Branches** → **Create branch** from the production branch (copy-on-write, instant, includes current data). Copy the new branch's **direct** (unpooled) connection string.
+2. **Point the Prisma CLI at the branch for this shell only** (`dotenv` never overrides a variable that's already set, so this wins over `.env`):
+   - PowerShell: `$env:DIRECT_URL="<branch direct URL>"`
+   - bash: `export DIRECT_URL="<branch direct URL>"`
+
+   Then confirm the target before running anything: `npx prisma migrate status` must print the **branch's** host, and should list exactly these two migrations as not yet applied.
+3. `npx prisma migrate deploy` — should apply both and finish with "All migrations have been successfully applied."
+4. `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code` — must print **"No difference detected."** Anything else means the branch had a table in an older shape; stop and investigate before production.
+5. Point a local `next dev` (`DATABASE_URL` = the branch's pooled URL) at the branch and smoke-test the admin: log in, open a post, Redirects, Booking, AI Pipeline.
+6. Only then repeat steps 2–4 against production (unset `DIRECT_URL` in the shell first so `.env`'s production value is used — and re-check `migrate status` prints the production host). Delete the Neon branch afterwards.
+
+If you'd rather not execute any SQL on production at all: once staging has proven the SQL correct, `npx prisma migrate resolve --applied 20261021000000_sync_missing_enum_values` and `npx prisma migrate resolve --applied 20261021000001_sync_missing_models` record them as applied without running them — Prisma's standard baselining approach, appropriate because production already has everything they create. Still run step 4 against production afterwards.
+
+**Rehearsing any migration locally** (no cloud resources): `npx prisma dev --name verify --detach` starts a disposable local Postgres. Point a throwaway Prisma config file at its `postgres://…localhost…` URL (never edit `prisma.config.ts` itself) and run `migrate deploy --config <that file>`. `npx prisma dev rm verify` removes it.
+
 ## Cron jobs
 
 Two different scheduling mechanisms are in play — know which one actually drives which route before changing either:

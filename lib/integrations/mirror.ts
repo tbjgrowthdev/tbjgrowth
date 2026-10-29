@@ -1,8 +1,6 @@
 import { getGoogleIntegration } from "@/lib/google-oauth";
+import { PROVIDER_KEY_ENV, PROVIDER_LABEL, hasProviderKey, resolveAiConfig } from "@/lib/content-pipeline/providers/config";
 import type { IntegrationStatusView } from "./types";
-
-const AI_PROVIDER_LABEL: Record<string, string> = { anthropic: "Anthropic", openai: "OpenAI", gemini: "Gemini" };
-const AI_PROVIDER_KEY_ENV: Record<string, string> = { anthropic: "ANTHROPIC_API_KEY", openai: "OPENAI_API_KEY", gemini: "GEMINI_API_KEY" };
 
 function view(partial: Omit<IntegrationStatusView, "provider" | "liveTestAvailable">): IntegrationStatusView {
   return { ...partial, provider: null, liveTestAvailable: false };
@@ -40,30 +38,30 @@ export async function getGoogleMirrorStatuses(): Promise<IntegrationStatusView[]
 }
 
 /**
- * Mirrors lib/content-pipeline/providers' env-var selection: only the
- * provider AI_PROVIDER actually points at is reported as live (or in
- * Error, if it's selected but missing its key — that combination will
- * throw the moment any pipeline stage actually calls it, so Error is the
- * honest status, not Disconnected). The other two configured-or-not
- * providers show Disconnected regardless of whether their key happens to
- * be set, since nothing calls them while they're not the active one.
+ * Mirrors lib/content-pipeline/providers' selection (Settings → AI
+ * Provider, else the AI_PROVIDER env var): only the active text provider
+ * is reported as live, or as Error if it's selected but missing its key —
+ * that combination throws the moment any pipeline stage calls it, so Error
+ * is the honest status, not Disconnected.
  */
-export function getAiProviderMirrorStatus(): IntegrationStatusView {
-  const active = (process.env.AI_PROVIDER || "anthropic").toLowerCase();
-  const activeLabel = AI_PROVIDER_LABEL[active] || active;
-  const hasKey = !!process.env[AI_PROVIDER_KEY_ENV[active] || "ANTHROPIC_API_KEY"];
+export async function getAiProviderMirrorStatus(): Promise<IntegrationStatusView> {
+  const { text } = await resolveAiConfig();
+  const activeLabel = PROVIDER_LABEL[text.provider] || text.provider;
+  const hasKey = hasProviderKey(text.provider);
+  const keyEnv = PROVIDER_KEY_ENV[text.provider] || `${text.provider.toUpperCase()}_API_KEY`;
+  const selectedVia = text.source === "admin" ? "selected in Settings" : "AI_PROVIDER env var";
 
   return view({
     id: "AI_PROVIDERS",
     label: "AI Providers",
     category: "Content",
     status: hasKey ? "CONNECTED" : "ERROR",
-    lastError: hasKey ? null : `AI_PROVIDER is set to "${active}" but ${AI_PROVIDER_KEY_ENV[active] || `${active.toUpperCase()}_API_KEY`} is not configured`,
+    lastError: hasKey ? null : `${activeLabel} is the active provider (${selectedVia}) but ${keyEnv} is not configured`,
     lastCheckedAt: null,
     connectedAt: null,
-    metadataSummary: `Active: ${activeLabel}`,
+    metadataSummary: `Active: ${activeLabel}${text.model ? ` (${text.model})` : ""} — ${selectedVia}`,
     managedBy: "env",
-    manageHref: null,
+    manageHref: "/admin/settings#ai-provider",
   });
 }
 

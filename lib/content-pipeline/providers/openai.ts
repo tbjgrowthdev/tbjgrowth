@@ -4,9 +4,9 @@ import { AiProviderError } from "./types";
 const API_URL = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_MODEL = "gpt-5";
 
-export function createOpenAiProvider(): AiProvider {
+export function createOpenAiProvider(modelOverride?: string): AiProvider {
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
+  const model = modelOverride || process.env.OPENAI_MODEL || DEFAULT_MODEL;
 
   return {
     name: "openai",

@@ -19,7 +19,11 @@ Nothing is written to the real CMS tables until the **Draft** stage, which calls
 
 ## Provider abstraction
 
-`lib/content-pipeline/providers/` isolates everything provider-specific behind one interface. `AI_PROVIDER` (env: `anthropic` | `openai` | `gemini`) picks which one every text stage calls via `lib/content-pipeline/ai.ts`'s `callAiForJson()` — no stage or prompt file references a provider by name. `AI_IMAGE_PROVIDER` is a separate selection (`openai` | `gemini`) for the Image stage only, since Anthropic has no image-generation API. Every `AiJob` row records the actual `provider`/`model` that ran it, so switching providers mid-project never misattributes a historical job.
+`lib/content-pipeline/providers/` isolates everything provider-specific behind one interface; every text stage calls whichever one is active via `lib/content-pipeline/ai.ts`'s `callAiForJson()` — no stage or prompt file references a provider by name. The image provider (`openai` | `gemini`) is a separate selection for the Image stage only, since Anthropic has no image-generation API.
+
+**Which provider is active** is resolved on every AI call by `providers/config.ts`'s `resolveAiConfig()`: a Super Admin's choice in **Settings → AI Provider** (the single-row `AiSettings` table — provider and optional model, for text and images independently) if one is saved, otherwise the `AI_PROVIDER` / `AI_IMAGE_PROVIDER` / `*_MODEL` env vars. Any error reading `AiSettings` falls back to the env vars rather than failing the AI call. API keys are never stored in the database — they stay in env vars, and Settings refuses to select a provider whose key isn't configured. Settings also has a "Test text provider" button that makes one tiny real completion against the chosen provider/model before saving. Gated on `INTEGRATION_MANAGEMENT` (Super Admin only); every save is written to the Audit Log under Integrations.
+
+A model name outside `lib/content-pipeline/pricing.ts`'s rate tables still runs normally, but its jobs record `costUsd = null` (the Settings form warns about this as you type). Every `AiJob` row records the actual `provider`/`model` that ran it, so switching providers mid-project never misattributes a historical job.
 
 ## Job tracking (`AiJob`)
 

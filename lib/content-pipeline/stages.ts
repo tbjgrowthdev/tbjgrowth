@@ -395,7 +395,7 @@ export async function runImageStage(runId: string): Promise<StageResult> {
     if (!brief || !outline) return wrongStage("Could not read this run's prior stages");
 
     const imagePromptText = await buildImageGenerationPrompt(brief, outline);
-    const imageProvider = getActiveImageProvider();
+    const imageProvider = await getActiveImageProvider();
 
     // Generate + Store + Optimize, tracked as their own job — completed
     // (with real cost recorded) the moment the upload succeeds, before

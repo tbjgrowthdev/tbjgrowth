@@ -8,9 +8,9 @@ import { AiProviderError } from "./types";
 const API_URL = "https://api.anthropic.com/v1/messages";
 const DEFAULT_MODEL = "claude-sonnet-5-5";
 
-export function createAnthropicProvider(): AiProvider {
+export function createAnthropicProvider(modelOverride?: string): AiProvider {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+  const model = modelOverride || process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
 
   return {
     name: "anthropic",

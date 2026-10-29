@@ -181,7 +181,15 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
                         Manage on SEO page
                       </Link>
                     )}
-                    {item.managedBy === "env" && <span className="text-xs text-caption italic">Managed via environment variables</span>}
+                    {item.managedBy === "env" && !item.manageHref && <span className="text-xs text-caption italic">Managed via environment variables</span>}
+                    {item.managedBy === "env" && item.manageHref && (
+                      <>
+                        <Link href={item.manageHref} className="text-xs text-brand-orange-deep dark:text-brand-orange-light hover:underline">
+                          Choose provider in Settings
+                        </Link>
+                        <span className="text-xs text-caption italic">API keys via environment variables</span>
+                      </>
+                    )}
                     {item.managedBy === "hub" && item.provider && (
                       <>
                         {item.status === "DISCONNECTED" ? (

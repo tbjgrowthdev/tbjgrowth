@@ -10,8 +10,9 @@ export type { AiUsage };
  * plus how many tokens that cost (summed across the repair attempt below,
  * if one happened — both calls are real, billed requests). Provider-
  * agnostic by design — see lib/content-pipeline/providers — so every
- * pipeline stage calls this one function regardless of which provider
- * AI_PROVIDER currently selects, and never touches token/cost accounting
+ * pipeline stage calls this one function regardless of which provider is
+ * currently selected (Settings → AI Provider, or the AI_PROVIDER env var),
+ * and never touches token/cost accounting
  * itself; that's handled by the job-tracking layer (./jobs.ts) using the
  * `usage` returned here.
  *
@@ -23,7 +24,7 @@ export type { AiUsage };
  * pipeline stage over a stray markdown code-fence.
  */
 export async function callAiForJson<T>(system: string, userPrompt: string, maxTokens = 4096): Promise<{ data: T; usage: AiUsage }> {
-  const provider = getActiveProvider();
+  const provider = await getActiveProvider();
 
   const first = await provider.complete(system, userPrompt, maxTokens);
   const parsed = tryParseJson<T>(first.text);

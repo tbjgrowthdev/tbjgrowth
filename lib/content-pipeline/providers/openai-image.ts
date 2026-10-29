@@ -4,9 +4,9 @@ import { AiProviderError } from "./types";
 const API_URL = "https://api.openai.com/v1/images/generations";
 const DEFAULT_MODEL = "gpt-image-1";
 
-export function createOpenAiImageProvider(): AiImageProvider {
+export function createOpenAiImageProvider(modelOverride?: string): AiImageProvider {
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_IMAGE_MODEL || DEFAULT_MODEL;
+  const model = modelOverride || process.env.OPENAI_IMAGE_MODEL || DEFAULT_MODEL;
 
   return {
     name: "openai",

@@ -54,11 +54,11 @@ Source: `.env.example` (copy to `.env` for local `next dev`; `.env*` is gitignor
 
 | Variable | Used by | Notes |
 |---|---|---|
-| `AI_PROVIDER` | `lib/content-pipeline/providers/index.ts` | `anthropic` (default) \| `openai` \| `gemini`. Picks which provider every **text** stage calls. Switching is a config change only — see `docs/ai-workflow.md`. |
-| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | `lib/content-pipeline/providers/anthropic.ts` | Only needed if `AI_PROVIDER=anthropic`. |
-| `OPENAI_API_KEY` / `OPENAI_MODEL` | `lib/content-pipeline/providers/openai.ts` | Only needed if `AI_PROVIDER=openai` (or for image generation, see below). |
-| `GEMINI_API_KEY` / `GEMINI_MODEL` | `lib/content-pipeline/providers/gemini.ts` | Only needed if `AI_PROVIDER=gemini` (or for image generation, see below). |
-| `AI_IMAGE_PROVIDER` | `lib/content-pipeline/providers/index.ts` | `openai` (default) \| `gemini`. **Separate** selection from `AI_PROVIDER` — Anthropic has no image-generation API, so the Image stage always needs one of the other two providers' key configured regardless of which text provider is active. |
+| `AI_PROVIDER` | `lib/content-pipeline/providers/config.ts` | `anthropic` (default) \| `openai` \| `gemini`. The **server default** for which provider every **text** stage calls. A Super Admin can override it (and the model) from **Settings → AI Provider** without a redeploy — stored in the `AiSettings` table; this env var applies whenever no override is saved, and is the fallback if that table can't be read. See `docs/ai-workflow.md`. |
+| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | `lib/content-pipeline/providers/anthropic.ts` | Key needed for Anthropic to be usable or selectable in Settings. `ANTHROPIC_MODEL` is the default model when Settings doesn't override it. |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` | `lib/content-pipeline/providers/openai.ts` | Same, for OpenAI (also used for image generation, see below). |
+| `GEMINI_API_KEY` / `GEMINI_MODEL` | `lib/content-pipeline/providers/gemini.ts` | Same, for Gemini (also used for image generation, see below). |
+| `AI_IMAGE_PROVIDER` | `lib/content-pipeline/providers/config.ts` | `openai` (default) \| `gemini`. Server default for the Image stage, also overridable in Settings → AI Provider. **Separate** selection from `AI_PROVIDER` — Anthropic has no image-generation API, so the Image stage always needs one of the other two providers' key configured regardless of which text provider is active. |
 | `OPENAI_IMAGE_MODEL` | `lib/content-pipeline/providers/openai-image.ts` | |
 | `GEMINI_IMAGE_MODEL` | `lib/content-pipeline/providers/gemini-image.ts` | |
 

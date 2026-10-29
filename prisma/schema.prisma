@@ -466,6 +466,23 @@ model ContentRefresh {
   @@index([status])
 }
 
+// Admin-panel override for which AI provider/model the content pipeline
+// calls (Settings → AI Provider, Super Admin only). Single row, id
+// "global". Every column null = use the AI_PROVIDER / AI_IMAGE_PROVIDER /
+// *_MODEL env vars, exactly as before this table existed. API keys are
+// deliberately NOT stored here — they stay in env vars, so a database leak
+// never exposes them. Plain strings rather than enums so adding a provider
+// is a code change in lib/content-pipeline/providers, not a migration.
+model AiSettings {
+  id            String   @id @default("global")
+  textProvider  String?
+  textModel     String?
+  imageProvider String?
+  imageModel    String?
+  updatedById   String?
+  updatedAt     DateTime @updatedAt
+}
+
 enum PromptCategory {
   BLOG
   CASE_STUDY

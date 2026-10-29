@@ -82,15 +82,15 @@ permission is necessary but not sufficient:
 
 Full detail and the login/role-assignment flow: `docs/admin-roles.md`.
 
-## A likely mismatch, flagged not fixed
+## What `INTEGRATION_MANAGEMENT` gates
 
-`app/api/google/connect` and `app/api/google/callback` gate on
-`session.user.role !== "ADMIN"` (a literal string check on the route itself,
-not `hasPermission`), while `app/(admin)/actions/google.ts`'s
-`updateGoogleConfig`/`disconnectGoogle` correctly gate on
-`INTEGRATION_MANAGEMENT`. Per the table above, `INTEGRATION_MANAGEMENT` is
-**SUPER_ADMIN-only** — so a `SUPER_ADMIN` is currently turned away from the
-OAuth connect flow (redirected to `/login`) while a plain `ADMIN` (who holds
-no `INTEGRATION_MANAGEMENT` at all) is let through to start it. Worth a
-deliberate decision — not changed here since it's not what was asked, and the
-"right" fix depends on which behavior was actually intended.
+Super Admin only. Covers: Integration Hub connect/edit/reconnect/disconnect
+(`lib/integrations/manage.ts`), Google OAuth connect/callback
+(`app/api/google/*`) and Google config/disconnect (`app/(admin)/actions/google.ts`),
+and **Settings → AI Provider** (`app/(admin)/actions/ai-settings.ts` — choosing
+the AI provider/model for the content pipeline). The Settings page itself is
+`SETTINGS_MANAGEMENT`; Admins see the active AI provider there read-only.
+
+The Google OAuth routes used to check a literal `role !== "ADMIN"` instead,
+which backwards-blocked Super Admins; fixed 2026-10-22 (see
+`docs/known-limitations.md`).

@@ -7,9 +7,9 @@ import { AiProviderError } from "./types";
 // text, rather than needing a separate "images" API the way OpenAI does.
 const DEFAULT_MODEL = "gemini-2.5-flash-image";
 
-export function createGeminiImageProvider(): AiImageProvider {
+export function createGeminiImageProvider(modelOverride?: string): AiImageProvider {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_IMAGE_MODEL || DEFAULT_MODEL;
+  const model = modelOverride || process.env.GEMINI_IMAGE_MODEL || DEFAULT_MODEL;
 
   return {
     name: "gemini",

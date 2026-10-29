@@ -196,6 +196,13 @@ prisma/schema.prisma --script`, which reads `DIRECT_URL` from
 production, same as the 2026-10-22 recovery did. Never let a schema change
 sit un-applied "for later."
 
+A second, related gap: ~40 models were created with `prisma db push` and never
+recorded in migration history at all, so a fresh database couldn't be built
+from `prisma/migrations`. Fixed by two baseline migrations
+(`20261021000000_sync_missing_enum_values`, `20261021000001_sync_missing_models`)
+— not yet applied to production as of 2026-10-28; they must go through
+staging first, per `docs/deployment.md` → "Database migrations".
+
 See `docs/troubleshooting.md` for the recovery steps if this happens again,
 and `docs/database-schema.md` for the `DATABASE_URL` (pooled, runtime) vs
 `DIRECT_URL` (unpooled, CLI/migrations) split that's easy to confuse when

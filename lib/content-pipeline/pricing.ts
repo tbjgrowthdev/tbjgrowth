@@ -35,3 +35,14 @@ const IMAGE_RATES: Record<string, number> = {
 export function estimateImageCostUsd(provider: string, model: string): number | null {
   return IMAGE_RATES[`${provider}:${model}`] ?? null;
 }
+
+function splitKeys(table: Record<string, unknown>) {
+  return Object.keys(table).map((key) => {
+    const [provider, ...rest] = key.split(":");
+    return { provider, model: rest.join(":") };
+  });
+}
+
+/** Which provider/model pairs the tables above can price — shown in Settings → AI Provider so an admin knows a model outside this list records no cost. */
+export const PRICED_TEXT_MODELS = splitKeys(RATES);
+export const PRICED_IMAGE_MODELS = splitKeys(IMAGE_RATES);

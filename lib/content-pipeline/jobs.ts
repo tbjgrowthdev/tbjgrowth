@@ -22,11 +22,11 @@ export async function startOrResumeJob(
 ): Promise<{ id: string; alreadyCompleted: boolean }> {
   const idempotencyKey = `${pipelineRunId}:${stage}`;
   const existing = await prisma.aiJob.findUnique({ where: { idempotencyKey } });
-  // Read fresh each call (not cached), so a retry after an admin changes
-  // AI_PROVIDER/ANTHROPIC_MODEL/etc. correctly records the provider/model
-  // that's actually about to run — a completed job keeps whatever it
-  // recorded on its own successful attempt.
-  const provider = getActiveProvider();
+  // Read fresh each call (not cached), so a retry after an admin switches
+  // provider/model in Settings correctly records the provider/model that's
+  // actually about to run — a completed job keeps whatever it recorded on
+  // its own successful attempt.
+  const provider = await getActiveProvider();
 
   if (!existing) {
     const created = await prisma.aiJob.create({
@@ -127,12 +127,12 @@ async function createFreshJob(pipelineRunId: string, stage: PipelineStage, conte
 }
 
 export async function createImageJob(pipelineRunId: string, contentId: string | null): Promise<{ id: string }> {
-  return createFreshJob(pipelineRunId, "IMAGE", contentId, getActiveImageProvider());
+  return createFreshJob(pipelineRunId, "IMAGE", contentId, await getActiveImageProvider());
 }
 
 /** Same non-idempotent "fresh job every call" shape as createImageJob, for text stages that support regeneration (currently just Internal Links). */
 export async function createTextJob(pipelineRunId: string, stage: PipelineStage, contentId: string | null): Promise<{ id: string }> {
-  return createFreshJob(pipelineRunId, stage, contentId, getActiveProvider());
+  return createFreshJob(pipelineRunId, stage, contentId, await getActiveProvider());
 }
 
 /**
@@ -144,7 +144,7 @@ export async function createTextJob(pipelineRunId: string, stage: PipelineStage,
  * Image/Internal Links above.
  */
 export async function createRefreshJob(contentRefreshId: string, contentId: string | null): Promise<{ id: string }> {
-  const provider = getActiveProvider();
+  const provider = await getActiveProvider();
   const created = await prisma.aiJob.create({
     data: {
       idempotencyKey: `${contentRefreshId}:REFRESH:${crypto.randomUUID()}`,
@@ -162,7 +162,7 @@ export async function createRefreshJob(contentRefreshId: string, contentId: stri
 
 /** Same shape as createRefreshJob, for the AI diagnosis call behind PerformanceFeedback. */
 export async function createPerformanceFeedbackJob(performanceFeedbackId: string, contentId: string | null): Promise<{ id: string }> {
-  const provider = getActiveProvider();
+  const provider = await getActiveProvider();
   const created = await prisma.aiJob.create({
     data: {
       idempotencyKey: `${performanceFeedbackId}:PERFORMANCE_FEEDBACK:${crypto.randomUUID()}`,

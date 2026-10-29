@@ -76,7 +76,7 @@ export async function listIntegrationStatuses(): Promise<IntegrationStatusView[]
     };
   });
 
-  const [googleViews, aiView, emailView] = await Promise.all([getGoogleMirrorStatuses(), Promise.resolve(getAiProviderMirrorStatus()), Promise.resolve(getEmailMirrorStatus())]);
+  const [googleViews, aiView, emailView] = await Promise.all([getGoogleMirrorStatuses(), getAiProviderMirrorStatus(), Promise.resolve(getEmailMirrorStatus())]);
 
   return [...googleViews, aiView, emailView, ...hubViews];
 }

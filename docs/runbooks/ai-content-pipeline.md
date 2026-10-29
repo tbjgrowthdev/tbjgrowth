@@ -6,18 +6,18 @@
 
 Set in the environment (see `.env.example`):
 
-- `AI_PROVIDER` — `anthropic` (default) | `openai` | `gemini`. Picks which provider every text stage actually calls; see "Provider abstraction" below.
+- `AI_PROVIDER` — `anthropic` (default) | `openai` | `gemini`. The server-default provider for every text stage — a Super Admin can override it in Settings → AI Provider; see "Provider abstraction" below.
 - `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL`, `OPENAI_API_KEY` / `OPENAI_MODEL`, `GEMINI_API_KEY` / `GEMINI_MODEL` — only the pair matching the active `AI_PROVIDER` needs to be set. Without it, every AI-driven stage fails with "`<KEY>` is not configured" and the run just sits at its current stage (nothing is lost — re-run the stage once the key is set).
 - `AI_IMAGE_PROVIDER` — `openai` (default) | `gemini`, with `OPENAI_IMAGE_MODEL` / `GEMINI_IMAGE_MODEL`. **Separate from `AI_PROVIDER`** — Anthropic has no image-generation API at all, so the Image stage always needs one of the other two configured regardless of which text provider is active.
 - `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` — already required for Keyword Tracking; also used here for real search-volume (Search Intent) and SERP competitor snippets (Research). If missing, those two stages still run — the model falls back to reasoning without live data instead of failing the stage.
 
 ## Provider abstraction
 
-`lib/content-pipeline/providers/` isolates everything provider-specific behind one interface (`AiProvider`: a name, a model, and a single `complete(system, userPrompt, maxTokens)` method). `lib/content-pipeline/ai.ts`'s `callAiForJson()` — the only AI-calling function `stages.ts`/`prompts.ts` ever uses — asks `getActiveProvider()` for whichever provider `AI_PROVIDER` currently selects and calls that one method. No stage, prompt, or business logic references Anthropic, OpenAI, or Gemini by name anywhere outside `providers/`.
+`lib/content-pipeline/providers/` isolates everything provider-specific behind one interface (`AiProvider`: a name, a model, and a single `complete(system, userPrompt, maxTokens)` method). `lib/content-pipeline/ai.ts`'s `callAiForJson()` — the only AI-calling function `stages.ts`/`prompts.ts` ever uses — asks `getActiveProvider()` for whichever provider is currently selected and calls that one method. No stage, prompt, or business logic references Anthropic, OpenAI, or Gemini by name anywhere outside `providers/`.
 
-Switching provider or model is purely a config change: set `AI_PROVIDER` (and that provider's API key/model env vars) and the next stage run picks it up — no code changes. Adding a fourth provider means writing one new file (`providers/<name>.ts`, implementing `AiProvider`) and registering it in `providers/index.ts`'s `PROVIDER_FACTORIES` map; `stages.ts` never changes.
+**Switching provider or model:** a Super Admin opens **Settings → AI Provider**, picks a provider (and optionally a model) for text and/or images, clicks **Test text provider**, then **Save AI Provider** — the next stage run picks it up, no redeploy. Only providers whose API key is set in the environment are selectable. Choosing "Server default" clears the override and goes back to the `AI_PROVIDER` / `AI_IMAGE_PROVIDER` / `*_MODEL` env vars, which still work exactly as before and are also the automatic fallback if the `AiSettings` table can't be read. Adding a fourth provider means writing one new file (`providers/<name>.ts`, implementing `AiProvider`), registering it in `providers/index.ts`'s `PROVIDER_FACTORIES` and `providers/config.ts`'s `TEXT_PROVIDERS`; `stages.ts` never changes.
 
-Each `AiJob` row (see below) records the actual `provider`/`model` that ran it at the time, read fresh on every attempt — so a run started on Claude and retried after switching `AI_PROVIDER` to GPT shows exactly that in its Job Log, rather than silently misattributing which model produced what.
+Each `AiJob` row (see below) records the actual `provider`/`model` that ran it at the time, read fresh on every attempt — so a run started on Claude and retried after switching to GPT shows exactly that in its Job Log, rather than silently misattributing which model produced what.
 
 ## How a run works
 
