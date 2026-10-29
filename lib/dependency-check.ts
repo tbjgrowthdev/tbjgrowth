@@ -211,3 +211,54 @@ export async function findDependencies(kind: ContentKind, id: string): Promise<D
 
   return [...links, ...findMenuReferences(path), ...schema, ...redirects, ...related, ...translations];
 }
+
+export type DeleteOptions = {
+  /** Delete even if other content depends on this item (the user has seen the list and confirmed). */
+  force?: boolean;
+};
+
+export type DependencyBlocked = { success: false; error: string; dependencies: DependencyFinding[] };
+
+const KIND_LABEL: Record<ContentKind, string> = {
+  POST: "post",
+  PAGE: "page",
+  CASE_STUDY: "case study",
+  SERVICE: "service",
+  LOCATION: "location",
+};
+
+/**
+ * Server-side half of the delete-dependency check, for the delete actions
+ * (posts/pages/cases/services/locations). Call it after the permission check,
+ * so a caller without DELETE can't use it to probe what links where.
+ *
+ * - No dependencies: `{ blocked: null, dependencies: [] }`, delete normally.
+ * - Dependencies and no `force`: `blocked` is the response to return as-is,
+ *   so the UI can show the list and offer "Delete anyway".
+ * - Dependencies with `force`: `blocked` is null; `dependencies` is returned
+ *   so the action can record what it deleted past in the audit log.
+ */
+export async function checkDeleteDependencies(
+  kind: ContentKind,
+  id: string,
+  options?: DeleteOptions
+): Promise<{ blocked: DependencyBlocked | null; dependencies: DependencyFinding[] }> {
+  const dependencies = await findDependencies(kind, id);
+  if (dependencies.length === 0 || options?.force) return { blocked: null, dependencies };
+  const n = dependencies.length;
+  return {
+    dependencies,
+    blocked: {
+      success: false,
+      error: `This ${KIND_LABEL[kind]} is referenced in ${n} place${n === 1 ? "" : "s"}. Review them and confirm "Delete anyway" to delete it.`,
+      dependencies,
+    },
+  };
+}
+
+/** Audit-log label for a delete; notes when it went ahead despite dependencies. */
+export function deleteAuditLabel(label: string | null | undefined, dependencies: DependencyFinding[]): string | null | undefined {
+  if (dependencies.length === 0) return label;
+  const n = dependencies.length;
+  return `${label ?? "(untitled)"} (deleted despite ${n} dependenc${n === 1 ? "y" : "ies"})`;
+}

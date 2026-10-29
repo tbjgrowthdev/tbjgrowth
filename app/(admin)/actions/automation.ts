@@ -14,51 +14,52 @@ import {
   type RuleInput,
 } from "@/lib/automation/manage";
 import { approveStep, rejectStep, runRuleManually } from "@/lib/automation/engine";
+import { guardMutation, guardRead } from "@/lib/action-guard";
 
 export async function listAutomationRulesAction() {
-  return listAutomationRules();
+  return guardRead("EDIT", () => [], () => listAutomationRules());
 }
 
 export async function getAutomationRuleAction(id: string) {
-  return getAutomationRule(id);
+  return guardRead("EDIT", () => null, () => getAutomationRule(id));
 }
 
 export async function createAutomationRuleAction(input: RuleInput) {
-  return createAutomationRule(input);
+  return guardMutation("SETTINGS_MANAGEMENT", () => createAutomationRule(input));
 }
 
 export async function updateAutomationRuleAction(id: string, input: RuleInput) {
-  return updateAutomationRule(id, input);
+  return guardMutation("SETTINGS_MANAGEMENT", () => updateAutomationRule(id, input));
 }
 
 export async function toggleAutomationRuleAction(id: string, enabled: boolean) {
-  return toggleAutomationRule(id, enabled);
+  return guardMutation("SETTINGS_MANAGEMENT", () => toggleAutomationRule(id, enabled));
 }
 
 export async function deleteAutomationRuleAction(id: string) {
-  return deleteAutomationRule(id);
+  return guardMutation("SETTINGS_MANAGEMENT", () => deleteAutomationRule(id));
 }
 
 export async function listAutomationRunsAction() {
-  return listAutomationRuns();
+  return guardRead("EDIT", () => [], () => listAutomationRuns());
 }
 
 export async function approveAutomationStepAction(stepId: string) {
-  return approveStep(stepId);
+  return guardMutation("APPROVE", () => approveStep(stepId));
 }
 
 export async function rejectAutomationStepAction(stepId: string) {
-  return rejectStep(stepId);
+  return guardMutation("APPROVE", () => rejectStep(stepId));
 }
 
 export async function runAutomationRuleManuallyAction(ruleId: string, contentType: ContentType, contentId: string) {
-  return runRuleManually(ruleId, contentType, contentId);
+  return guardMutation("EDIT", () => runRuleManually(ruleId, contentType, contentId));
 }
 
 export async function listSocialDraftsAction() {
-  return listSocialDrafts();
+  return guardRead("EDIT", () => [], () => listSocialDrafts());
 }
 
 export async function dismissSocialDraftAction(id: string) {
-  return dismissSocialDraft(id);
+  return guardMutation("EDIT", () => dismissSocialDraft(id));
 }

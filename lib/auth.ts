@@ -1,4 +1,5 @@
 import { NextAuthOptions } from "next-auth";
+import { getNextAuthSecret } from "@/lib/env";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
@@ -207,5 +208,9 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development-only-replace-in-production",
+  // A getter so the secret is resolved per request, not when this module
+  // loads (which also happens during `next build`). See lib/env.ts.
+  get secret() {
+    return getNextAuthSecret();
+  },
 };

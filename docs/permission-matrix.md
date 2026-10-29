@@ -54,10 +54,12 @@ the real `requirePermission(...)` call sites:
   certificate check) — these read operational/diagnostic data, not just
   settings, but were grouped with settings rather than `USER_MANAGEMENT` or a
   dedicated ops permission.
-- **`EXPORT`** gates only `import-export.ts` (every `export*`/`import*`
-  action) — `SEO_MANAGER` holds it (useful for exporting SEO data), but
-  `EDITOR` does not, despite `EDITOR` otherwise having a broader content
-  permission set than `SEO_MANAGER`.
+- **`EXPORT`** gates `import-export.ts`'s `export*` actions and the page
+  itself — `SEO_MANAGER` holds it (useful for exporting SEO data), but
+  `EDITOR` does not. The `import*` actions need `CREATE` **and** `DELETE`
+  instead (`requireImport()`), because an import creates and overwrites
+  records in bulk. Since the page needs `EXPORT` too, in practice only
+  Super Admins and Admins can import; SEO Managers see export only.
 - **`CREATE`/`EDIT`/`DELETE`** also gate most non-CMS-workflow content
   (FAQs, testimonials, partners, systems, pricing, booking slots) — these
   reuse the content permissions rather than getting their own, since they're
@@ -67,6 +69,22 @@ the real `requirePermission(...)` call sites:
   fixed permission — which permission is required depends on *which*
   transition is being attempted (submit for review vs. approve vs. publish
   vs. schedule). See `docs/cms-workflow.md` for the per-transition table.
+
+## Every Server Action checks auth itself
+
+Server Actions can be called directly by id, so every export in a
+`"use server"` file runs its own check, even when the lib function it calls
+already checks the same permission (defense in depth). Thin wrappers use
+`guardMutation(permission, fn)` / `guardRead(permission, fallback, fn)` from
+`lib/action-guard.ts`; on denial they return `{ success: false, error }` or
+the reader's usual empty value. `"SESSION"` means any signed-in admin.
+
+`npm run check:actions` (`scripts/check-server-action-auth.mjs`, run in CI
+by `.github/workflows/checks.yml`) fails if any export never calls
+`requireSession`/`requirePermission`/`guardMutation`/`guardRead`, directly or
+through a local helper. Actions the public site uses (booking, contact form,
+published content readers, 404 logging) are marked
+`// auth-check: public — <reason>` directly above the function.
 
 ## User management: who can manage whom
 

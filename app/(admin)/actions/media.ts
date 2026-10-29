@@ -69,6 +69,7 @@ export async function getMediaFolders() {
 // revalidation from the actions file, not from lib/.
 export async function uploadMediaAsset(file: File, data: { altText: string; folder?: string; title?: string }) {
   try {
+    await requirePermission("MEDIA_MANAGEMENT");
     const { asset, url } = await uploadAndRegisterMedia(file, data);
     revalidatePath("/admin/media");
     return { success: true, asset, url };

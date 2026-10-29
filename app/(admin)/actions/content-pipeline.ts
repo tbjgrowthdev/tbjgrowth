@@ -27,93 +27,102 @@ import { getAllJobs, getJobsForRun } from "@/lib/content-pipeline/jobs";
 import { getCostSummary } from "@/lib/content-pipeline/costs";
 import { activatePromptVersion, getPromptTemplateDetail, listPromptTemplates, savePromptVersion } from "@/lib/content-pipeline/prompt-library";
 import type { PromptCategory } from "@/lib/generated/prisma/client";
+import { PROMPT_CATEGORIES } from "@/lib/content-pipeline/prompt-constants";
+import { guardMutation, guardRead, type ActionAccess } from "@/lib/action-guard";
+
+// Each action re-checks the same permission its lib function checks
+// (lib/action-guard.ts explains why both layers check).
 
 export async function createPipelineRunAction(brief: Brief) {
-  return createPipelineRun(brief);
+  return guardMutation("CREATE", () => createPipelineRun(brief));
 }
 
 export async function getPipelineRunsAction() {
-  return getPipelineRuns();
+  return guardRead("CREATE", () => [], () => getPipelineRuns());
 }
 
 export async function getPipelineRunAction(id: string) {
-  return getPipelineRun(id);
+  return guardRead("CREATE", () => null, () => getPipelineRun(id));
 }
 
 export async function deletePipelineRunAction(id: string) {
-  return deletePipelineRun(id);
+  return guardMutation("CREATE", () => deletePipelineRun(id));
 }
 
 export async function advanceSearchIntentAction(runId: string) {
-  return runSearchIntentStage(runId);
+  return guardMutation("EDIT", () => runSearchIntentStage(runId));
 }
 
 export async function advanceResearchAction(runId: string) {
-  return runResearchStage(runId);
+  return guardMutation("EDIT", () => runResearchStage(runId));
 }
 
 export async function advanceOutlineAction(runId: string) {
-  return runOutlineStage(runId);
+  return guardMutation("EDIT", () => runOutlineStage(runId));
 }
 
 export async function advanceDraftAction(runId: string) {
-  return runDraftStage(runId);
+  return guardMutation("CREATE", () => runDraftStage(runId));
 }
 
 export async function advanceImageAction(runId: string) {
-  return runImageStage(runId);
+  return guardMutation("EDIT", () => runImageStage(runId));
 }
 
 export async function attachGeneratedImageAction(runId: string) {
-  return attachGeneratedImage(runId);
+  return guardMutation("EDIT", () => attachGeneratedImage(runId));
 }
 
 export async function skipImageStageAction(runId: string) {
-  return skipImageStage(runId);
+  return guardMutation("EDIT", () => skipImageStage(runId));
 }
 
 export async function updatePendingImageAltTextAction(runId: string, altText: string) {
-  return updatePendingImageAltText(runId, altText);
+  return guardMutation("EDIT", () => updatePendingImageAltText(runId, altText));
 }
 
 export async function advanceSeoAction(runId: string) {
-  return runSeoStage(runId);
+  return guardMutation("EDIT", () => runSeoStage(runId));
 }
 
 export async function advanceInternalLinksAction(runId: string) {
-  return runInternalLinksStage(runId);
+  return guardMutation("EDIT", () => runInternalLinksStage(runId));
 }
 
 export async function decideLinkSuggestionAction(runId: string, suggestionId: string, decision: "approved" | "rejected") {
-  return decideLinkSuggestion(runId, suggestionId, decision);
+  return guardMutation("EDIT", () => decideLinkSuggestion(runId, suggestionId, decision));
 }
 
 export async function applyInternalLinksAction(runId: string) {
-  return applyInternalLinks(runId);
+  return guardMutation("EDIT", () => applyInternalLinks(runId));
 }
 
 export async function advanceSchemaAction(runId: string) {
-  return runSchemaStage(runId);
+  return guardMutation("EDIT", () => runSchemaStage(runId));
 }
 
 export async function advanceQaAction(runId: string) {
-  return runQaStage(runId);
+  return guardMutation("EDIT", () => runQaStage(runId));
 }
 
 export async function approveRunAction(runId: string) {
-  return approveRunForPublish(runId);
+  return guardMutation("APPROVE", () => approveRunForPublish(runId));
 }
 
 export async function publishRunAction(runId: string, mode: "publish" | "submit" | "schedule", schedule?: { date: string; time: string; timezone: string }) {
-  return publishRun(runId, mode, schedule);
+  // Same permission the matching workflow transition needs (lib/workflow.ts):
+  // publishRun itself has no check and relies on transitionContent's.
+  const access: Record<typeof mode, ActionAccess> = { submit: "CREATE", schedule: "SCHEDULE", publish: "PUBLISH" };
+  if (!access[mode]) return { success: false as const, error: `Unknown publish mode "${mode}"` };
+  return guardMutation(access[mode], () => publishRun(runId, mode, schedule));
 }
 
 export async function getJobsForRunAction(runId: string) {
-  return getJobsForRun(runId);
+  return guardRead("CREATE", () => [], () => getJobsForRun(runId));
 }
 
 export async function getAllJobsAction() {
-  return getAllJobs();
+  return guardRead("CREATE", () => [], () => getAllJobs());
 }
 
 const RETRY_BY_STAGE: Record<string, (runId: string) => Promise<{ success: boolean; error?: string }>> = {
@@ -138,28 +147,32 @@ const RETRY_BY_STAGE: Record<string, (runId: string) => Promise<{ success: boole
 export async function retryJobAction(runId: string, stage: string) {
   const fn = RETRY_BY_STAGE[stage];
   if (!fn) return { success: false, error: `Stage "${stage}" cannot be retried from here` };
-  return fn(runId);
+  return guardMutation(stage === "DRAFT" ? "CREATE" : "EDIT", () => fn(runId));
 }
 
 export async function getCostSummaryAction() {
-  return getCostSummary();
+  return guardRead("CREATE", () => null, () => getCostSummary());
 }
 
 export async function listPromptTemplatesAction() {
-  return listPromptTemplates();
+  return guardRead("SETTINGS_MANAGEMENT", () => PROMPT_CATEGORIES.map((category) => ({ category, template: null, updatedByName: null })), () => listPromptTemplates());
 }
 
 export async function getPromptTemplateDetailAction(category: PromptCategory) {
-  return getPromptTemplateDetail(category);
+  return guardRead(
+    "SETTINGS_MANAGEMENT",
+    () => ({ category, template: null, authors: new Map<string, string>(), forbidden: true as const }),
+    () => getPromptTemplateDetail(category)
+  );
 }
 
 export async function savePromptVersionAction(
   category: PromptCategory,
   data: { name: string; description?: string; systemPrompt?: string; bodyTemplate: string; changeNote?: string }
 ) {
-  return savePromptVersion(category, data);
+  return guardMutation("SETTINGS_MANAGEMENT", () => savePromptVersion(category, data));
 }
 
 export async function activatePromptVersionAction(templateId: string, versionId: string) {
-  return activatePromptVersion(templateId, versionId);
+  return guardMutation("SETTINGS_MANAGEMENT", () => activatePromptVersion(templateId, versionId));
 }

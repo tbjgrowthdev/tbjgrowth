@@ -6,6 +6,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { checkStale } from "@/lib/stale-check";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
+import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 function locationSnapshot(location: Record<string, unknown>) {
   return {
@@ -21,6 +22,7 @@ function locationSnapshot(location: Record<string, unknown>) {
 }
 
 // getLocations / getLocationBySlug are consumed by public location pages — stay unguarded.
+// auth-check: public — public location pages
 export async function getLocations() {
   try {
     return await prisma.location.findMany({ orderBy: { order: "asc" } });
@@ -40,6 +42,7 @@ export async function getLocation(id: string) {
   }
 }
 
+// auth-check: public — public location pages
 export async function getLocationBySlug(slug: string) {
   try {
     return await prisma.location.findUnique({ where: { slug }, include: { faqs: { orderBy: { order: "asc" } } } });
@@ -122,9 +125,13 @@ export async function updateLocation(id: string, data: Record<string, unknown>) 
   }
 }
 
-export async function deleteLocation(id: string) {
+// Blocked when other content depends on this item, unless options.force is
+// set (the UI passes it after showing the list). See checkDeleteDependencies.
+export async function deleteLocation(id: string, options?: DeleteOptions) {
   try {
     await requirePermission("DELETE");
+    const { blocked, dependencies } = await checkDeleteDependencies("LOCATION", id, options);
+    if (blocked) return blocked;
     const before = await prisma.location.findUnique({ where: { id } });
     await prisma.location.delete({ where: { id } });
     revalidatePath("/locations");
@@ -134,7 +141,7 @@ export async function deleteLocation(id: string) {
       category: "Content",
       entityType: "Location",
       entityId: id,
-      entityLabel: before?.name,
+      entityLabel: deleteAuditLabel(before?.name, dependencies),
       before: before ? locationSnapshot(before) : undefined,
     });
     return { success: true };

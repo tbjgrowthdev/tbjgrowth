@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "check:actions": "node scripts/check-server-action-auth.mjs",
     "build:cloudflare": "prisma generate && opennextjs-cloudflare build",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },

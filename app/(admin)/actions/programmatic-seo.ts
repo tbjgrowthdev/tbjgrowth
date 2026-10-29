@@ -207,9 +207,12 @@ export async function overridePSeoPage(id: string): Promise<ActionResult<null>> 
 }
 
 // getPSeoPageBySlug is consumed by the public pSEO route — stays unguarded.
+// auth-check: public — public pSEO route; never returns NEEDS_REVIEW pages
 export async function getPSeoPageBySlug(slug: string) {
   try {
-    return await prisma.pSeoPage.findUnique({ where: { slug }, include: { template: true } });
+    // NEEDS_REVIEW pages never render publicly, so don't return them here either.
+    const page = await prisma.pSeoPage.findUnique({ where: { slug }, include: { template: true } });
+    return page && page.status !== "NEEDS_REVIEW" ? page : null;
   } catch (error) {
     console.error(`Failed to fetch pSEO page with slug ${slug}:`, error);
     return null;

@@ -17,6 +17,7 @@ function systemSnapshot(system: any) {
 }
 
 // Consumed by the public TBJSystems homepage component — stays unguarded.
+// auth-check: public — public systems section
 export async function getSystems() {
   try {
     return await prisma.tBJSystem.findMany({

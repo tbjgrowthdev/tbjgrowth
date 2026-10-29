@@ -6,6 +6,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 
 // getFaqs is consumed by the public homepage FAQ section — stays unguarded.
+// auth-check: public — public FAQ section
 export async function getFaqs() {
   try {
     return await prisma.faq.findMany({

@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { requireSession } from "@/lib/auth-guard";
+import { guardMutation, guardRead } from "@/lib/action-guard";
+import { PREFIXED_LOCALES } from "@/lib/i18n";
 import { searchContent, getSearchFacets, type SearchFilters } from "@/lib/content-search";
 import {
   saveTranslationDraft as libSaveTranslationDraft,
@@ -14,7 +16,7 @@ import {
 } from "@/lib/translation";
 
 // Each of these just forwards to lib/translation.ts, which already does its
-// own requirePermission/catch — kept here (rather than re-exported directly)
+// own requirePermission/catch, and is re-checked here too (lib/action-guard.ts) — kept here (rather than re-exported directly)
 // so this file stays the one Server Action boundary, matching every other
 // app/(admin)/actions/*.ts file's convention in this codebase.
 
@@ -24,23 +26,27 @@ export async function saveTranslationDraft(
   locale: string,
   data: Parameters<typeof libSaveTranslationDraft>[3]
 ) {
-  return libSaveTranslationDraft(contentType, contentId, locale, data);
+  return guardMutation("EDIT", () => libSaveTranslationDraft(contentType, contentId, locale, data));
 }
 
 export async function publishTranslation(contentType: TranslatableKind, contentId: string, locale: string) {
-  return libPublishTranslation(contentType, contentId, locale);
+  return guardMutation("PUBLISH", () => libPublishTranslation(contentType, contentId, locale));
 }
 
 export async function unpublishTranslation(contentType: TranslatableKind, contentId: string, locale: string) {
-  return libUnpublishTranslation(contentType, contentId, locale);
+  return guardMutation("PUBLISH", () => libUnpublishTranslation(contentType, contentId, locale));
 }
 
 export async function deleteTranslation(contentType: TranslatableKind, contentId: string, locale: string) {
-  return libDeleteTranslation(contentType, contentId, locale);
+  return guardMutation("EDIT", () => libDeleteTranslation(contentType, contentId, locale));
 }
 
 export async function getTranslationStatusMap(contentType: TranslatableKind, contentId: string) {
-  return libGetTranslationStatusMap(contentType, contentId);
+  return guardRead(
+    "SESSION",
+    () => Object.fromEntries(PREFIXED_LOCALES.map((l) => [l.code, "NOT_STARTED"])) as Record<string, "NOT_STARTED" | "DRAFT" | "PUBLISHED">,
+    () => libGetTranslationStatusMap(contentType, contentId)
+  );
 }
 
 export async function getExistingTranslation(contentType: TranslatableKind, contentId: string, locale: string) {

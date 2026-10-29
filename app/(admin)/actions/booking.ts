@@ -10,6 +10,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 // Public
 // ------------------------------------------------------
 
+// auth-check: public — public booking page lists open future slots
 export async function getAvailableSlots() {
   try {
     return await prisma.availableSlot.findMany({
@@ -40,6 +41,7 @@ const createBookingSchema = z.object({
 const BOOKING_WINDOW_MS = 60 * 60 * 1000;
 const BOOKING_MAX_PER_WINDOW = 3;
 
+// auth-check: public — public booking form; zod-validated and rate-limited per email
 export async function createBooking(data: unknown) {
   try {
     const parsed = createBookingSchema.safeParse(data);

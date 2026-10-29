@@ -1,0 +1,21 @@
+name: Checks
+
+# Fails a push/PR if any "use server" export has no auth check
+# (scripts/check-server-action-auth.mjs; see docs/permission-matrix.md).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server-action-auth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # --ignore-scripts: the check only needs the typescript package, not prisma generate.
+      - run: npm ci --ignore-scripts
+      - run: npm run check:actions

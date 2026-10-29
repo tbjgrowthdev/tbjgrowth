@@ -6,19 +6,20 @@ import {
   markCannibalizationResolved,
   scanAndUpsertCannibalizationPairs,
 } from "@/lib/content-cannibalization/cannibalization";
+import { guardMutation, guardRead } from "@/lib/action-guard";
 
 export async function scanAndUpsertCannibalizationPairsAction() {
-  return scanAndUpsertCannibalizationPairs();
+  return guardMutation("EDIT", () => scanAndUpsertCannibalizationPairs());
 }
 
 export async function listCannibalizationPairsAction() {
-  return listCannibalizationPairs();
+  return guardRead("EDIT", () => [], () => listCannibalizationPairs());
 }
 
 export async function dismissCannibalizationPairAction(id: string) {
-  return dismissCannibalizationPair(id);
+  return guardMutation("EDIT", () => dismissCannibalizationPair(id));
 }
 
 export async function markCannibalizationResolvedAction(id: string) {
-  return markCannibalizationResolved(id);
+  return guardMutation("EDIT", () => markCannibalizationResolved(id));
 }

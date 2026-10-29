@@ -4,11 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/utils";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
-import { transitionContent, type WorkflowAction } from "@/lib/workflow";
+import { TRANSITIONS, transitionContent, type WorkflowAction } from "@/lib/workflow";
+import { guardMutation } from "@/lib/action-guard";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // SEO fields here are read back out by lib/seo-change-log to build the SEO
 // Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
@@ -57,8 +59,10 @@ export async function getCaseStudies() {
   }
 }
 
+// Admin edit page only — returns drafts, so it needs a session.
 export async function getCaseStudy(id: string) {
   try {
+    await requireSession();
     return await prisma.caseStudy.findUnique({
       where: { id },
     });
@@ -69,6 +73,7 @@ export async function getCaseStudy(id: string) {
 }
 
 /** Published case studies flagged to show on the home page, most recent first. */
+// auth-check: public — public site; PUBLISHED only
 export async function getFeaturedCaseStudies(limit = 6) {
   try {
     return await prisma.caseStudy.findMany({
@@ -249,9 +254,13 @@ export async function updateCaseStudy(id: string, data: any) {
   }
 }
 
-export async function deleteCaseStudy(id: string) {
+// Blocked when other content depends on this item, unless options.force is
+// set (the UI passes it after showing the list). See checkDeleteDependencies.
+export async function deleteCaseStudy(id: string, options?: DeleteOptions) {
   try {
     await requirePermission("DELETE");
+    const { blocked, dependencies } = await checkDeleteDependencies("CASE_STUDY", id, options);
+    if (blocked) return blocked;
     const before = await prisma.caseStudy.findUnique({ where: { id } });
     await prisma.caseStudy.delete({
       where: { id },
@@ -262,7 +271,7 @@ export async function deleteCaseStudy(id: string) {
       category: "Content",
       entityType: "CaseStudy",
       entityId: id,
-      entityLabel: before?.title,
+      entityLabel: deleteAuditLabel(before?.title, dependencies),
       before: before ? caseStudySnapshot(before) : undefined,
     });
     return { success: true };
@@ -276,5 +285,7 @@ export async function deleteCaseStudy(id: string) {
 }
 
 export async function transitionCaseStudy(id: string, action: WorkflowAction, comment?: string) {
-  return transitionContent("CASE_STUDY", id, action, comment);
+  const permission = TRANSITIONS[action]?.permission;
+  if (!permission) return { success: false as const, error: `Unknown workflow action "${action}"` };
+  return guardMutation(permission, () => transitionContent("CASE_STUDY", id, action, comment));
 }

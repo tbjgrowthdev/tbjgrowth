@@ -10,6 +10,7 @@ function testimonialSnapshot(t: any) {
 }
 
 // Consumed by the public Testimonials component — stays unguarded.
+// auth-check: public — public testimonials section
 export async function getTestimonials() {
   try {
     return await prisma.testimonial.findMany({

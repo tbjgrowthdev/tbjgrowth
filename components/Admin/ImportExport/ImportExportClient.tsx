@@ -68,7 +68,8 @@ function Section({
   count: number;
   fileName: string;
   onExport: ExportFn;
-  onImport: ImportFn;
+  /** Omitted when the viewer can't import this kind of record; hides the Import button. */
+  onImport?: ImportFn;
 }) {
   const router = useRouter();
   const inputId = `import-${title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -95,7 +96,7 @@ function Section({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !onImport) return;
     setIsImporting(true);
     setError(null);
     setResult(null);
@@ -141,21 +142,25 @@ function Section({
           {isExporting ? "Exporting..." : `Export ${format.toUpperCase()}`}
         </button>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={format === "json" ? ".json,application/json" : ".csv,text/csv"}
-          onChange={handleFileChange}
-          className="hidden"
-          id={inputId}
-        />
-        <label
-          htmlFor={inputId}
-          className={`flex items-center gap-2 px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-tint transition-colors cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}
-        >
-          <Upload size={14} />
-          {isImporting ? "Importing..." : `Import ${format.toUpperCase()}`}
-        </label>
+        {onImport && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={format === "json" ? ".json,application/json" : ".csv,text/csv"}
+              onChange={handleFileChange}
+              className="hidden"
+              id={inputId}
+            />
+            <label
+              htmlFor={inputId}
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-tint transition-colors cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}
+            >
+              <Upload size={14} />
+              {isImporting ? "Importing..." : `Import ${format.toUpperCase()}`}
+            </label>
+          </>
+        )}
       </div>
 
       {error && (
@@ -195,7 +200,10 @@ type Counts = {
   media: number;
 };
 
-export default function ImportExportClient({ counts }: { counts: Counts }) {
+// canImport mirrors requireImport() in app/(admin)/actions/import-export.ts
+// (CREATE + DELETE). Redirects keep their own import gate (bulkImportRedirects).
+export default function ImportExportClient({ counts, canImport }: { counts: Counts; canImport: boolean }) {
+  const ifImport = (fn: ImportFn) => (canImport ? fn : undefined);
   return (
     <div className="space-y-6">
       <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-300 dark:border-amber-900/50 text-sm text-amber-800 dark:text-amber-300 p-4 rounded-lg">
@@ -213,7 +221,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.pages}
           fileName="pages.json"
           onExport={exportPages}
-          onImport={importPages}
+          onImport={ifImport(importPages)}
         />
         <Section
           title="Posts"
@@ -222,7 +230,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.posts}
           fileName="posts.json"
           onExport={exportPosts}
-          onImport={importPosts}
+          onImport={ifImport(importPosts)}
         />
         <Section
           title="Case Studies"
@@ -231,7 +239,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.caseStudies}
           fileName="case-studies.json"
           onExport={exportCaseStudies}
-          onImport={importCaseStudies}
+          onImport={ifImport(importCaseStudies)}
         />
         <Section
           title="Services"
@@ -240,7 +248,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.services}
           fileName="services.json"
           onExport={exportServices}
-          onImport={importServices}
+          onImport={ifImport(importServices)}
         />
         <Section
           title="SEO Metadata"
@@ -249,7 +257,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.pages + counts.posts + counts.caseStudies + counts.services}
           fileName="seo-metadata.csv"
           onExport={exportSeo}
-          onImport={importSeo}
+          onImport={ifImport(importSeo)}
         />
         <Section
           title="Redirects"
@@ -267,7 +275,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.categories}
           fileName="categories.csv"
           onExport={exportCategories}
-          onImport={importCategories}
+          onImport={ifImport(importCategories)}
         />
         <Section
           title="Tags"
@@ -276,7 +284,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.tags}
           fileName="tags.csv"
           onExport={exportTags}
-          onImport={importTags}
+          onImport={ifImport(importTags)}
         />
         <Section
           title="Media Metadata"
@@ -285,7 +293,7 @@ export default function ImportExportClient({ counts }: { counts: Counts }) {
           count={counts.media}
           fileName="media-metadata.csv"
           onExport={exportMedia}
-          onImport={importMedia}
+          onImport={ifImport(importMedia)}
         />
       </div>
     </div>

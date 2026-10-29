@@ -4,11 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/utils";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
-import { transitionContent, type WorkflowAction } from "@/lib/workflow";
+import { TRANSITIONS, transitionContent, type WorkflowAction } from "@/lib/workflow";
+import { guardMutation } from "@/lib/action-guard";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // SEO fields here are read back out by lib/seo-change-log to build the SEO
 // Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
@@ -207,9 +209,13 @@ export async function updatePage(id: string, data: any) {
   }
 }
 
-export async function deletePage(id: string) {
+// Blocked when other content depends on this item, unless options.force is
+// set (the UI passes it after showing the list). See checkDeleteDependencies.
+export async function deletePage(id: string, options?: DeleteOptions) {
   try {
     await requirePermission("DELETE");
+    const { blocked, dependencies } = await checkDeleteDependencies("PAGE", id, options);
+    if (blocked) return blocked;
     const before = await prisma.page.findUnique({ where: { id } });
     await prisma.page.delete({
       where: { id },
@@ -220,7 +226,7 @@ export async function deletePage(id: string) {
       category: "Content",
       entityType: "Page",
       entityId: id,
-      entityLabel: before?.title,
+      entityLabel: deleteAuditLabel(before?.title, dependencies),
       before: before ? pageSnapshot(before) : undefined,
     });
     return { success: true };
@@ -234,5 +240,7 @@ export async function deletePage(id: string) {
 }
 
 export async function transitionPage(id: string, action: WorkflowAction, comment?: string) {
-  return transitionContent("PAGE", id, action, comment);
+  const permission = TRANSITIONS[action]?.permission;
+  if (!permission) return { success: false as const, error: `Unknown workflow action "${action}"` };
+  return guardMutation(permission, () => transitionContent("PAGE", id, action, comment));
 }

@@ -204,7 +204,9 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
         </section>
       )}
 
-      {/* Long-form content, if the admin has written any */}
+      {/* Long-form content, if the admin has written any. Already re-sanitized
+          on the server by page.tsx (sanitizeRichText) before it reaches this
+          client component; doing it here would ship sanitize-html to the browser. */}
       {service.content && (
         <section className="relative pb-16 lg:pb-20">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

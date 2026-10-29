@@ -43,7 +43,7 @@ type Transition = {
 // actions land on the same destination status under different rules (e.g.
 // "reject" and an eventual unpublish both end at DRAFT, but only one needs
 // APPROVE).
-const TRANSITIONS: Record<WorkflowAction, Transition> = {
+export const TRANSITIONS: Record<WorkflowAction, Transition> = {
   submit: { from: ["DRAFT"], to: "REVIEW", permission: "CREATE" },
   resubmit: { from: ["CHANGES_REQUESTED"], to: "REVIEW", permission: "EDIT" },
   approve: { from: ["REVIEW"], to: "APPROVED", permission: "APPROVE" },

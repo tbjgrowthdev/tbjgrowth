@@ -1,15 +1,15 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { authOptions } from "@/lib/auth";
-import { getServerSession } from "next-auth";
+import { AuthError, requireSession } from "@/lib/auth-guard";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { logAudit } from "@/lib/audit-log";
 
 export async function getCurrentAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return null;
+  // requireSession (not bare getServerSession) so a revoked session is refused too.
+  const session = await requireSession().catch(() => null);
+  if (!session) return null;
 
   try {
     return await prisma.user.findUnique({
@@ -28,9 +28,11 @@ export async function updateProfile(data: {
   image?: string;
   socialLinks?: string;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
+  let session;
+  try {
+    session = await requireSession();
+  } catch (error) {
+    return { success: false, error: error instanceof AuthError ? error.message : "Not authenticated" };
   }
 
   try {
@@ -73,9 +75,11 @@ export async function changePassword(data: {
   currentPassword: string;
   newPassword: string;
 }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return { success: false, error: "Not authenticated" };
+  let session;
+  try {
+    session = await requireSession();
+  } catch (error) {
+    return { success: false, error: error instanceof AuthError ? error.message : "Not authenticated" };
   }
 
   if (data.newPassword.length < 6) {

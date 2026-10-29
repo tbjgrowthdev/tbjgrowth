@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireCronAuth } from "@/lib/cron-auth";
 import { processDueJobs } from "@/lib/scheduled-jobs";
 
 // Hosting-agnostic cron target: protected by CRON_SECRET rather than a
@@ -6,16 +7,8 @@ import { processDueJobs } from "@/lib/scheduled-jobs";
 // Vercel Cron (see vercel.json) or any external scheduler (cron-job.org,
 // GitHub Actions, etc.) that can send this header on a timer.
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-
-  if (!secret) {
-    console.error("CRON_SECRET is not configured — refusing to run scheduled jobs.");
-    return NextResponse.json({ error: "Not configured" }, { status: 500 });
-  }
-  if (authHeader !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = requireCronAuth(req, "run scheduled jobs");
+  if (denied) return denied;
 
   const results = await processDueJobs();
   return NextResponse.json({ processed: results.length, results });

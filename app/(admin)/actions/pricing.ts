@@ -6,6 +6,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 
 // Consumed by the public /pricing page — stays unguarded.
+// auth-check: public — public pricing section
 export async function getPricingPlans() {
   try {
     return await prisma.pricingPlan.findMany({ orderBy: { order: "asc" } });

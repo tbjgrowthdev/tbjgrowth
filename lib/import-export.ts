@@ -460,6 +460,18 @@ export async function exportServicesJson(): Promise<string> {
   );
 }
 
+// Separate statements, not a nested `faqs: { deleteMany, create }` write:
+// Prisma runs nested writes in a transaction, which the Neon HTTP adapter
+// (lib/prisma.ts) rejects. Same pattern as app/(admin)/actions/serviceFaqs.ts.
+// Not atomic: if a FAQ insert fails, the error is reported for that row and
+// re-running the import fixes it (FAQs are always fully replaced).
+async function replaceServiceFaqs(serviceId: string, faqs: { question: string; answer: string }[]) {
+  await prisma.serviceFaq.deleteMany({ where: { serviceId } });
+  await Promise.all(
+    faqs.map((f, i) => prisma.serviceFaq.create({ data: { serviceId, question: f.question, answer: f.answer, order: i } }))
+  );
+}
+
 // Services have no workflow/status to protect, but still go through the
 // same lock-check as every other importer — a Service row can be open in
 // ServiceForm with ContentLock acquired under contentType "SERVICE".
@@ -516,22 +528,12 @@ export async function importServicesJson(jsonText: string, actor: Actor): Promis
           result.errors.push(`${slug}: being edited by ${lock.lockedByName || "another user"} — skipped`);
           continue;
         }
-        await prisma.agencyService.update({
-          where: { id: existing.id },
-          data: {
-            ...scalarData,
-            faqs: { deleteMany: {}, create: faqs.map((f: any, i: number) => ({ question: f.question, answer: f.answer, order: i })) },
-          },
-        });
+        await prisma.agencyService.update({ where: { id: existing.id }, data: scalarData });
+        await replaceServiceFaqs(existing.id, faqs);
         result.updated++;
       } else {
-        await prisma.agencyService.create({
-          data: {
-            ...scalarData,
-            slug,
-            faqs: { create: faqs.map((f: any, i: number) => ({ question: f.question, answer: f.answer, order: i })) },
-          },
-        });
+        const created = await prisma.agencyService.create({ data: { ...scalarData, slug } });
+        await replaceServiceFaqs(created.id, faqs);
         result.created++;
       }
     } catch (error: any) {

@@ -1,7 +1,8 @@
 "use server";
 
 import { getExecutiveAnalytics } from "@/lib/executive-analytics/aggregate";
+import { guardRead } from "@/lib/action-guard";
 
 export async function getExecutiveAnalyticsAction(days: number) {
-  return getExecutiveAnalytics(days);
+  return guardRead("SETTINGS_MANAGEMENT", () => null, () => getExecutiveAnalytics(days));
 }

@@ -15,7 +15,7 @@ Source: `.env.example` (copy to `.env` for local `next dev`; `.env*` is gitignor
 
 | Variable | Used by | Notes |
 |---|---|---|
-| `NEXTAUTH_SECRET` | NextAuth (JWT signing) | Must be set in the Worker's runtime **Secrets**, not Build variables — this exact distinction caused an incident previously. |
+| `NEXTAUTH_SECRET` | NextAuth (JWT signing), read via `lib/env.ts`'s `getNextAuthSecret()` by both `lib/auth.ts` and `middleware.ts` | Must be set in the Worker's runtime **Secrets**, not Build variables — this exact distinction caused an incident previously. In production a missing value is an error on every login/admin request (never a silent fallback); locally the dev fallback is used with a console warning. Not needed at build time. |
 | `NEXTAUTH_URL` | NextAuth | `http://localhost:3000` locally; the live site's URL in production. |
 | `NEXT_PUBLIC_BASE_URL` | ~20 files across `lib/` and public page routes (sitemap, canonical/hreflang, schema.org URLs, search-engine ping, `robots.txt`) | The canonical site origin used to build absolute URLs server-side. Public (`NEXT_PUBLIC_*`), so it's inlined at build time too. |
 | `CRON_SECRET` | every `app/api/cron/*` route | Bearer-token auth for cron/report endpoints, checked independently of any user session. Must match the value GitHub Actions workflows send. See `docs/deployment.md`. |

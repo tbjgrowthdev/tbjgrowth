@@ -7,6 +7,7 @@ import { logAudit } from "@/lib/audit-log";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
+import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // SEO fields here are read back out by lib/seo-change-log to build the SEO
 // Change Impact log, so keep this in parity with SEO_CHANGE_FIELDS.
@@ -38,6 +39,7 @@ function serviceSnapshot(service: any) {
 }
 
 // getServices / getServiceBySlug are consumed by public service pages — stay unguarded.
+// auth-check: public — public service pages
 export async function getServices() {
   try {
     return await prisma.agencyService.findMany({
@@ -62,6 +64,7 @@ export async function getService(id: string) {
   }
 }
 
+// auth-check: public — public service pages
 export async function getServiceBySlug(slug: string) {
   try {
     return await prisma.agencyService.findUnique({
@@ -154,9 +157,13 @@ export async function updateService(id: string, data: any) {
   }
 }
 
-export async function deleteService(id: string) {
+// Blocked when other content depends on this item, unless options.force is
+// set (the UI passes it after showing the list). See checkDeleteDependencies.
+export async function deleteService(id: string, options?: DeleteOptions) {
   try {
     await requirePermission("DELETE");
+    const { blocked, dependencies } = await checkDeleteDependencies("SERVICE", id, options);
+    if (blocked) return blocked;
     const before = await prisma.agencyService.findUnique({ where: { id } });
     await prisma.agencyService.delete({
       where: { id },
@@ -169,7 +176,7 @@ export async function deleteService(id: string) {
       category: "Content",
       entityType: "AgencyService",
       entityId: id,
-      entityLabel: before?.title,
+      entityLabel: deleteAuditLabel(before?.title, dependencies),
       before: before ? serviceSnapshot(before) : undefined,
     });
     return { success: true };

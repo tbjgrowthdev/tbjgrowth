@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 
+// auth-check: public — called by the public 404 page to record missing paths
 export async function logNotFound(path: string) {
   try {
     const headersList = await headers();

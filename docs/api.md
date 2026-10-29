@@ -125,5 +125,5 @@ mutations and a bare array/object (or `[]`/`null` on failure, logged via
 - **`technical.ts`**: `getWebVitalsSummary`, `getRecentFailedLogins`, `checkTlsCertificate` — `SETTINGS_MANAGEMENT`.
 - **`audit.ts`**: `getAuditLogs`, `deleteAuditLog`, `purgeAuditLogsBefore`.
 - **`executive-analytics.ts`**: `getExecutiveAnalyticsAction(days)`.
-- **`import-export.ts`**: `export*`/`import*` per content type, `getImportExportCounts` — all `EXPORT`.
+- **`import-export.ts`**: `export*` per content type and `getImportExportCounts` — `EXPORT`; `import*` — `CREATE` **and** `DELETE` (`requireImport()`), since an import creates and overwrites records in bulk.
 - **`seo.ts`**: `logNotFound` — tiny, logs a 404 hit for the SEO 404 report.

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getRedirectMap } from "@/lib/redirect-cache";
 import { ALL_ROLES } from "@/lib/permissions";
 import { isKnownLocalePrefix } from "@/lib/i18n";
+import { getNextAuthSecret } from "@/lib/env";
 
 // Paths that live outside the app/(public)/[locale] tree entirely (standalone
 // campaign landing pages, metadata routes) — never locale-rewritten/redirected.
@@ -126,11 +127,13 @@ export default withAuth(
     return NextResponse.next();
   },
   {
-    // Must match lib/auth.ts's authOptions fallback exactly — withAuth reads
-    // NEXTAUTH_SECRET itself (separately from authOptions) and throws
-    // NO_SECRET if it can't see it in this execution context, even when the
-    // same var is visible elsewhere in the Worker (e.g. in Route Handlers).
-    secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development-only-replace-in-production",
+    // Same helper as lib/auth.ts's authOptions, so both always agree. Passed
+    // explicitly because withAuth reads NEXTAUTH_SECRET separately from
+    // authOptions and throws NO_SECRET if it can't see it in this execution
+    // context. A getter, so it's resolved per request (see lib/env.ts).
+    get secret() {
+      return getNextAuthSecret();
+    },
     callbacks: {
       async authorized() {
         // We handle all path-scoping ourselves in the middleware function above,

@@ -25,6 +25,7 @@ const SUBMIT_WINDOW_MS = 10 * 60 * 1000;
 const SUBMIT_MAX_PER_WINDOW = 3;
 
 // Public contact form — stays unguarded, but validated and throttled.
+// auth-check: public — public contact form; zod-validated and rate-limited per email
 export async function submitContactForm(data: unknown) {
   try {
     const parsed = contactFormSchema.safeParse(data);

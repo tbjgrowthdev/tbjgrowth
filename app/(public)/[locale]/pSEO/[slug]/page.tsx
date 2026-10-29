@@ -5,6 +5,7 @@ import { breadcrumbSchema } from "@/lib/schema";
 import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -65,7 +66,7 @@ export default async function PSeoPageDetail({ params }: { params: Promise<{ slu
       />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8">{page.h1}</h1>
-        <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: page.bodyHtml }} />
+        <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeRichText(page.bodyHtml) }} />
       </div>
     </main>
   );

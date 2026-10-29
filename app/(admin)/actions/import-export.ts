@@ -1,7 +1,8 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { requirePermission, AuthError } from "@/lib/auth-guard";
+import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
+import { hasPermission } from "@/lib/permissions";
 import { logAudit } from "@/lib/audit-log";
 import {
   exportPagesJson, importPagesJson,
@@ -16,13 +17,22 @@ import {
   type ImportResult,
 } from "@/lib/import-export";
 
-// Single gate for every function in this file. EXPORT is already a closed-
-// set RBAC permission (see lib/permissions.ts) granted to SUPER_ADMIN,
-// ADMIN, and SEO_MANAGER — the same roles the rest of this admin already
-// trusts with bulk data access, so import (a mutation) is gated on it too
-// rather than introducing a new permission the fixed role matrix doesn't have.
+// Export (and the page's counts) need EXPORT: SUPER_ADMIN, ADMIN, SEO_MANAGER.
 async function requireExport() {
   return requirePermission("EXPORT");
+}
+
+// Import creates and overwrites records in bulk, so it needs both CREATE and
+// DELETE (SUPER_ADMIN, ADMIN, EDITOR) rather than EXPORT. One session check,
+// then both permissions, so the error names whichever one is missing.
+async function requireImport() {
+  const session = await requireSession();
+  for (const permission of ["CREATE", "DELETE"] as const) {
+    if (!hasPermission(session.user.role, permission)) {
+      throw new AuthError(`Missing required permission: ${permission}`);
+    }
+  }
+  return session;
 }
 
 type ExportResponse = { success: true; data: string } | { success: false; error: string };
@@ -50,7 +60,7 @@ async function runImport(
   fn: (actor: { id: string; name: string | null; email: string | null }) => Promise<ImportResult>
 ): Promise<ImportResponse> {
   try {
-    const session = await requireExport();
+    const session = await requireImport();
     const actor = { id: session.user.id, name: session.user.name ?? null, email: session.user.email ?? null };
     const result = await fn(actor);
     await logAudit({

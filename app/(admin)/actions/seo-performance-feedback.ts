@@ -1,15 +1,16 @@
 "use server";
 
+import { guardMutation, guardRead } from "@/lib/action-guard";
 import { dismissPerformanceFeedback, listPerformanceFeedback, scanAndUpsertPerformanceFeedback } from "@/lib/seo-performance-feedback/scan";
 
 export async function scanAndUpsertPerformanceFeedbackAction() {
-  return scanAndUpsertPerformanceFeedback();
+  return guardMutation("EDIT", () => scanAndUpsertPerformanceFeedback());
 }
 
 export async function listPerformanceFeedbackAction() {
-  return listPerformanceFeedback();
+  return guardRead("EDIT", () => [], () => listPerformanceFeedback());
 }
 
 export async function dismissPerformanceFeedbackAction(id: string) {
-  return dismissPerformanceFeedback(id);
+  return guardMutation("EDIT", () => dismissPerformanceFeedback(id));
 }

@@ -3,14 +3,26 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
-import { transitionContent, type WorkflowAction } from "@/lib/workflow";
+import { TRANSITIONS, transitionContent, type WorkflowAction } from "@/lib/workflow";
 import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
 import { logAudit } from "@/lib/audit-log";
+import type { Permission } from "@/lib/permissions";
 
 const MAX_BULK_SELECTION = 200;
 
 function tooMany(ids: string[]) {
   return ids.length === 0 || ids.length > MAX_BULK_SELECTION;
+}
+
+/** Returns the denial message, or null when the caller has the permission. */
+async function authError(permission: Permission): Promise<string | null> {
+  try {
+    await requirePermission(permission);
+    return null;
+  } catch (error) {
+    if (error instanceof AuthError) return error.message;
+    throw error;
+  }
 }
 
 // ------------------------------------------------------
@@ -30,6 +42,10 @@ export async function bulkChangeStatus(postIds: string[], action: WorkflowAction
   if (!BULK_STATUS_ACTIONS.includes(action)) {
     return { success: false, error: "Unsupported bulk status action", results: [] };
   }
+  // Checked once up front (transitionContent still re-checks per post), so a
+  // caller without the permission is refused before any per-post work runs.
+  const denied = await authError(TRANSITIONS[action].permission);
+  if (denied) return { success: false, error: denied, results: [] };
 
   const results = await Promise.all(
     postIds.map(async (id) => {
@@ -61,6 +77,8 @@ export async function bulkChangeStatus(postIds: string[], action: WorkflowAction
 // single-post scheduling UI already does).
 export async function bulkSchedule(postIds: string[], date: string, time: string, timezone: string) {
   if (tooMany(postIds)) return { success: false, error: `Select between 1 and ${MAX_BULK_SELECTION} posts`, results: [] };
+  const denied = await authError("SCHEDULE");
+  if (denied) return { success: false, error: denied, results: [] };
 
   const results = await Promise.all(
     postIds.map(async (id) => {

@@ -10,35 +10,36 @@ import {
   scanAndUpsertCandidates,
 } from "@/lib/content-refresh/refresh";
 import { getJobsForRefresh } from "@/lib/content-pipeline/jobs";
+import { guardMutation, guardRead } from "@/lib/action-guard";
 
 export async function scanAndUpsertCandidatesAction() {
-  return scanAndUpsertCandidates();
+  return guardMutation("EDIT", () => scanAndUpsertCandidates());
 }
 
 export async function listRefreshCandidatesAction() {
-  return listRefreshCandidates();
+  return guardRead("EDIT", () => [], () => listRefreshCandidates());
 }
 
 export async function getRefreshDetailAction(id: string) {
-  return getRefreshDetail(id);
+  return guardRead("EDIT", () => null, () => getRefreshDetail(id));
 }
 
 export async function generateRefreshDraftAction(id: string) {
-  return generateRefreshDraft(id);
+  return guardMutation("EDIT", () => generateRefreshDraft(id));
 }
 
 export async function approveRefreshDraftAction(id: string) {
-  return approveRefreshDraft(id);
+  return guardMutation("APPROVE", () => approveRefreshDraft(id));
 }
 
 export async function rejectRefreshDraftAction(id: string) {
-  return rejectRefreshDraft(id);
+  return guardMutation("EDIT", () => rejectRefreshDraft(id));
 }
 
 export async function applyRefreshDraftAction(id: string) {
-  return applyRefreshDraft(id);
+  return guardMutation("PUBLISH", () => applyRefreshDraft(id));
 }
 
 export async function getJobsForRefreshAction(id: string) {
-  return getJobsForRefresh(id);
+  return guardRead("EDIT", () => [], () => getJobsForRefresh(id));
 }

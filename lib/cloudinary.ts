@@ -9,7 +9,7 @@
 
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth-guard";
+import { requirePermission, requireSession } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 
 function getCredentials() {
@@ -66,7 +66,7 @@ async function uploadDataUriToCloudinary(dataUri: string, folder: string): Promi
   return res.json();
 }
 
-async function uploadToCloudinary(file: File, folder: string): Promise<CloudinaryUploadResponse> {
+async function uploadFileToCloudinary(file: File, folder: string): Promise<CloudinaryUploadResponse> {
   const arrayBuffer = await file.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
   return uploadDataUriToCloudinary(`data:${file.type};base64,${base64}`, folder);
@@ -74,7 +74,7 @@ async function uploadToCloudinary(file: File, folder: string): Promise<Cloudinar
 
 // For bytes that never existed as a browser File — an AI-generated image
 // comes back from the provider as raw bytes, not a file picked in a form.
-// Same upload path/signing as uploadToCloudinary, just skipping the
+// Same upload path/signing as uploadFileToCloudinary, just skipping the
 // File.arrayBuffer() step since there's no File to begin with.
 async function uploadBufferToCloudinary(buffer: ArrayBuffer, mimeType: string, folder: string): Promise<CloudinaryUploadResponse> {
   const base64 = Buffer.from(buffer).toString("base64");
@@ -84,12 +84,17 @@ async function uploadBufferToCloudinary(buffer: ArrayBuffer, mimeType: string, f
 // Unchanged, still used directly by ProfileForm for avatar uploads — those
 // aren't public content assets worth tracking in the shared library or
 // forcing alt text onto.
+//
+// This file is "use server" and ProfileForm (a client component) imports it,
+// so every export here can be called as a Server Action — each one checks auth.
 export async function uploadImage(file: File): Promise<string> {
-  const data = await uploadToCloudinary(file, "tbj-growth");
+  await requireSession();
+  const data = await uploadFileToCloudinary(file, "tbj-growth");
   return data.secure_url;
 }
 
 export async function destroyImage(publicId: string): Promise<void> {
+  await requirePermission("MEDIA_MANAGEMENT");
   const { cloudName, apiKey, apiSecret } = getCredentials();
 
   const timestamp = Math.round(Date.now() / 1000);
@@ -132,7 +137,7 @@ export async function uploadAndRegisterMedia(
   const session = await requirePermission("MEDIA_MANAGEMENT");
   const folder = opts.folder?.trim() || "Uncategorized";
 
-  const data = await uploadToCloudinary(file, "tbj-growth");
+  const data = await uploadFileToCloudinary(file, "tbj-growth");
 
   const asset = await prisma.mediaAsset.create({
     data: {
@@ -168,15 +173,15 @@ export async function uploadAndRegisterMedia(
 // stages.ts) — same storage path as uploadAndRegisterMedia, but the real
 // alt text doesn't exist yet at upload time (it's generated in a later
 // step and only becomes real content once a human approves it), so this
-// takes a placeholder instead of requiring one upfront. No auth check
-// here: every caller is an already-`requirePermission`-gated stage
-// function, not a directly reachable "use server" entry point the way
-// uploadAndRegisterMedia is.
+// takes a placeholder instead of requiring one upfront. Its callers are
+// already EDIT-gated stage functions, but this file is "use server", so it is
+// also directly reachable and re-checks EDIT itself.
 export async function uploadAndRegisterGeneratedImage(
   buffer: ArrayBuffer,
   mimeType: string,
   opts: { folder: string; title: string; uploadedBy: { id: string; name: string | null; email: string | null } }
 ) {
+  await requirePermission("EDIT");
   const data = await uploadBufferToCloudinary(buffer, mimeType, "tbj-growth");
 
   const asset = await prisma.mediaAsset.create({
@@ -209,4 +214,9 @@ export async function uploadAndRegisterGeneratedImage(
   return { asset, url: asset.url };
 }
 
-export { uploadToCloudinary };
+// Raw upload (no MediaAsset row) for media.ts's replaceMediaAsset. Exported,
+// so reachable as a Server Action: needs the same permission as its caller.
+export async function uploadToCloudinary(file: File, folder: string): Promise<CloudinaryUploadResponse> {
+  await requirePermission("MEDIA_MANAGEMENT");
+  return uploadFileToCloudinary(file, folder);
+}

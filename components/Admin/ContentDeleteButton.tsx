@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Trash2, AlertTriangle, Link2, Menu, FileText, Code2, Route, Languages } from "lucide-react";
 import { checkContentDependencies } from "@/app/(admin)/actions/dependencies";
-import type { ContentKind, DependencyCategory } from "@/lib/dependency-check";
+import type { ContentKind, DeleteOptions, DependencyCategory, DependencyFinding } from "@/lib/dependency-check";
 
 const CATEGORY_ICON: Record<DependencyCategory, typeof Link2> = {
   "Internal Links": Link2,
@@ -17,21 +17,26 @@ const CATEGORY_ICON: Record<DependencyCategory, typeof Link2> = {
 interface ContentDeleteButtonProps {
   id: string;
   kind: ContentKind;
-  onDelete: (id: string) => Promise<{ success: boolean; error?: string }>;
+  // The delete actions block when dependencies exist and return them; this
+  // component passes { force: true } once the user has seen them and confirmed.
+  onDelete: (id: string, options?: DeleteOptions) => Promise<{ success: boolean; error?: string; dependencies?: DependencyFinding[] }>;
   entityName?: string;
 }
 
 export default function ContentDeleteButton({ id, kind, onDelete, entityName = "item" }: ContentDeleteButtonProps) {
   const [checking, setChecking] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [findings, setFindings] = useState<{ category: DependencyCategory; description: string }[] | null>(null);
+  const [findings, setFindings] = useState<DependencyFinding[] | null>(null);
   const [showModal, setShowModal] = useState(false);
+  // Set when the server found references the pre-check didn't show.
+  const [changedSinceCheck, setChangedSinceCheck] = useState(false);
 
   const handleClick = async () => {
     setChecking(true);
     try {
       const results = await checkContentDependencies(kind, id);
       setFindings(results);
+      setChangedSinceCheck(false);
       setShowModal(true);
     } finally {
       setChecking(false);
@@ -41,7 +46,15 @@ export default function ContentDeleteButton({ id, kind, onDelete, entityName = "
   const handleConfirmDelete = async () => {
     setDeleting(true);
     try {
-      const result = await onDelete(id);
+      // Force only when the user was shown a non-empty list and clicked "Delete Anyway".
+      const result = await onDelete(id, findings && findings.length > 0 ? { force: true } : undefined);
+      if (!result.success && result.dependencies?.length) {
+        // The server found references this dialog didn't show (e.g. a link added
+        // after it opened). Show them and let the user decide again.
+        setFindings(result.dependencies);
+        setChangedSinceCheck(true);
+        return;
+      }
       if (!result.success) {
         alert(result.error || `Failed to delete ${entityName}`);
       }
@@ -83,6 +96,11 @@ export default function ContentDeleteButton({ id, kind, onDelete, entityName = "
               </p>
             ) : (
               <>
+                {changedSinceCheck && (
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    This list changed since you opened this dialog. Review it again before deleting.
+                  </p>
+                )}
                 <p className="text-sm text-caption">
                   Deleting this {entityName} may break the following. Review before continuing:
                 </p>
