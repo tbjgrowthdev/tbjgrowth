@@ -1,5 +1,6 @@
 import type { AiProvider } from "./types";
 import { AiProviderError } from "./types";
+import { redactSecret } from "./catalog";
 
 // Raw fetch against the Anthropic Messages API — same house convention as
 // every other external integration in this project (Resend, Cloudinary,
@@ -8,15 +9,15 @@ import { AiProviderError } from "./types";
 const API_URL = "https://api.anthropic.com/v1/messages";
 const DEFAULT_MODEL = "claude-sonnet-5-5";
 
-export function createAnthropicProvider(modelOverride?: string): AiProvider {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+/** `apiKey` is resolved by the caller (./keys.ts: admin-entered key, else ANTHROPIC_API_KEY). */
+export function createAnthropicProvider(apiKey: string | null, modelOverride?: string): AiProvider {
   const model = modelOverride || process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
 
   return {
     name: "anthropic",
     model,
     async complete(system, userPrompt, maxTokens) {
-      if (!apiKey) throw new AiProviderError("ANTHROPIC_API_KEY is not configured");
+      if (!apiKey) throw new AiProviderError("No Anthropic API key is configured (Settings → AI Provider, or ANTHROPIC_API_KEY)");
 
       const res = await fetch(API_URL, {
         method: "POST",
@@ -35,7 +36,7 @@ export function createAnthropicProvider(modelOverride?: string): AiProvider {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new AiProviderError(`Anthropic API request failed (${res.status}): ${errorText}`);
+        throw new AiProviderError(`Anthropic API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
       const data: { content?: { type: string; text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } } = await res.json();
@@ -43,7 +44,12 @@ export function createAnthropicProvider(modelOverride?: string): AiProvider {
       if (typeof text !== "string") {
         throw new AiProviderError("Anthropic API response had no text content");
       }
-      return { text, inputTokens: data.usage?.input_tokens ?? 0, outputTokens: data.usage?.output_tokens ?? 0 };
+      return {
+        text,
+        inputTokens: data.usage?.input_tokens ?? 0,
+        outputTokens: data.usage?.output_tokens ?? 0,
+        usageUnknown: data.usage?.input_tokens == null || data.usage?.output_tokens == null,
+      };
     },
   };
 }

@@ -9,6 +9,12 @@
 export interface AiUsage {
   inputTokens: number;
   outputTokens: number;
+  /**
+   * True when the provider's response carried no (or unparseable) usage
+   * counts, so the token numbers above are 0 by default, not measured. Cost
+   * tracking records such a job's cost as unknown (null), never as $0.
+   */
+  usageUnknown?: boolean;
 }
 
 export interface AiCompletion extends AiUsage {

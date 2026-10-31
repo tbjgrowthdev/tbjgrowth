@@ -35,6 +35,10 @@ Set directly in **Cloudflare dashboard → Workers & Pages → the Worker → Se
 
 Never run `prisma migrate dev` or `prisma db push` against production. `migrate dev` targets whatever `DIRECT_URL` points at — in this repo's `.env`, that's production.
 
+### `20261031000000_add_ai_provider_keys` (AI provider keys in Settings)
+
+Adds six values to the `IntegrationProvider` enum (`ANTHROPIC`, `OPENAI`, `GEMINI`, `XAI`, `OPENROUTER`, `CEREBRAS`). Additive and idempotent (`ADD VALUE IF NOT EXISTS`), no table changes. **Run `npx prisma migrate deploy` before deploying the code that adds the API keys panel.** If the code ships first nothing breaks (AI calls keep using the `*_API_KEY` env vars and Settings says keys can't be stored yet), but no key can be saved until the migration is applied. `INTEGRATION_ENCRYPTION_KEY` must be set on the Worker for keys to be saved.
+
 ### ⚠️ Staging first: `20261021000000_sync_missing_enum_values` + `20261021000001_sync_missing_models`
 
 **These two migrations must be tested on a staging database before being applied to production.**

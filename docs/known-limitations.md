@@ -207,3 +207,11 @@ See `docs/troubleshooting.md` for the recovery steps if this happens again,
 and `docs/database-schema.md` for the `DATABASE_URL` (pooled, runtime) vs
 `DIRECT_URL` (unpooled, CLI/migrations) split that's easy to confuse when
 debugging this.
+
+## Admin-entered AI provider keys (Settings → AI Provider)
+
+- **Rotating `INTEGRATION_ENCRYPTION_KEY` orphans every stored key.** Ciphertext encrypted under the old key can't be decrypted under the new one, and there is no re-encryption tool. AI calls don't break: `getAiApiKey()` logs the failure and falls back to the `*_API_KEY` env var, and Settings marks the stored key as unreadable. But each key has to be re-entered (or removed) after a rotation. The same applies to every other Integration Hub credential.
+- **A compromised admin account can *use* the keys, not *read* them.** Anyone with `INTEGRATION_MANAGEMENT` can run AI calls (and Test connection) billed to the stored keys, switch providers, or replace/remove keys. No code path returns a stored key to the browser, but that doesn't protect against misuse of the account itself; MFA on Super Admin accounts and provider-side spend limits are the mitigation.
+- **Server compromise exposes keys.** The encryption key lives in the Worker's environment next to the database credentials, so anyone who can read both (or run code in the Worker) can decrypt the stored keys. Encryption at rest protects against a database-only leak (backups, SQL access), nothing more.
+- **Status is not live.** "Configured here" means a key is stored, not that it works. Only Test connection (one small billed request) verifies it, and its result is recorded on the key's row.
+- **Cost tracking for the new providers is partial.** Only `xai:grok-4.3` has a rate (xAI's under-200k-token tier). OpenRouter and Cerebras models record token counts with unknown cost, and the AI Costs page counts them as unpriced. Responses without usage counts are also stored as unknown cost.

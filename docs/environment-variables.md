@@ -48,21 +48,26 @@ Source: `.env.example` (copy to `.env` for local `next dev`; `.env*` is gitignor
 
 | Variable | Used by |
 |---|---|
-| `INTEGRATION_ENCRYPTION_KEY` | `lib/integrations/crypto.ts` — AES-256-GCM key encrypting stored credentials for Google Business Profile, Meta, CRM, Slack, WordPress, and Webhooks (the providers with no other home — see `docs/database-schema.md`'s `Integration` model). Generate with `openssl rand -base64 32`. **Rotating this key without a migration plan orphans every already-stored credential** — they become undecryptable ciphertext. |
+| `INTEGRATION_ENCRYPTION_KEY` | `lib/integrations/crypto.ts` — AES-256-GCM key encrypting stored credentials for Google Business Profile, Meta, CRM, Slack, WordPress, Webhooks, **and admin-entered AI provider API keys** (see `docs/database-schema.md`'s `Integration` model). Always an env secret — never stored in the database. Generate with `openssl rand -base64 32`. **Rotating this key without a migration plan orphans every already-stored credential** — they become undecryptable ciphertext. For AI keys this degrades gracefully (calls fall back to the `*_API_KEY` env var and Settings flags the stored key as unreadable), but the keys must be re-entered. |
 
 ## AI Content Pipeline
 
 | Variable | Used by | Notes |
 |---|---|---|
-| `AI_PROVIDER` | `lib/content-pipeline/providers/config.ts` | `anthropic` (default) \| `openai` \| `gemini`. The **server default** for which provider every **text** stage calls. A Super Admin can override it (and the model) from **Settings → AI Provider** without a redeploy — stored in the `AiSettings` table; this env var applies whenever no override is saved, and is the fallback if that table can't be read. See `docs/ai-workflow.md`. |
-| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | `lib/content-pipeline/providers/anthropic.ts` | Key needed for Anthropic to be usable or selectable in Settings. `ANTHROPIC_MODEL` is the default model when Settings doesn't override it. |
+| `AI_PROVIDER` | `lib/content-pipeline/providers/config.ts` | `anthropic` (default) \| `openai` \| `gemini` \| `xai` \| `openrouter` \| `cerebras`. The **server default** for which provider every **text** stage calls. A Super Admin can override it (and the model) from **Settings → AI Provider** without a redeploy — stored in the `AiSettings` table; this env var applies whenever no override is saved, and is the fallback if that table can't be read. See `docs/ai-workflow.md`. |
+| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | `lib/content-pipeline/providers/anthropic.ts` | Anthropic's key, unless an admin entered one in Settings → AI Provider (**an admin-entered key overrides the env var**; removing it falls back to the env var). `ANTHROPIC_MODEL` is the default model when Settings doesn't override it. |
 | `OPENAI_API_KEY` / `OPENAI_MODEL` | `lib/content-pipeline/providers/openai.ts` | Same, for OpenAI (also used for image generation, see below). |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | `lib/content-pipeline/providers/gemini.ts` | Same, for Gemini (also used for image generation, see below). |
+| `XAI_API_KEY` / `XAI_MODEL` | `lib/content-pipeline/providers/openai-compatible.ts` | xAI (Grok), `https://api.x.ai/v1`. Same override rule. Default model `grok-4.3`. |
+| `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` | `lib/content-pipeline/providers/openai-compatible.ts` | OpenRouter, `https://openrouter.ai/api/v1`. Same override rule. Model ids are `vendor/model`; default `openai/gpt-5`. Not priced in cost tracking (the price depends on the upstream route), so jobs record tokens with unknown cost. |
+| `CEREBRAS_API_KEY` / `CEREBRAS_MODEL` | `lib/content-pipeline/providers/openai-compatible.ts` | Cerebras, `https://api.cerebras.ai/v1`. Same override rule. Default model `gpt-oss-120b`; not priced in cost tracking. |
 | `AI_IMAGE_PROVIDER` | `lib/content-pipeline/providers/config.ts` | `openai` (default) \| `gemini`. Server default for the Image stage, also overridable in Settings → AI Provider. **Separate** selection from `AI_PROVIDER` — Anthropic has no image-generation API, so the Image stage always needs one of the other two providers' key configured regardless of which text provider is active. |
 | `OPENAI_IMAGE_MODEL` | `lib/content-pipeline/providers/openai-image.ts` | |
 | `GEMINI_IMAGE_MODEL` | `lib/content-pipeline/providers/gemini-image.ts` | |
 
-Missing the key matching the active provider fails every AI-driven stage with `"<KEY> is not configured"` — the run just sits at its current stage, nothing is lost, and re-running the stage after setting the key picks up cleanly.
+**Key precedence:** an API key entered in Settings → AI Provider (stored AES-256-GCM-encrypted in the `Integration` table) wins over the env var; with no stored key, or if the stored one can't be read or decrypted, the env var is used, so a deployment with no stored keys behaves exactly as before. The image providers (OpenAI, Gemini) use the same resolved key as their text counterparts. **Model precedence:** a model saved in Settings wins over `*_MODEL`, which wins over the built-in default.
+
+Missing the key matching the active provider fails every AI-driven stage with `"No <Provider> API key is configured"` — the run just sits at its current stage, nothing is lost, and re-running the stage after setting the key picks up cleanly.
 
 ## Not in `.env.example` but required in CI (GitHub Actions secrets)
 

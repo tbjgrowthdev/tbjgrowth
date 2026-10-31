@@ -1,18 +1,19 @@
 import type { AiProvider } from "./types";
 import { AiProviderError } from "./types";
+import { redactSecret } from "./catalog";
 
 const API_URL = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_MODEL = "gpt-5";
 
-export function createOpenAiProvider(modelOverride?: string): AiProvider {
-  const apiKey = process.env.OPENAI_API_KEY;
+/** `apiKey` is resolved by the caller (./keys.ts: admin-entered key, else OPENAI_API_KEY). */
+export function createOpenAiProvider(apiKey: string | null, modelOverride?: string): AiProvider {
   const model = modelOverride || process.env.OPENAI_MODEL || DEFAULT_MODEL;
 
   return {
     name: "openai",
     model,
     async complete(system, userPrompt, maxTokens) {
-      if (!apiKey) throw new AiProviderError("OPENAI_API_KEY is not configured");
+      if (!apiKey) throw new AiProviderError("No OpenAI API key is configured (Settings → AI Provider, or OPENAI_API_KEY)");
 
       const res = await fetch(API_URL, {
         method: "POST",
@@ -35,7 +36,7 @@ export function createOpenAiProvider(modelOverride?: string): AiProvider {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new AiProviderError(`OpenAI API request failed (${res.status}): ${errorText}`);
+        throw new AiProviderError(`OpenAI API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
       const data: { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } } = await res.json();
@@ -43,7 +44,12 @@ export function createOpenAiProvider(modelOverride?: string): AiProvider {
       if (typeof text !== "string") {
         throw new AiProviderError("OpenAI API response had no text content");
       }
-      return { text, inputTokens: data.usage?.prompt_tokens ?? 0, outputTokens: data.usage?.completion_tokens ?? 0 };
+      return {
+        text,
+        inputTokens: data.usage?.prompt_tokens ?? 0,
+        outputTokens: data.usage?.completion_tokens ?? 0,
+        usageUnknown: data.usage?.prompt_tokens == null || data.usage?.completion_tokens == null,
+      };
     },
   };
 }

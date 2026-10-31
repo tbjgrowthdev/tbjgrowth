@@ -106,7 +106,8 @@ Super Admin only. Covers: Integration Hub connect/edit/reconnect/disconnect
 (`lib/integrations/manage.ts`), Google OAuth connect/callback
 (`app/api/google/*`) and Google config/disconnect (`app/(admin)/actions/google.ts`),
 and **Settings → AI Provider** (`app/(admin)/actions/ai-settings.ts` — choosing
-the AI provider/model for the content pipeline). The Settings page itself is
+the AI provider/model for the content pipeline, and saving, replacing,
+removing and testing AI provider API keys). The Settings page itself is
 `SETTINGS_MANAGEMENT`; Admins see the active AI provider there read-only.
 
 The Google OAuth routes used to check a literal `role !== "ADMIN"` instead,

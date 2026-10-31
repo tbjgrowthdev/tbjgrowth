@@ -8,7 +8,7 @@
 - **Auth**: NextAuth v4, Credentials provider + JWT sessions (see "Auth" below).
 - **Media**: Cloudinary.
 - **Email**: Resend.
-- **AI providers**: Anthropic / OpenAI / Gemini, switchable via env var (see `docs/runbooks/ai-content-pipeline.md`).
+- **AI providers**: Anthropic / OpenAI / Gemini / xAI / OpenRouter / Cerebras, switchable in Settings → AI Provider or via env var; keys from Settings (encrypted) or env vars (see `docs/ai-workflow.md`).
 - **Deployment target**: Cloudflare Workers, via OpenNext (`@opennextjs/cloudflare`) — see `docs/deployment.md`.
 
 ## Why the Neon HTTP adapter

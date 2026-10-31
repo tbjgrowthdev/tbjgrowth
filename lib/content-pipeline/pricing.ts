@@ -14,6 +14,13 @@ const RATES: Record<string, { inputPer1M: number; outputPer1M: number }> = {
   "anthropic:claude-sonnet-5-5": { inputPer1M: 3, outputPer1M: 15 },
   "openai:gpt-5": { inputPer1M: 1.25, outputPer1M: 10 },
   "gemini:gemini-2.5-flash": { inputPer1M: 0.3, outputPer1M: 2.5 },
+  // xAI's published rate for prompts under 200k tokens (docs.x.ai/docs/models,
+  // checked 2026-10). Prompts of 200k+ tokens bill at double; the pipeline's
+  // prompts are far below that.
+  "xai:grok-4.3": { inputPer1M: 1.25, outputPer1M: 2.5 },
+  // OpenRouter and Cerebras are deliberately absent: OpenRouter's price
+  // depends on which upstream model/route serves the request, and no
+  // Cerebras rate was verified. Their jobs record tokens with cost null.
 };
 
 export function estimateCostUsd(provider: string, model: string, inputTokens: number, outputTokens: number): number | null {

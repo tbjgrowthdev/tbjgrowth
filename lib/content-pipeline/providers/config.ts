@@ -1,29 +1,25 @@
 import { prisma } from "@/lib/prisma";
 
-export const TEXT_PROVIDERS = ["anthropic", "openai", "gemini"] as const;
-export const IMAGE_PROVIDERS = ["openai", "gemini"] as const;
-export type TextProviderName = (typeof TEXT_PROVIDERS)[number];
-export type ImageProviderName = (typeof IMAGE_PROVIDERS)[number];
+import { isImageProvider, isTextProvider, isValidModelName } from "./catalog";
+import { resolveAiApiKey } from "./keys";
 
-export const PROVIDER_LABEL: Record<string, string> = { anthropic: "Anthropic", openai: "OpenAI", gemini: "Gemini" };
-export const PROVIDER_KEY_ENV: Record<string, string> = { anthropic: "ANTHROPIC_API_KEY", openai: "OPENAI_API_KEY", gemini: "GEMINI_API_KEY" };
+export {
+  TEXT_PROVIDERS,
+  IMAGE_PROVIDERS,
+  PROVIDER_LABEL,
+  PROVIDER_KEY_ENV,
+  MODEL_NAME_PATTERN,
+  OPENROUTER_MODEL_PATTERN,
+  isTextProvider,
+  isImageProvider,
+  isValidModelName,
+  maskKey,
+} from "./catalog";
+export type { TextProviderName, ImageProviderName } from "./catalog";
 
-// Gemini interpolates the model name straight into its request URL path,
-// so this is a security boundary, not just tidiness: no slashes, query
-// characters, or whitespace can ever reach a provider URL from admin input.
-export const MODEL_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/;
-
-export function isTextProvider(name: string | null | undefined): name is TextProviderName {
-  return !!name && (TEXT_PROVIDERS as readonly string[]).includes(name);
-}
-
-export function isImageProvider(name: string | null | undefined): name is ImageProviderName {
-  return !!name && (IMAGE_PROVIDERS as readonly string[]).includes(name);
-}
-
-export function hasProviderKey(name: string): boolean {
-  const envName = PROVIDER_KEY_ENV[name];
-  return !!envName && !!process.env[envName];
+/** Whether a key is available for this provider — an admin-entered one (Integration Hub) or its env var. */
+export async function hasProviderKey(name: string): Promise<boolean> {
+  return (await resolveAiApiKey(name)).source !== "none";
 }
 
 export interface ResolvedSelection {
@@ -38,8 +34,8 @@ export interface ResolvedAiConfig {
   image: ResolvedSelection;
 }
 
-function validModel(model: string | null | undefined): string | null {
-  return model && MODEL_NAME_PATTERN.test(model) ? model : null;
+function validModel(provider: string, model: string | null | undefined): string | null {
+  return model && isValidModelName(provider, model) ? model : null;
 }
 
 /**
@@ -66,11 +62,11 @@ export async function resolveAiConfig(): Promise<ResolvedAiConfig> {
   }
 
   const text: ResolvedSelection = isTextProvider(row?.textProvider)
-    ? { provider: row!.textProvider!, model: validModel(row!.textModel), source: "admin" }
+    ? { provider: row!.textProvider!, model: validModel(row!.textProvider!, row!.textModel), source: "admin" }
     : { provider: (process.env.AI_PROVIDER || "anthropic").toLowerCase(), model: null, source: "env" };
 
   const image: ResolvedSelection = isImageProvider(row?.imageProvider)
-    ? { provider: row!.imageProvider!, model: validModel(row!.imageModel), source: "admin" }
+    ? { provider: row!.imageProvider!, model: validModel(row!.imageProvider!, row!.imageModel), source: "admin" }
     : { provider: (process.env.AI_IMAGE_PROVIDER || "openai").toLowerCase(), model: null, source: "env" };
 
   return { text, image };

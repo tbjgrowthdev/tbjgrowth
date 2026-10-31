@@ -1545,6 +1545,15 @@ enum IntegrationProvider {
   SLACK
   WORDPRESS
   WEBHOOKS
+  // AI provider API keys (credentials = { apiKey }), managed in Settings →
+  // AI Provider rather than as Integration Hub cards — see
+  // lib/content-pipeline/providers/keys.ts. Added by 20261031000000_add_ai_provider_keys.
+  ANTHROPIC
+  OPENAI
+  GEMINI
+  XAI
+  OPENROUTER
+  CEREBRAS
 }
 
 enum IntegrationStatus {
@@ -1560,14 +1569,14 @@ enum IntegrationStatus {
 //
 // Deliberately NOT the home for every integration this site has: Google
 // Search Console/Analytics already have a dedicated OAuth flow
-// (GoogleIntegration above), and the AI text/image providers and the
-// Resend email provider are already configured via environment variable
-// API keys read at call time (lib/content-pipeline/providers, lib/email.ts).
-// The Integration Hub admin page reads those three sources' status
-// directly (lib/integrations/mirror.ts) rather than migrating working
-// credential storage into this table for no functional gain. This table
-// only owns the providers that had no home before it: Google Business
-// Profile, Meta, a generic CRM, Slack, WordPress, and outbound webhooks.
+// (GoogleIntegration above), and the Resend email provider is configured
+// via an environment variable read at call time (lib/email.ts). The
+// Integration Hub admin page reads those sources' status directly
+// (lib/integrations/mirror.ts). This table owns Google Business Profile,
+// Meta, a generic CRM, Slack, WordPress, outbound webhooks — and the AI
+// provider API keys (ANTHROPIC … CEREBRAS), which an admin may enter in
+// Settings → AI Provider to override the *_API_KEY env vars. AI key rows
+// are edited only from that settings screen, not from Integration Hub cards.
 model Integration {
   id       String              @id @default(cuid())
   provider IntegrationProvider @unique

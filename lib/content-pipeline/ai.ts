@@ -28,7 +28,7 @@ export async function callAiForJson<T>(system: string, userPrompt: string, maxTo
 
   const first = await provider.complete(system, userPrompt, maxTokens);
   const parsed = tryParseJson<T>(first.text);
-  if (parsed) return { data: parsed, usage: { inputTokens: first.inputTokens, outputTokens: first.outputTokens } };
+  if (parsed) return { data: parsed, usage: { inputTokens: first.inputTokens, outputTokens: first.outputTokens, usageUnknown: !!first.usageUnknown } };
 
   const repair = await provider.complete(
     system,
@@ -38,6 +38,7 @@ export async function callAiForJson<T>(system: string, userPrompt: string, maxTo
   const usage: AiUsage = {
     inputTokens: first.inputTokens + repair.inputTokens,
     outputTokens: first.outputTokens + repair.outputTokens,
+    usageUnknown: !!first.usageUnknown || !!repair.usageUnknown,
   };
   const repaired = tryParseJson<T>(repair.text);
   if (repaired) return { data: repaired, usage };

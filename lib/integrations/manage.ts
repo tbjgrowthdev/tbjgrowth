@@ -183,6 +183,8 @@ export async function testIntegration(provider: IntegrationProvider): Promise<St
 export async function disconnectIntegration(provider: IntegrationProvider): Promise<StageResult<null>> {
   try {
     await requirePermission("INTEGRATION_MANAGEMENT");
+    // Only Hub-card providers. AI key rows share this table but are removed from Settings → AI Provider.
+    if (!PROVIDER_REGISTRY[provider]) return fail("Unknown provider");
     const existing = await prisma.integration.findUnique({ where: { provider } });
     if (existing) {
       await prisma.integration.delete({ where: { provider } });

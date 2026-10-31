@@ -1,18 +1,18 @@
 import type { AiImageProvider } from "./types";
 import { AiProviderError } from "./types";
+import { redactSecret } from "./catalog";
 
 const API_URL = "https://api.openai.com/v1/images/generations";
 const DEFAULT_MODEL = "gpt-image-1";
 
-export function createOpenAiImageProvider(modelOverride?: string): AiImageProvider {
-  const apiKey = process.env.OPENAI_API_KEY;
+export function createOpenAiImageProvider(apiKey: string | null, modelOverride?: string): AiImageProvider {
   const model = modelOverride || process.env.OPENAI_IMAGE_MODEL || DEFAULT_MODEL;
 
   return {
     name: "openai",
     model,
     async generateImage(prompt) {
-      if (!apiKey) throw new AiProviderError("OPENAI_API_KEY is not configured");
+      if (!apiKey) throw new AiProviderError("No OpenAI API key is configured (Settings → AI Provider, or OPENAI_API_KEY)");
 
       const res = await fetch(API_URL, {
         method: "POST",
@@ -22,7 +22,7 @@ export function createOpenAiImageProvider(modelOverride?: string): AiImageProvid
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new AiProviderError(`OpenAI Images API request failed (${res.status}): ${errorText}`);
+        throw new AiProviderError(`OpenAI Images API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
       const data: { data?: { b64_json?: string }[] } = await res.json();

@@ -75,7 +75,9 @@ async function usageFields(jobId: string, usage?: AiUsage) {
   if (!usage) return {};
   const job = await prisma.aiJob.findUnique({ where: { id: jobId }, select: { provider: true, model: true } });
   const totalTokens = usage.inputTokens + usage.outputTokens;
-  const costUsd = job ? estimateCostUsd(job.provider, job.model, usage.inputTokens, usage.outputTokens) : null;
+  // Unknown usage (the provider sent no token counts) means unknown cost —
+  // null, which the cost dashboard counts as "unpriced", never a false $0.
+  const costUsd = job && !usage.usageUnknown ? estimateCostUsd(job.provider, job.model, usage.inputTokens, usage.outputTokens) : null;
   return { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens, costUsd };
 }
 

@@ -1,5 +1,6 @@
 import { getGoogleIntegration } from "@/lib/google-oauth";
-import { PROVIDER_KEY_ENV, PROVIDER_LABEL, hasProviderKey, resolveAiConfig } from "@/lib/content-pipeline/providers/config";
+import { PROVIDER_KEY_ENV, PROVIDER_LABEL, resolveAiConfig } from "@/lib/content-pipeline/providers/config";
+import { resolveAiApiKey } from "@/lib/content-pipeline/providers/keys";
 import type { IntegrationStatusView } from "./types";
 
 function view(partial: Omit<IntegrationStatusView, "provider" | "liveTestAvailable">): IntegrationStatusView {
@@ -40,14 +41,16 @@ export async function getGoogleMirrorStatuses(): Promise<IntegrationStatusView[]
 /**
  * Mirrors lib/content-pipeline/providers' selection (Settings → AI
  * Provider, else the AI_PROVIDER env var): only the active text provider
- * is reported as live, or as Error if it's selected but missing its key —
+ * is reported as live, or as Error if it's selected but has no key (neither
+ * one entered in Settings → AI Provider nor its env var) —
  * that combination throws the moment any pipeline stage calls it, so Error
  * is the honest status, not Disconnected.
  */
 export async function getAiProviderMirrorStatus(): Promise<IntegrationStatusView> {
   const { text } = await resolveAiConfig();
   const activeLabel = PROVIDER_LABEL[text.provider] || text.provider;
-  const hasKey = hasProviderKey(text.provider);
+  const { source: keySource } = await resolveAiApiKey(text.provider);
+  const hasKey = keySource !== "none";
   const keyEnv = PROVIDER_KEY_ENV[text.provider] || `${text.provider.toUpperCase()}_API_KEY`;
   const selectedVia = text.source === "admin" ? "selected in Settings" : "AI_PROVIDER env var";
 
@@ -56,10 +59,10 @@ export async function getAiProviderMirrorStatus(): Promise<IntegrationStatusView
     label: "AI Providers",
     category: "Content",
     status: hasKey ? "CONNECTED" : "ERROR",
-    lastError: hasKey ? null : `${activeLabel} is the active provider (${selectedVia}) but ${keyEnv} is not configured`,
+    lastError: hasKey ? null : `${activeLabel} is the active provider (${selectedVia}) but ${keyEnv} is not configured and no key was entered in Settings → AI Provider`,
     lastCheckedAt: null,
     connectedAt: null,
-    metadataSummary: `Active: ${activeLabel}${text.model ? ` (${text.model})` : ""} — ${selectedVia}`,
+    metadataSummary: `Active: ${activeLabel}${text.model ? ` (${text.model})` : ""} — ${selectedVia}${hasKey ? ` · key from ${keySource === "admin" ? "Settings" : "env var"}` : ""}`,
     managedBy: "env",
     manageHref: "/admin/settings#ai-provider",
   });

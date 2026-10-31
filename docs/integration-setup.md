@@ -28,8 +28,11 @@ Hub supports. Six providers, each with its own credential fields and
 
 Deliberately **not** in this registry (see the `Integration` model's schema
 comment and `registry.ts`'s own comment): Google Search Console/Analytics,
-the AI providers (Anthropic/OpenAI/Gemini), and Resend email. Those are
-configured via plain env vars, not the Hub, but `lib/integrations/mirror.ts`
+the AI providers, and Resend email. AI provider API keys *are* stored in the
+Hub's encrypted `Integration` table (registered separately as
+`AI_KEY_REGISTRY` in `registry.ts`), but they're managed only from
+Settings → AI Provider, so they get no Hub card and the generic Hub actions
+can't touch them. Google and Resend are configured outside the Hub, but `lib/integrations/mirror.ts`
 surfaces their *status* alongside the Hub-owned ones on the same page —
 `listIntegrationStatuses()` in `lib/integrations/manage.ts` merges
 `getGoogleMirrorStatuses()` / `getAiProviderMirrorStatus()` /
