@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { slugify } from "@/lib/utils";
 import { recordVersion } from "@/lib/versioning";
+import { syncTaxonomy } from "@/lib/content-relations";
 import { isLockedByOther } from "@/lib/content-lock";
 import { rowsToCsv, csvToObjects } from "@/lib/csv";
 
@@ -248,11 +249,9 @@ export async function importPostsJson(jsonText: string, actor: Actor): Promise<I
           result.errors.push(`${slug}: being edited by ${lock.lockedByName || "another user"} — skipped`);
           continue;
         }
-        const updated = await prisma.post.update({
-          where: { id: existing.id },
-          data: { ...scalarData, categories: { set: categoryIds.map((id) => ({ id })) }, tags: { set: tagIds.map((id) => ({ id })) } },
-          include: { categories: true, tags: true },
-        });
+        await prisma.post.update({ where: { id: existing.id }, data: scalarData });
+        await syncTaxonomy("POST", existing.id, { categoryIds, tagIds });
+        const updated = await prisma.post.findUniqueOrThrow({ where: { id: existing.id }, include: { categories: true, tags: true } });
         await recordVersion("POST", updated.id, updated, actor, "Imported (update)");
         result.updated++;
       } else {
@@ -382,11 +381,9 @@ export async function importCaseStudiesJson(jsonText: string, actor: Actor): Pro
           result.errors.push(`${slug}: being edited by ${lock.lockedByName || "another user"} — skipped`);
           continue;
         }
-        const updated = await prisma.caseStudy.update({
-          where: { id: existing.id },
-          data: { ...scalarData, categories: { set: categoryIds.map((id) => ({ id })) }, tags: { set: tagIds.map((id) => ({ id })) } },
-          include: { categories: true, tags: true },
-        });
+        await prisma.caseStudy.update({ where: { id: existing.id }, data: scalarData });
+        await syncTaxonomy("CASE_STUDY", existing.id, { categoryIds, tagIds });
+        const updated = await prisma.caseStudy.findUniqueOrThrow({ where: { id: existing.id }, include: { categories: true, tags: true } });
         await recordVersion("CASE_STUDY", updated.id, updated, actor, "Imported (update)");
         result.updated++;
       } else {

@@ -10,6 +10,8 @@ import { sanitizeRichText } from "@/lib/sanitize";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
+import { syncTaxonomy } from "@/lib/content-relations";
+import { captureError } from "@/lib/error-monitor";
 import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // Metadata only — excludes content so the audit log doesn't bloat. The SEO
@@ -147,6 +149,15 @@ export async function createPost(data: any) {
   }
 }
 
+// The last meaningful line of an error (Prisma puts the actual reason last), for showing to the admin.
+function shortReason(error: any): string {
+  const lines = String(error?.message || error || "unknown error")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  return (lines[lines.length - 1] || "unknown error").slice(0, 200);
+}
+
 export async function updatePost(id: string, data: any) {
   try {
     const session = await requirePermission("EDIT");
@@ -195,10 +206,11 @@ export async function updatePost(id: string, data: any) {
         maxSnippet: data.maxSnippet ?? -1,
         maxImagePreview: data.maxImagePreview || "large",
         maxVideoPreview: data.maxVideoPreview ?? -1,
-        categories: data.categoryIds ? { set: data.categoryIds.map((id: string) => ({ id })) } : undefined,
-        tags: data.tagIds ? { set: data.tagIds.map((id: string) => ({ id })) } : undefined,
       },
     });
+    // Not a nested { set } on the update above — that needs a transaction,
+    // which the production Neon HTTP adapter rejects (lib/content-relations.ts).
+    await syncTaxonomy("POST", id, { categoryIds: data.categoryIds, tagIds: data.tagIds });
     revalidatePath("/admin/posts");
     revalidatePath(`/admin/posts/${id}`);
     revalidatePath("/blog");
@@ -228,7 +240,9 @@ export async function updatePost(id: string, data: any) {
     if (error.code === "P2002") {
       return { success: false, error: "A post with this slug already exists" };
     }
-    return { success: false, error: "Failed to update post" };
+    // Recorded in ErrorLog (Monitoring) so the real cause is visible without worker logs.
+    await captureError({ message: `updatePost(${id}): ${error?.message || String(error)}`, stack: error?.stack ?? null, path: `/admin/posts/${id}`, source: "server" });
+    return { success: false, error: `Failed to update post: ${shortReason(error)}` };
   }
 }
 

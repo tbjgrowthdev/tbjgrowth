@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
+import { syncTaxonomy } from "@/lib/content-relations";
 import { sendScheduledJobFailureNotification } from "@/lib/email";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
@@ -253,16 +254,14 @@ async function executeJob(job: Prisma.ScheduledJobGetPayload<object>) {
   const { categoryIds, tagIds, ...scalarFields } = snapshot;
 
   const updateData: AnyRecord = { ...scalarFields };
-  if (job.contentType !== "PAGE") {
-    if (Array.isArray(categoryIds)) {
-      updateData.categories = { set: (categoryIds as string[]).map((cid) => ({ id: cid })) };
-    }
-    if (Array.isArray(tagIds)) {
-      updateData.tags = { set: (tagIds as string[]).map((tid) => ({ id: tid })) };
-    }
-  }
-
   const updated = await delegate.update({ where: { id: job.contentId }, data: updateData });
+  // Separate from the update: a nested { set } needs a transaction the production adapter rejects.
+  if (job.contentType === "POST" || job.contentType === "CASE_STUDY") {
+    await syncTaxonomy(job.contentType, job.contentId, {
+      categoryIds: Array.isArray(categoryIds) ? (categoryIds as string[]) : undefined,
+      tagIds: Array.isArray(tagIds) ? (tagIds as string[]) : undefined,
+    });
+  }
 
   const categoryIdList = Array.isArray(categoryIds) ? (categoryIds as string[]) : [];
   const tagIdList = Array.isArray(tagIds) ? (tagIds as string[]) : [];

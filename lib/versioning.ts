@@ -3,6 +3,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import type { ContentType } from "@/lib/generated/prisma/client";
+import { syncTaxonomy } from "@/lib/content-relations";
 
 // Only the actual editable content — never status, publishedAt, or the
 // approval-assignment fields (reviewerId/seoReviewerId/approverId/
@@ -150,17 +151,15 @@ export async function restoreVersion(contentType: ContentType, contentId: string
     const { categoryIds, tagIds, ...scalarFields } = snapshot;
 
     const updateData: AnyRecord = { ...scalarFields };
-    if (RELATION_TYPES.includes(contentType)) {
-      if (Array.isArray(categoryIds)) {
-        updateData.categories = { set: (categoryIds as string[]).map((id) => ({ id })) };
-      }
-      if (Array.isArray(tagIds)) {
-        updateData.tags = { set: (tagIds as string[]).map((id) => ({ id })) };
-      }
-    }
-
     const delegate = model(contentType);
     const updated = await delegate.update({ where: { id: contentId }, data: updateData });
+    // Separate from the update: a nested { set } needs a transaction the production adapter rejects.
+    if (RELATION_TYPES.includes(contentType)) {
+      await syncTaxonomy(contentType as "POST" | "CASE_STUDY", contentId, {
+        categoryIds: Array.isArray(categoryIds) ? (categoryIds as string[]) : undefined,
+        tagIds: Array.isArray(tagIds) ? (tagIds as string[]) : undefined,
+      });
+    }
 
     const includeRelations = RELATION_TYPES.includes(contentType) ? { include: { categories: true, tags: true } } : {};
     const full = await delegate.findUnique({ where: { id: contentId }, ...includeRelations });
