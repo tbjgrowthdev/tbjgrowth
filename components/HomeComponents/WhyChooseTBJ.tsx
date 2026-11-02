@@ -631,9 +631,9 @@ export default function WhyChooseTBJ() {
           className="mt-16 lg:mt-20 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center"
         >
           {[
-            { value: "150+", label: "Projects Delivered", icon: Trophy },
-            { value: "50+", label: "Happy Clients", icon: Heart },
-            { value: "98%", label: "Client Retention", icon: ThumbsUp },
+            { value: "50+", label: "Projects Delivered", icon: Trophy },
+            { value: "10+", label: "Happy Clients", icon: Heart },
+            { value: "95%", label: "Client Retention", icon: ThumbsUp },
             { value: "4.9/5", label: "Average Rating", icon: Star },
           ].map((stat, i) => {
             const Icon = stat.icon;

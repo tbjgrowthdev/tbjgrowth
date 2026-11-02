@@ -29,34 +29,34 @@ const footerLinks = {
   services: {
     title: "Services",
     links: [
-      { label: "Web Development", href: "#services" },
-      { label: "SEO & Content", href: "#services" },
-      { label: "Social Media", href: "#services" },
-      { label: "Paid Ads", href: "#services" },
-      { label: "CRM Solutions", href: "#services" },
-      { label: "Automation", href: "#services" },
+      { label: "Web Design & Development", href: "/services/web-design-development" },
+      { label: "Social Media Marketing", href: "/services/social-media-marketing" },
+      { label: "Media Buying & Lead Generation", href: "/services/media-buying-lead-generation" },
+      { label: "CRM & Marketing Automation", href: "/services/crm-marketing-automation" },
+      { label: "Branding & Creative", href: "/services/branding-creative" },
+      { label: "SEO & Digital Optimisation", href: "/services/seo-digital-optimisation" },
     ],
   },
   company: {
     title: "Company",
     links: [
       { label: "About Us", href: "/about" },
-      { label: "Case Studies", href: "#case-studies" },
+      { label: "Case Studies", href: "/case-studies" },
       { label: "Our Process", href: "#why-tbj" },
       { label: "TBJ Systems", href: "#tbj-systems" },
-      { label: "Careers", href: "#" },
-      { label: "Contact", href: "#contact" },
+      // { label: "Careers", href: "#" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   resources: {
     title: "Resources",
     links: [
       { label: "Blog", href: "/blog" },
-      { label: "Free Tools", href: "#" },
-      { label: "Guides", href: "#" },
-      { label: "Webinars", href: "#" },
+      // { label: "Free Tools", href: "#" },
+      // { label: "Guides", href: "#" },
+      // { label: "Webinars", href: "#" },
       { label: "FAQ", href: "#faq" },
-      { label: "Support", href: "#" },
+      { label: "Support", href: "/book-a-call" },
     ],
   },
 };
@@ -310,11 +310,11 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
             {/* Copyright */}
             <p className="text-sm text-caption flex items-center gap-1">
               © {new Date().getFullYear()} TBJ Growth Ltd. All rights reserved.
-              <span className="hidden sm:inline">·</span>
+              {/* <span className="hidden sm:inline">·</span>
               <br className="sm:hidden" />
               Made with{" "}
               <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 inline-block mx-0.5 animate-pulse" />{" "}
-              in London
+              in London */}
             </p>
 
             {/* Legal Links */}

@@ -44,9 +44,9 @@ const navItems = [
     type: "route",
   },
   {
-    label: "Why TBJ",
-    href: "#why-tbj",
-    type: "section",
+    label: "Blogs",
+    href: "/blog",
+    type: "route",
   },
   {
     label: "Contact",
