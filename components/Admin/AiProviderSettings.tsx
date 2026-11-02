@@ -12,6 +12,7 @@ import {
   type AiProviderOption,
   type AiProviderSettingsView,
 } from "@/app/(admin)/actions/ai-settings";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const inputClass = "w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground";
 
@@ -97,38 +98,53 @@ function KeyRow({ status, testModel, disabled, onChange }: { status: AiKeyStatus
 
   const save = async () => {
     setBusy("save");
-    setMessage(null);
-    const result = await saveAiProviderKey({ provider: status.provider, apiKey: draft });
-    setBusy(null);
-    if (result.success) {
-      setDraft(""); // drop the plaintext key from the browser as soon as it's stored
-      onChange(result.data);
-      setMessage({ ok: true, text: "Key saved (encrypted). Use Test connection to verify it." });
-    } else {
-      setMessage({ ok: false, text: result.error });
+    try {
+      setMessage(null);
+      const result = await saveAiProviderKey({ provider: status.provider, apiKey: draft });
+      if (result.success) {
+        setDraft(""); // drop the plaintext key from the browser as soon as it's stored
+        onChange(result.data);
+        setMessage({ ok: true, text: "Key saved (encrypted). Use Test connection to verify it." });
+      } else {
+        setMessage({ ok: false, text: result.error });
+      }
+    } catch (err) {
+      setMessage({ ok: false, text: describeActionError(err) });
+    } finally {
+      setBusy(null);
     }
   };
 
   const remove = async () => {
     setBusy("remove");
-    setMessage(null);
-    const result = await removeAiProviderKey({ provider: status.provider });
-    setBusy(null);
-    setConfirmRemove(false);
-    if (result.success) {
-      onChange(result.data);
-      setMessage({ ok: true, text: result.data.source === "env" ? `Removed. Calls now use ${status.keyEnv}.` : "Removed." });
-    } else {
-      setMessage({ ok: false, text: result.error });
+    try {
+      setMessage(null);
+      const result = await removeAiProviderKey({ provider: status.provider });
+      setConfirmRemove(false);
+      if (result.success) {
+        onChange(result.data);
+        setMessage({ ok: true, text: result.data.source === "env" ? `Removed. Calls now use ${status.keyEnv}.` : "Removed." });
+      } else {
+        setMessage({ ok: false, text: result.error });
+      }
+    } catch (err) {
+      setMessage({ ok: false, text: describeActionError(err) });
+    } finally {
+      setBusy(null);
     }
   };
 
   const test = async () => {
     setBusy("test");
-    setMessage(null);
-    const result = await testAiProviderConnection({ provider: status.provider, model: testModel });
-    setBusy(null);
-    setMessage(result.success ? { ok: true, text: `Responded in ${result.data.latencyMs} ms (${result.data.model}).` } : { ok: false, text: result.error });
+    try {
+      setMessage(null);
+      const result = await testAiProviderConnection({ provider: status.provider, model: testModel });
+      setMessage(result.success ? { ok: true, text: `Responded in ${result.data.latencyMs} ms (${result.data.model}).` } : { ok: false, text: result.error });
+    } catch (err) {
+      setMessage({ ok: false, text: describeActionError(err) });
+    } finally {
+      setBusy(null);
+    }
   };
 
   const secondaryButton = "flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-background disabled:opacity-50";
@@ -243,28 +259,38 @@ export default function AiProviderSettings({ initial }: { initial: AiProviderSet
 
   const save = async () => {
     setSaving(true);
-    setMessage(null);
-    const result = await saveAiProviderSettings({ textProvider: textProvider || null, textModel, imageProvider: imageProvider || null, imageModel });
-    setSaving(false);
-    if (result.success) {
-      setMessage({ ok: true, text: "Saved. The next AI call uses this selection — no redeploy needed." });
-      router.refresh();
-    } else {
-      setMessage({ ok: false, text: result.error });
+    try {
+      setMessage(null);
+      const result = await saveAiProviderSettings({ textProvider: textProvider || null, textModel, imageProvider: imageProvider || null, imageModel });
+      if (result.success) {
+        setMessage({ ok: true, text: "Saved. The next AI call uses this selection — no redeploy needed." });
+        router.refresh();
+      } else {
+        setMessage({ ok: false, text: result.error });
+      }
+    } catch (err) {
+      setMessage({ ok: false, text: describeActionError(err) });
+    } finally {
+      setSaving(false);
     }
   };
 
   const test = async () => {
     setTesting(true);
-    setMessage(null);
-    const provider = textProvider || initial.env.textProvider;
-    const result = await testAiProviderConnection({ provider, model: textProvider ? textModel : "" });
-    setTesting(false);
-    setMessage(
-      result.success
-        ? { ok: true, text: `${label(provider)} (${result.data.model}) responded in ${result.data.latencyMs} ms.` }
-        : { ok: false, text: `${label(provider)} test failed: ${result.error}` }
-    );
+    try {
+      setMessage(null);
+      const provider = textProvider || initial.env.textProvider;
+      const result = await testAiProviderConnection({ provider, model: textProvider ? textModel : "" });
+      setMessage(
+        result.success
+          ? { ok: true, text: `${label(provider)} (${result.data.model}) responded in ${result.data.latencyMs} ms.` }
+          : { ok: false, text: `${label(provider)} test failed: ${result.error}` }
+      );
+    } catch (err) {
+      setMessage({ ok: false, text: describeActionError(err) });
+    } finally {
+      setTesting(false);
+    }
   };
 
   const { text, image } = initial.active;

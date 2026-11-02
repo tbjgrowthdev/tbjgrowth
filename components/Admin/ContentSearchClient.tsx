@@ -5,6 +5,7 @@ import Link from "next/link";
 import { searchAllContent } from "@/app/(admin)/actions/content-search";
 import type { SearchResultItem, SearchFilters, ContentKind } from "@/lib/content-search";
 import { Search, X, FileText, FileEdit, Briefcase, LayoutGrid, AlertTriangle } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const TYPE_LABEL: Record<ContentKind, { label: string; icon: typeof FileText }> = {
   POST: { label: "Post", icon: FileEdit },
@@ -21,13 +22,20 @@ export default function ContentSearchClient({ facets }: { facets: { categories: 
   const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
   const [results, setResults] = useState<SearchResultItem[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(async () => {
       setLoading(true);
-      const data = await searchAllContent(filters);
-      setResults(data);
-      setLoading(false);
+      try {
+        setActionError(null);
+        const data = await searchAllContent(filters);
+        setResults(data);
+      } catch (err) {
+        setActionError(describeActionError(err, "Search failed"));
+      } finally {
+        setLoading(false);
+      }
     }, 250);
     return () => clearTimeout(timeout);
   }, [filters]);
@@ -41,6 +49,7 @@ export default function ContentSearchClient({ facets }: { facets: { categories: 
 
   return (
     <div className="space-y-6">
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
       <div className="bg-card p-4 rounded-lg border border-border space-y-4">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-caption" />

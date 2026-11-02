@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createPipelineRunAction } from "@/app/(admin)/actions/content-pipeline";
 import type { Brief, PipelineContentType } from "@/lib/content-pipeline/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 export default function BriefForm({ initialTopic, initialContentType, initialNotes }: { initialTopic?: string; initialContentType?: PipelineContentType; initialNotes?: string } = {}) {
   const router = useRouter();
@@ -23,23 +24,28 @@ export default function BriefForm({ initialTopic, initialContentType, initialNot
 
   const submit = async () => {
     setBusy(true);
-    setError(null);
-    const brief: Brief = {
-      contentType,
-      topic,
-      goal,
-      audience,
-      tone,
-      notes: notes || undefined,
-      ...(contentType === "CASE_STUDY" ? { clientName, industry, serviceType, resultsHint: resultsHint || undefined } : {}),
-    };
-    const result = await createPipelineRunAction(brief);
-    setBusy(false);
-    if (!result.success || !result.data) {
-      setError(!result.success ? result.error : "Failed to create pipeline run");
-      return;
+    try {
+      setError(null);
+      const brief: Brief = {
+        contentType,
+        topic,
+        goal,
+        audience,
+        tone,
+        notes: notes || undefined,
+        ...(contentType === "CASE_STUDY" ? { clientName, industry, serviceType, resultsHint: resultsHint || undefined } : {}),
+      };
+      const result = await createPipelineRunAction(brief);
+      if (!result.success || !result.data) {
+        setError(!result.success ? result.error : "Failed to create pipeline run");
+        return;
+      }
+      router.push(`/admin/ai-pipeline/${result.data.id}`);
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
     }
-    router.push(`/admin/ai-pipeline/${result.data.id}`);
   };
 
   const canSubmit = topic.trim() && goal.trim() && audience.trim() && (contentType === "POST" || (clientName.trim() && industry.trim() && serviceType.trim()));

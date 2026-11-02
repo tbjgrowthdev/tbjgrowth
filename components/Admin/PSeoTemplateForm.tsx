@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPSeoTemplate, updatePSeoTemplate, deletePSeoTemplate } from "@/app/(admin)/actions/programmatic-seo";
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type InitialData = Partial<{
   id: string;
@@ -86,12 +87,17 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
     if (!initialData?.id) return;
     if (!confirm("Delete this template, every dataset uploaded to it, and every page it generated? This can't be undone.")) return;
     setIsDeleting(true);
-    const result = await deletePSeoTemplate(initialData.id);
-    setIsDeleting(false);
-    if (result.success) {
-      router.push("/admin/programmatic-seo");
-    } else {
-      setError(result.error);
+    try {
+      const result = await deletePSeoTemplate(initialData.id);
+      if (result.success) {
+        router.push("/admin/programmatic-seo");
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setIsDeleting(false);
     }
   };
 

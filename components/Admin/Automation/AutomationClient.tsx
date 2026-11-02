@@ -14,6 +14,7 @@ import type { ContentType } from "@/lib/generated/prisma/client";
 import RuleFormModal from "./RuleFormModal";
 import RunsPanel from "./RunsPanel";
 import SocialDraftsPanel from "./SocialDraftsPanel";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Rule = Awaited<ReturnType<typeof listAutomationRulesAction>>[number];
 type RunsProp = Parameters<typeof RunsPanel>[0]["initialRuns"];
@@ -37,10 +38,15 @@ function TestRunRow({ rule }: { rule: Rule }) {
   const run = async () => {
     if (!contentId.trim()) return;
     setRunning(true);
-    setStatus(null);
-    const result = await runAutomationRuleManuallyAction(rule.id, contentType, contentId.trim());
-    setRunning(false);
-    setStatus(result.success ? "Started — check the Runs tab." : result.error);
+    try {
+      setStatus(null);
+      const result = await runAutomationRuleManuallyAction(rule.id, contentType, contentId.trim());
+      setStatus(result.success ? "Started — check the Runs tab." : result.error);
+    } catch (err) {
+      setStatus(describeActionError(err));
+    } finally {
+      setRunning(false);
+    }
   };
 
   return (

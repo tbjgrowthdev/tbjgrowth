@@ -11,6 +11,7 @@ import {
   listPSeoPages,
   overridePSeoPage,
 } from "@/app/(admin)/actions/programmatic-seo";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Dataset = {
   id: string;
@@ -56,18 +57,23 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-    setUploadError(null);
-    setUploadWarnings([]);
-    const result = await uploadPSeoDataset(templateId, uploadName.trim() || "Untitled dataset", csvText);
-    setUploading(false);
-    if (!result.success) {
-      setUploadError(result.error);
-      return;
+    try {
+      setUploadError(null);
+      setUploadWarnings([]);
+      const result = await uploadPSeoDataset(templateId, uploadName.trim() || "Untitled dataset", csvText);
+      if (!result.success) {
+        setUploadError(result.error);
+        return;
+      }
+      setUploadWarnings(result.data.warnings);
+      setUploadName("");
+      setCsvText("");
+      router.refresh();
+    } catch (err) {
+      setUploadError(describeActionError(err, "Untitled dataset"));
+    } finally {
+      setUploading(false);
     }
-    setUploadWarnings(result.data.warnings);
-    setUploadName("");
-    setCsvText("");
-    router.refresh();
   };
 
   const handleGenerate = async (datasetId: string) => {
@@ -105,9 +111,14 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
 
   const handleOverride = async (pageId: string, datasetId: string) => {
     setBusyPageId(pageId);
-    const result = await overridePSeoPage(pageId);
-    setBusyPageId(null);
-    if (result.success) await loadPages(datasetId);
+    try {
+      const result = await overridePSeoPage(pageId);
+      if (result.success) await loadPages(datasetId);
+    } catch (err) {
+      setGenSummary(describeActionError(err, "Override failed"));
+    } finally {
+      setBusyPageId(null);
+    }
   };
 
   const handleDeleteDataset = async (datasetId: string) => {

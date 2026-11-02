@@ -12,6 +12,7 @@ import {
 } from "@/app/(admin)/actions/integrations";
 import type { getProviderFieldDefsAction } from "@/app/(admin)/actions/integrations";
 import type { IntegrationProvider } from "@/lib/integrations/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type StatusView = Awaited<ReturnType<typeof listIntegrationStatusesAction>>[number];
 type FieldDef = Awaited<ReturnType<typeof getProviderFieldDefsAction>>[number];
@@ -45,8 +46,14 @@ function ConnectForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await onSave(values);
-    setSaving(false);
+    try {
+      await onSave(values);
+    } catch (err) {
+      // handleSave (the parent) reports its own errors; this only guarantees the button resets.
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -105,32 +112,46 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
 
   const handleSave = async (provider: IntegrationProvider, credentials: Record<string, string>) => {
     setError(null);
-    const result = await saveIntegrationCredentialsAction(provider, credentials);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      const result = await saveIntegrationCredentialsAction(provider, credentials);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setExpandedId(null);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Failed to save credentials"));
     }
-    setExpandedId(null);
-    router.refresh();
   };
 
   const handleTest = async (provider: IntegrationProvider) => {
     setBusyId(provider);
-    setError(null);
-    const result = await testIntegrationAction(provider);
-    setBusyId(null);
-    if (!result.success) setError(result.error);
-    router.refresh();
+    try {
+      setError(null);
+      const result = await testIntegrationAction(provider);
+      if (!result.success) setError(result.error);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const handleDisconnect = async (provider: IntegrationProvider) => {
     if (!confirm("Disconnect this integration? Stored credentials will be deleted.")) return;
     setBusyId(provider);
-    setError(null);
-    const result = await disconnectIntegrationAction(provider);
-    setBusyId(null);
-    if (!result.success) setError(result.error);
-    router.refresh();
+    try {
+      setError(null);
+      const result = await disconnectIntegrationAction(provider);
+      if (!result.success) setError(result.error);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (

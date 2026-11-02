@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createRedirect, updateRedirect, deleteRedirect, bulkImportRedirects } from "@/app/(admin)/actions/redirects";
 import { AlertCircle, AlertTriangle, CheckCircle2, Plus, Upload, Search, Pencil, X, Save, Link2, RotateCw, Copy } from "lucide-react";
 import DeleteButton from "./DeleteButton";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type RedirectItem = {
   id: string;
@@ -60,27 +61,37 @@ export default function RedirectsManager({ redirects, diagnostics }: { redirects
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
+    try {
+      setError(null);
 
-    const result = await createRedirect({ source, destination: statusCode === 410 ? undefined : destination, statusCode });
-    if (result.success) {
-      setSource("");
-      setDestination("");
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to create redirect");
+      const result = await createRedirect({ source, destination: statusCode === 410 ? undefined : destination, statusCode });
+      if (result.success) {
+        setSource("");
+        setDestination("");
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to create redirect");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to create redirect"));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleImport = async () => {
     setIsImporting(true);
-    setImportResult(null);
-    const result = await bulkImportRedirects(csvText);
-    setImportResult(`Imported ${result.created}, skipped ${result.skipped}${result.errors.length ? `, ${result.errors.length} errors` : ""}.`);
-    setCsvText("");
-    router.refresh();
-    setIsImporting(false);
+    try {
+      setImportResult(null);
+      const result = await bulkImportRedirects(csvText);
+      setImportResult(`Imported ${result.created}, skipped ${result.skipped}${result.errors.length ? `, ${result.errors.length} errors` : ""}.`);
+      setCsvText("");
+      router.refresh();
+    } catch (err) {
+      setImportResult(describeActionError(err));
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const startEdit = (r: RedirectItem) => {
@@ -96,18 +107,23 @@ export default function RedirectsManager({ redirects, diagnostics }: { redirects
   const saveEdit = async () => {
     if (!editingId) return;
     setIsSaving(true);
-    const result = await updateRedirect(editingId, {
-      source: editSource,
-      destination: editStatusCode === 410 ? undefined : editDestination,
-      statusCode: editStatusCode,
-    });
-    if (result.success) {
-      setEditingId(null);
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to update redirect");
+    try {
+      const result = await updateRedirect(editingId, {
+        source: editSource,
+        destination: editStatusCode === 410 ? undefined : editDestination,
+        statusCode: editStatusCode,
+      });
+      if (result.success) {
+        setEditingId(null);
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to update redirect");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to update redirect"));
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   return (

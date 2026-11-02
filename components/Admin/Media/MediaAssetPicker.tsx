@@ -5,6 +5,7 @@ import { X, Search } from "lucide-react";
 import { getMediaAssets } from "@/app/(admin)/actions/media";
 import MediaGrid from "./MediaGrid";
 import type { MediaAsset } from "@/lib/generated/prisma/client";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 interface MediaAssetPickerProps {
   onClose: () => void;
@@ -15,13 +16,20 @@ export default function MediaAssetPicker({ onClose, onSelect }: MediaAssetPicker
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(async () => {
       setLoading(true);
-      const data = await getMediaAssets({ search, sortBy: "createdAt", sortOrder: "desc" });
-      setAssets(data);
-      setLoading(false);
+      try {
+        setActionError(null);
+        const data = await getMediaAssets({ search, sortBy: "createdAt", sortOrder: "desc" });
+        setAssets(data);
+      } catch (err) {
+        setActionError(describeActionError(err, "Could not load the media library"));
+      } finally {
+        setLoading(false);
+      }
     }, 300);
     return () => clearTimeout(timeout);
   }, [search]);
@@ -47,6 +55,7 @@ export default function MediaAssetPicker({ onClose, onSelect }: MediaAssetPicker
           />
         </div>
 
+        {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
         {loading ? (
           <p className="text-sm text-caption text-center py-8">Loading...</p>
         ) : (

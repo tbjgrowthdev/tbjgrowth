@@ -18,6 +18,7 @@ import {
   type RuleConditions,
 } from "@/lib/automation/types";
 import type { ContentType, PerformanceFeedbackSeverity } from "@/lib/generated/prisma/client";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const CONTENT_TYPES: ContentType[] = ["POST", "PAGE", "CASE_STUDY"];
 const SEVERITIES: PerformanceFeedbackSeverity[] = ["HIGH", "MEDIUM", "LOW"];
@@ -108,22 +109,27 @@ export default function RuleFormModal({ existing, onClose, onSaved }: { existing
       return;
     }
     setSaving(true);
-    setError(null);
-    const input = {
-      name: name.trim(),
-      description: description.trim() || undefined,
-      event,
-      enabled,
-      conditions: { contentTypes: contentTypes.length ? contentTypes : undefined, severities: isSignalEvent && severities.length ? severities : undefined } as RuleConditions,
-      actions: steps,
-    };
-    const result = existing ? await updateAutomationRuleAction(existing.id, input) : await createAutomationRuleAction(input);
-    setSaving(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      setError(null);
+      const input = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        event,
+        enabled,
+        conditions: { contentTypes: contentTypes.length ? contentTypes : undefined, severities: isSignalEvent && severities.length ? severities : undefined } as RuleConditions,
+        actions: steps,
+      };
+      const result = existing ? await updateAutomationRuleAction(existing.id, input) : await createAutomationRuleAction(input);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      onSaved();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setSaving(false);
     }
-    onSaved();
   };
 
   return (

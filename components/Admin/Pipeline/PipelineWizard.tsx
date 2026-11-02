@@ -1,19 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Circle, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 import {
-  advanceDraftAction,
-  advanceImageAction,
-  advanceInternalLinksAction,
-  advanceOutlineAction,
-  advanceQaAction,
-  advanceResearchAction,
-  advanceSchemaAction,
-  advanceSearchIntentAction,
-  advanceSeoAction,
   applyInternalLinksAction,
   approveRunAction,
   attachGeneratedImageAction,
@@ -24,10 +15,21 @@ import {
   skipImageStageAction,
   updatePendingImageAltTextAction,
 } from "@/app/(admin)/actions/content-pipeline";
-import { PIPELINE_STAGE_ORDER, STAGE_LABEL, nextStage } from "@/lib/content-pipeline/types";
+import { PIPELINE_STAGE_ORDER, STAGE_LABEL, STALE_JOB_MS, isJobStale, nextStage } from "@/lib/content-pipeline/types";
 import type { Brief, Research, SearchIntent, Outline, QaReport, QaCheck, LinkSuggestion, GeneratedImage } from "@/lib/content-pipeline/types";
+import { describeActionError, requestPipelineStage } from "@/lib/admin/action-errors";
 
 type RunAndContent = NonNullable<Awaited<ReturnType<typeof getPipelineRunAction>>> & { jobs: Awaited<ReturnType<typeof getJobsForRunAction>> };
+type Job = RunAndContent["jobs"][number];
+type ActionResult = { success: boolean; error?: string };
+type Act = (fn: () => Promise<ActionResult>, fallback?: string) => Promise<boolean>;
+
+const POLL_MS = 5_000;
+
+const isRunning = (job: Job) => (job.status === "PROCESSING" || job.status === "QUEUED") && !isJobStale(job);
+const attemptKey = (job: Job) => `${job.id}@${job.startedAt ? new Date(job.startedAt).getTime() : 0}`;
+const stageName = (stage: string) => STAGE_LABEL[stage as keyof typeof STAGE_LABEL] ?? stage;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function parse<T>(value: string | null | undefined): T | null {
   if (!value) return null;
@@ -38,23 +40,159 @@ function parse<T>(value: string | null | undefined): T | null {
   }
 }
 
-// INTERNAL_LINKS is deliberately not here — it gets its own
-// InternalLinksReviewCard with a bundled generate/regenerate trigger,
-// same reason IMAGE isn't here either (see that card's own comment).
-const STAGE_ACTIONS: Record<string, (runId: string) => Promise<{ success: boolean; error?: string }>> = {
-  SEARCH_INTENT: advanceSearchIntentAction,
-  RESEARCH: advanceResearchAction,
-  OUTLINE: advanceOutlineAction,
-  DRAFT: advanceDraftAction,
-  SEO: advanceSeoAction,
-  SCHEMA: advanceSchemaAction,
-  QA: advanceQaAction,
-};
+// Stages the generic "whatever comes next" button can run. INTERNAL_LINKS
+// is deliberately not here — it gets its own InternalLinksReviewCard with a
+// bundled generate/regenerate trigger, same reason IMAGE isn't here either
+// (see that card's own comment). All of these (plus IMAGE and
+// INTERNAL_LINKS) run through the streaming stage endpoint — see runAiStage.
+const GENERIC_AI_STAGES = new Set(["SEARCH_INTENT", "RESEARCH", "OUTLINE", "DRAFT", "SEO", "SCHEMA", "QA"]);
 
 export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Shown while waiting on a stage whose request was lost but whose job may still be running.
+  const [notice, setNotice] = useState<string | null>(null);
+  const busyRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const setBusyBoth = (value: boolean) => {
+    busyRef.current = value;
+    setBusy(value);
+  };
+
+  // Non-AI actions (approve, attach, skip, publish...). A rejected Server
+  // Action (dropped connection, 5xx) must still clear the busy state.
+  const act: Act = async (fn, fallback = "Something went wrong") => {
+    setBusyBoth(true);
+    setError(null);
+    try {
+      const result = await fn();
+      if (!result.success) {
+        setError(result.error || fallback);
+        return false;
+      }
+      router.refresh();
+      return true;
+    } catch (err) {
+      setError(describeActionError(err, fallback));
+      return false;
+    } finally {
+      setBusyBoth(false);
+    }
+  };
+
+  /**
+   * Polls this run's jobs until nothing is running for `stage`, then
+   * reports how the attempt ended. `known` holds the job attempts that
+   * existed before this attempt started, so an old FAILED/COMPLETED row
+   * isn't mistaken for this attempt's outcome.
+   */
+  const watchStage = useCallback(
+    async (stage: string, known: Set<string>, reason: string) => {
+      const label = stageName(stage);
+      setNotice(`${reason} Checking whether ${label} is still running on the server…`);
+      const deadline = Date.now() + STALE_JOB_MS + 60_000;
+      let quietPolls = 0;
+      try {
+        while (mountedRef.current && Date.now() < deadline) {
+          await sleep(POLL_MS);
+          if (!mountedRef.current) return;
+          let latest: Job[];
+          try {
+            latest = await getJobsForRunAction(run.id);
+          } catch {
+            setNotice(`Still can't reach the server. Retrying every ${POLL_MS / 1000}s…`);
+            continue;
+          }
+          const stageJobs = latest.filter((j) => j.stage === stage);
+          if (stageJobs.some(isRunning)) {
+            quietPolls = 0;
+            setNotice(`${label} is still running on the server. This page will update when it finishes.`);
+            continue;
+          }
+          // Two quiet polls in a row: IMAGE runs two jobs back to back (image, then alt text).
+          if (++quietPolls < 2) continue;
+
+          const attempts = stageJobs.filter((j) => !known.has(attemptKey(j)));
+          router.refresh();
+          if (attempts.some((j) => j.status === "COMPLETED")) {
+            setError(null);
+          } else {
+            const failed = attempts.find((j) => j.status === "FAILED");
+            setError(failed ? `${label} failed: ${failed.error || "unknown error"}` : `${reason} ${label} never started on the server — try again.`);
+          }
+          return;
+        }
+        if (mountedRef.current) setError(`${label} still hasn't reported a result. Reload this page in a few minutes to check.`);
+      } finally {
+        setNotice(null);
+      }
+    },
+    [run.id, router]
+  );
+
+  // Every AI stage goes through the streaming endpoint, which keeps the
+  // connection alive during long AI calls. If the connection drops anyway,
+  // the job keeps going on the server, so poll for its result rather than
+  // reporting a failure that may not have happened.
+  const runAiStage = async (stage: string) => {
+    if (busyRef.current) return;
+    setBusyBoth(true);
+    setError(null);
+    const known = new Set(jobs.filter((j) => !isRunning(j)).map(attemptKey));
+    try {
+      const result = await requestPipelineStage(run.id, stage);
+      if (result.success) {
+        router.refresh();
+        return;
+      }
+      if (result.connectionLost) {
+        await watchStage(stage, known, result.error || "Lost connection.");
+        return;
+      }
+      // A refusal can mean another tab/click is already running this stage — wait for that one.
+      let latest: Job[] = [];
+      try {
+        latest = await getJobsForRunAction(run.id);
+      } catch {
+        // fall through to showing the error
+      }
+      if (latest.some((j) => j.stage === stage && isRunning(j))) {
+        await watchStage(stage, known, "");
+        return;
+      }
+      setError(result.error || `${stageName(stage)} failed`);
+      router.refresh(); // shows the FAILED job row and its Retry label
+    } finally {
+      setBusyBoth(false);
+    }
+  };
+
+  // Opening (or reloading) the page while a stage is still running on the
+  // server: show it as running and pick up the result, instead of offering
+  // a button that would only be refused.
+  useEffect(() => {
+    const running = jobs.find(isRunning);
+    if (!running) return;
+    const known = new Set(jobs.filter((j) => !isRunning(j)).map(attemptKey));
+    const timer = setTimeout(() => {
+      if (busyRef.current) return;
+      busyRef.current = true;
+      setBusy(true);
+      watchStage(running.stage, known, "").finally(() => {
+        busyRef.current = false;
+        setBusy(false);
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [jobs, watchStage]);
 
   const brief = parse<Brief>(run.brief);
   const searchIntent = parse<SearchIntent>(run.searchIntent);
@@ -67,18 +205,6 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
   const upcoming = nextStage(run.stage);
   const currentIndex = PIPELINE_STAGE_ORDER.indexOf(run.stage);
   const pendingJob = upcoming ? jobs.find((j) => j.stage === upcoming) : undefined;
-
-  const runStage = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
-    setBusy(true);
-    setError(null);
-    const result = await fn();
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Something went wrong");
-      return;
-    }
-    router.refresh();
-  };
 
   const editorHref = run.contentId ? (run.contentType === "POST" ? `/admin/posts/${run.contentId}` : `/admin/cases/${run.contentId}`) : null;
 
@@ -98,8 +224,15 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
 
       <Stepper currentIndex={currentIndex} />
 
+      {notice && (
+        <div role="status" className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-3">
+          <Loader2 size={16} className="animate-spin shrink-0" />
+          {notice}
+        </div>
+      )}
+
       {error && (
-        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3">
+        <div role="alert" className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3">
           <AlertTriangle size={16} />
           {error}
         </div>
@@ -187,16 +320,16 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
       )}
 
       {generatedImage && (
-        <ImageReviewCard runId={run.id} image={generatedImage} busy={busy} setBusy={setBusy} setError={setError} onDone={() => router.refresh()} />
+        <ImageReviewCard runId={run.id} image={generatedImage} busy={busy} act={act} onRegenerate={() => runAiStage("IMAGE")} setError={setError} onDone={() => router.refresh()} />
       )}
 
       {run.stage === "DRAFT" && !generatedImage && (
         <div className="flex gap-2">
-          <ActionBar busy={busy} label="Generate Image" onClick={() => runStage(() => advanceImageAction(run.id))} />
+          <ActionBar busy={busy} label="Generate Image" onClick={() => runAiStage("IMAGE")} />
           <button
             type="button"
             disabled={busy}
-            onClick={() => runStage(() => skipImageStageAction(run.id))}
+            onClick={() => act(() => skipImageStageAction(run.id))}
             className="px-5 py-3 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm whitespace-nowrap"
           >
             Skip
@@ -217,7 +350,8 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
           runId={run.id}
           suggestions={internalLinks}
           busy={busy}
-          setBusy={setBusy}
+          act={act}
+          onGenerate={() => runAiStage("INTERNAL_LINKS")}
           setError={setError}
           onDone={() => router.refresh()}
         />
@@ -287,7 +421,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
       )}
 
       {/* Action area for whatever comes next */}
-      {upcoming && upcoming !== "PUBLISHED" && run.stage !== "APPROVAL" && STAGE_ACTIONS[upcoming] && (
+      {upcoming && upcoming !== "PUBLISHED" && run.stage !== "APPROVAL" && GENERIC_AI_STAGES.has(upcoming) && (
         <>
           {pendingJob?.status === "FAILED" && pendingJob.error && (
             <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3">
@@ -300,16 +434,16 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
           <ActionBar
             busy={busy}
             label={pendingJob?.status === "FAILED" ? `Retry ${STAGE_LABEL[upcoming]}` : `Generate ${STAGE_LABEL[upcoming]}`}
-            onClick={() => runStage(() => STAGE_ACTIONS[upcoming](run.id))}
+            onClick={() => runAiStage(upcoming)}
           />
         </>
       )}
 
       {run.stage === "QA" && (
-        <ActionBar busy={busy} label="Approve for publish" onClick={() => runStage(() => approveRunAction(run.id))} />
+        <ActionBar busy={busy} label="Approve for publish" onClick={() => act(() => approveRunAction(run.id))} />
       )}
 
-      {run.stage === "APPROVAL" && <PublishPanel runId={run.id} busy={busy} setBusy={setBusy} setError={setError} onDone={() => router.refresh()} />}
+      {run.stage === "APPROVAL" && <PublishPanel runId={run.id} busy={busy} act={act} />}
 
       {run.stage === "PUBLISHED" && (
         <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg px-4 py-3">
@@ -455,41 +589,37 @@ function ImageReviewCard({
   runId,
   image,
   busy,
-  setBusy,
+  act,
+  onRegenerate,
   setError,
   onDone,
 }: {
   runId: string;
   image: GeneratedImage;
   busy: boolean;
-  setBusy: (v: boolean) => void;
+  act: Act;
+  onRegenerate: () => void;
   setError: (v: string | null) => void;
   onDone: () => void;
 }) {
   const [altText, setAltText] = useState(image.altText);
   const [savingAlt, setSavingAlt] = useState(false);
 
-  const act = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
-    setBusy(true);
-    setError(null);
-    const result = await fn();
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Something went wrong");
-      return;
-    }
-    onDone();
-  };
-
   const saveAltText = async () => {
     setSavingAlt(true);
-    const result = await updatePendingImageAltTextAction(runId, altText);
-    setSavingAlt(false);
-    if (!result.success) {
-      setError(result.error || "Failed to save alt text");
-      return;
+    setError(null);
+    try {
+      const result = await updatePendingImageAltTextAction(runId, altText);
+      if (!result.success) {
+        setError(result.error || "Failed to save alt text");
+        return;
+      }
+      onDone();
+    } catch (err) {
+      setError(describeActionError(err, "Failed to save alt text"));
+    } finally {
+      setSavingAlt(false);
     }
-    onDone();
   };
 
   const altTextChanged = altText !== image.altText;
@@ -546,7 +676,7 @@ function ImageReviewCard({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => act(() => advanceImageAction(runId))}
+                onClick={onRegenerate}
                 className="px-3 py-1.5 border border-border rounded-md hover:bg-background disabled:opacity-50 text-xs"
               >
                 Regenerate
@@ -577,54 +707,41 @@ function InternalLinksReviewCard({
   runId,
   suggestions,
   busy,
-  setBusy,
+  act,
+  onGenerate,
   setError,
   onDone,
 }: {
   runId: string;
   suggestions: LinkSuggestion[] | null;
   busy: boolean;
-  setBusy: (v: boolean) => void;
+  act: Act;
+  onGenerate: () => void;
   setError: (v: string | null) => void;
   onDone: () => void;
 }) {
   const [decidingId, setDecidingId] = useState<string | null>(null);
 
-  const generate = async () => {
-    setBusy(true);
-    setError(null);
-    const result = await advanceInternalLinksAction(runId);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to generate link suggestions");
-      return;
-    }
-    onDone();
-  };
+  const generate = onGenerate;
 
   const decide = async (suggestionId: string, decision: "approved" | "rejected") => {
     setDecidingId(suggestionId);
     setError(null);
-    const result = await decideLinkSuggestionAction(runId, suggestionId, decision);
-    setDecidingId(null);
-    if (!result.success) {
-      setError(result.error || "Failed to record decision");
-      return;
+    try {
+      const result = await decideLinkSuggestionAction(runId, suggestionId, decision);
+      if (!result.success) {
+        setError(result.error || "Failed to record decision");
+        return;
+      }
+      onDone();
+    } catch (err) {
+      setError(describeActionError(err, "Failed to record decision"));
+    } finally {
+      setDecidingId(null);
     }
-    onDone();
   };
 
-  const apply = async () => {
-    setBusy(true);
-    setError(null);
-    const result = await applyInternalLinksAction(runId);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to apply internal links");
-      return;
-    }
-    onDone();
-  };
+  const apply = () => act(() => applyInternalLinksAction(runId), "Failed to apply internal links");
 
   if (!suggestions) {
     return <ActionBar busy={busy} label="Generate Internal Link Suggestions" onClick={generate} />;
@@ -707,32 +824,19 @@ function InternalLinksReviewCard({
 function PublishPanel({
   runId,
   busy,
-  setBusy,
-  setError,
-  onDone,
+  act: runAct,
 }: {
   runId: string;
   busy: boolean;
-  setBusy: (v: boolean) => void;
-  setError: (v: string | null) => void;
-  onDone: () => void;
+  act: Act;
 }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("09:00");
   const [timezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [showSchedule, setShowSchedule] = useState(false);
 
-  const act = async (mode: "publish" | "submit" | "schedule") => {
-    setBusy(true);
-    setError(null);
-    const result = await publishRunAction(runId, mode, mode === "schedule" ? { date, time, timezone } : undefined);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to publish");
-      return;
-    }
-    onDone();
-  };
+  const act = (mode: "publish" | "submit" | "schedule") =>
+    runAct(() => publishRunAction(runId, mode, mode === "schedule" ? { date, time, timezone } : undefined), "Failed to publish");
 
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-5 space-y-4">

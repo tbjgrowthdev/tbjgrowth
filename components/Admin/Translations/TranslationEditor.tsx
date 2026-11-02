@@ -10,6 +10,7 @@ import {
   deleteTranslation,
 } from "@/app/(admin)/actions/translations";
 import type { TranslatableKind } from "@/lib/translation";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const LONG_TEXT_FIELDS = new Set(["content", "excerpt", "detailIntro", "ogDescription", "twitterDescription"]);
 
@@ -74,50 +75,65 @@ export default function TranslationEditor({
 
   const handleSave = async () => {
     setIsSaving(true);
-    setError(null);
-    setMessage(null);
-    const result = await saveTranslationDraft(contentType, contentId, locale, { ...values, expectedUpdatedAt: updatedAt });
-    if (result.success && result.translation) {
-      setUpdatedAt(result.translation.updatedAt);
-      setStatus(result.translation.status);
-      setMessage("Draft saved.");
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to save draft");
+    try {
+      setError(null);
+      setMessage(null);
+      const result = await saveTranslationDraft(contentType, contentId, locale, { ...values, expectedUpdatedAt: updatedAt });
+      if (result.success && result.translation) {
+        setUpdatedAt(result.translation.updatedAt);
+        setStatus(result.translation.status);
+        setMessage("Draft saved.");
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to save draft");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to save draft"));
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const handlePublish = async () => {
     setIsPublishing(true);
-    setError(null);
-    setMessage(null);
-    const result = await publishTranslation(contentType, contentId, locale);
-    if (result.success && result.translation) {
-      setStatus(result.translation.status);
-      setUpdatedAt(result.translation.updatedAt);
-      setMessage("Published — live on the site now.");
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to publish");
+    try {
+      setError(null);
+      setMessage(null);
+      const result = await publishTranslation(contentType, contentId, locale);
+      if (result.success && result.translation) {
+        setStatus(result.translation.status);
+        setUpdatedAt(result.translation.updatedAt);
+        setMessage("Published — live on the site now.");
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to publish");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to publish"));
+    } finally {
+      setIsPublishing(false);
     }
-    setIsPublishing(false);
   };
 
   const handleUnpublish = async () => {
     setIsPublishing(true);
-    setError(null);
-    setMessage(null);
-    const result = await unpublishTranslation(contentType, contentId, locale);
-    if (result.success && result.translation) {
-      setStatus(result.translation.status);
-      setUpdatedAt(result.translation.updatedAt);
-      setMessage("Unpublished — reverted to draft, no longer live.");
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to unpublish");
+    try {
+      setError(null);
+      setMessage(null);
+      const result = await unpublishTranslation(contentType, contentId, locale);
+      if (result.success && result.translation) {
+        setStatus(result.translation.status);
+        setUpdatedAt(result.translation.updatedAt);
+        setMessage("Unpublished — reverted to draft, no longer live.");
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to unpublish");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to unpublish"));
+    } finally {
+      setIsPublishing(false);
     }
-    setIsPublishing(false);
   };
 
   const handleDelete = async () => {
@@ -125,12 +141,18 @@ export default function TranslationEditor({
     if (!window.confirm("Delete this translation entirely? This can't be undone.")) return;
     setIsDeleting(true);
     setError(null);
-    const result = await deleteTranslation(contentType, contentId, locale);
-    if (result.success) {
-      router.push("/admin/translations");
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to delete");
+    try {
+      const result = await deleteTranslation(contentType, contentId, locale);
+      if (result.success) {
+        // Leaves isDeleting on while navigating away, so the button can't be clicked twice.
+        router.push("/admin/translations");
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to delete");
+        setIsDeleting(false);
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to delete"));
       setIsDeleting(false);
     }
   };

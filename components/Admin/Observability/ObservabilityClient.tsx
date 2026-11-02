@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Database, Server, Mail, Webhook, Plug, Bot, Send } from "lucide-react";
 import { getObservabilityDataAction } from "@/app/(admin)/actions/observability";
 import type { ObservabilityData } from "@/lib/observability/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const WINDOW_LABEL: Record<number, string> = { 24: "Last 24h", 168: "Last 7d", 720: "Last 30d" };
 
@@ -15,13 +16,20 @@ export default function ObservabilityClient({ initialData, initialHours }: { ini
   const [data, setData] = useState(initialData);
   const [hours, setHours] = useState(initialHours);
   const [loading, setLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   async function changeWindow(next: number) {
     setHours(next);
     setLoading(true);
-    const result = await getObservabilityDataAction(next);
-    setData(result);
-    setLoading(false);
+    try {
+      setActionError(null);
+      const result = await getObservabilityDataAction(next);
+      setData(result);
+    } catch (err) {
+      setActionError(describeActionError(err, "Could not load that time window"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (!data) {
@@ -60,6 +68,8 @@ export default function ObservabilityClient({ initialData, initialHours }: { ini
           ))}
         </div>
       </div>
+
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
 
       {/* Application */}
       <section className="space-y-4">

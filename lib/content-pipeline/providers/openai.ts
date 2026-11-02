@@ -1,5 +1,6 @@
 import type { AiProvider } from "./types";
 import { AiProviderError } from "./types";
+import { providerFetch, textRequestTimeoutMs } from "./http";
 import { redactSecret } from "./catalog";
 
 const API_URL = "https://api.openai.com/v1/chat/completions";
@@ -15,7 +16,7 @@ export function createOpenAiProvider(apiKey: string | null, modelOverride?: stri
     async complete(system, userPrompt, maxTokens) {
       if (!apiKey) throw new AiProviderError("No OpenAI API key is configured (Settings → AI Provider, or OPENAI_API_KEY)");
 
-      const res = await fetch(API_URL, {
+      const call = await providerFetch("OpenAI API", API_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -32,14 +33,15 @@ export function createOpenAiProvider(apiKey: string | null, modelOverride?: stri
             { role: "user", content: userPrompt },
           ],
         }),
-      });
+      }, textRequestTimeoutMs());
+      const res = call.res;
 
       if (!res.ok) {
-        const errorText = await res.text();
+        const errorText = await call.text();
         throw new AiProviderError(`OpenAI API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
-      const data: { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } } = await res.json();
+      const data: { choices?: { message?: { content?: string } }[]; usage?: { prompt_tokens?: number; completion_tokens?: number } } = await call.json();
       const text = data?.choices?.[0]?.message?.content;
       if (typeof text !== "string") {
         throw new AiProviderError("OpenAI API response had no text content");

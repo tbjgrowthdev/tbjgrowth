@@ -10,6 +10,7 @@ import {
   scanAndUpsertPerformanceFeedbackAction,
 } from "@/app/(admin)/actions/seo-performance-feedback";
 import { SIGNAL_LABEL, type PerformanceFeedbackSeverity, type PerformanceSignal } from "@/lib/seo-performance-feedback/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Row = Awaited<ReturnType<typeof listPerformanceFeedbackAction>>[number];
 
@@ -54,26 +55,36 @@ export default function PerformanceFeedbackListClient({ rows }: { rows: Row[] })
 
   const scan = async () => {
     setScanning(true);
-    setError(null);
-    const result = await scanAndUpsertPerformanceFeedbackAction();
-    setScanning(false);
-    if (!result.success) {
-      setError(result.error || "Scan failed");
-      return;
+    try {
+      setError(null);
+      const result = await scanAndUpsertPerformanceFeedbackAction();
+      if (!result.success) {
+        setError(result.error || "Scan failed");
+        return;
+      }
+      setLastResult(result.data);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Scan failed"));
+    } finally {
+      setScanning(false);
     }
-    setLastResult(result.data);
-    router.refresh();
   };
 
   const dismiss = async (id: string) => {
     setBusyId(id);
-    const result = await dismissPerformanceFeedbackAction(id);
-    setBusyId(null);
-    if (!result.success) {
-      setError(result.error || "Something went wrong");
-      return;
+    try {
+      const result = await dismissPerformanceFeedbackAction(id);
+      if (!result.success) {
+        setError(result.error || "Something went wrong");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Something went wrong"));
+    } finally {
+      setBusyId(null);
     }
-    router.refresh();
   };
 
   return (

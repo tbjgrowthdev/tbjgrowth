@@ -3,7 +3,25 @@ import { requirePermission } from "@/lib/auth-guard";
 import { getActiveImageProvider, getActiveProvider } from "./providers";
 import type { AiUsage } from "./providers/types";
 import { estimateCostUsd } from "./pricing";
-import type { PipelineStage } from "@/lib/generated/prisma/client";
+import type { PipelineStage, Prisma } from "@/lib/generated/prisma/client";
+import { isJobStale, STALE_JOB_MS } from "./types";
+
+export { isJobStale, STALE_JOB_MS };
+
+export class JobInProgressError extends Error {}
+
+/** Marks abandoned PROCESSING/QUEUED jobs FAILED so they show a reason and can be retried. */
+async function expireStaleJobs(where: Prisma.AiJobWhereInput) {
+  const cutoff = new Date(Date.now() - STALE_JOB_MS);
+  await prisma.aiJob.updateMany({
+    where: { ...where, status: { in: ["PROCESSING", "QUEUED"] }, OR: [{ startedAt: null }, { startedAt: { lt: cutoff } }] },
+    data: {
+      status: "FAILED",
+      completedAt: new Date(),
+      error: "Interrupted: no result was recorded within 15 minutes (the request was probably dropped). Retry the stage.",
+    },
+  });
+}
 
 /**
  * Starts (or resumes) the tracked job for one (pipelineRun, stage) pair.
@@ -48,11 +66,23 @@ export async function startOrResumeJob(
     return { id: existing.id, alreadyCompleted: true };
   }
 
-  // FAILED -> this is a retry. QUEUED/PROCESSING with no completedAt means
-  // a previous request died mid-flight (crash, timeout) — also safe to
-  // resume as a fresh attempt, since nothing downstream was ever marked done.
-  const updated = await prisma.aiJob.update({
-    where: { id: existing.id },
+  // Another request is still working on this stage (a second tab, or a
+  // click after the first request's connection dropped). Starting a second
+  // AI call would double the cost, and for Draft could create two posts.
+  if (!isJobStale(existing)) {
+    throw new JobInProgressError("This stage is already running. Wait for it to finish — the page will pick up the result.");
+  }
+
+  // FAILED -> this is a retry. A stale QUEUED/PROCESSING job means a
+  // previous request died mid-flight — also safe to resume as a fresh
+  // attempt, since nothing downstream was ever marked done. The claim is a
+  // conditional update so two simultaneous clicks can't both start it.
+  const claimed = await prisma.aiJob.updateMany({
+    where: {
+      id: existing.id,
+      status: existing.status,
+      ...(existing.startedAt ? { startedAt: existing.startedAt } : { startedAt: null }),
+    },
     data: {
       status: "PROCESSING",
       retryCount: existing.status === "FAILED" ? existing.retryCount + 1 : existing.retryCount,
@@ -64,7 +94,10 @@ export async function startOrResumeJob(
       contentId: contentId ?? existing.contentId,
     },
   });
-  return { id: updated.id, alreadyCompleted: false };
+  if (claimed.count === 0) {
+    throw new JobInProgressError("This stage was just started by another request. Wait for it to finish — the page will pick up the result.");
+  }
+  return { id: existing.id, alreadyCompleted: false };
 }
 
 // Looks up the job's own recorded provider/model to price `usage` against
@@ -113,6 +146,11 @@ export async function failJob(jobId: string, error: string, usage?: AiUsage) {
  * automatically" stance as everywhere else in this schema.
  */
 async function createFreshJob(pipelineRunId: string, stage: PipelineStage, contentId: string | null, provider: { name: string; model: string }): Promise<{ id: string }> {
+  const running = await prisma.aiJob.findFirst({
+    where: { pipelineRunId, stage, status: { in: ["PROCESSING", "QUEUED"] }, startedAt: { gte: new Date(Date.now() - STALE_JOB_MS) } },
+    select: { id: true },
+  });
+  if (running) throw new JobInProgressError("This stage is already running. Wait for it to finish — the page will pick up the result.");
   const created = await prisma.aiJob.create({
     data: {
       idempotencyKey: `${pipelineRunId}:${stage}:${crypto.randomUUID()}`,
@@ -183,6 +221,7 @@ export async function createPerformanceFeedbackJob(performanceFeedbackId: string
 export async function getJobsForRun(pipelineRunId: string) {
   try {
     await requirePermission("CREATE");
+    await expireStaleJobs({ pipelineRunId });
     return await prisma.aiJob.findMany({ where: { pipelineRunId }, orderBy: { queuedAt: "asc" } });
   } catch (error) {
     console.error(`Failed to fetch jobs for run ${pipelineRunId}:`, error);
@@ -193,6 +232,7 @@ export async function getJobsForRun(pipelineRunId: string) {
 export async function getJobsForRefresh(contentRefreshId: string) {
   try {
     await requirePermission("EDIT");
+    await expireStaleJobs({ contentRefreshId });
     return await prisma.aiJob.findMany({ where: { contentRefreshId }, orderBy: { queuedAt: "asc" } });
   } catch (error) {
     console.error(`Failed to fetch jobs for refresh ${contentRefreshId}:`, error);
@@ -203,6 +243,7 @@ export async function getJobsForRefresh(contentRefreshId: string) {
 export async function getAllJobs() {
   try {
     await requirePermission("CREATE");
+    await expireStaleJobs({});
     return await prisma.aiJob.findMany({
       orderBy: { queuedAt: "desc" },
       take: 200,

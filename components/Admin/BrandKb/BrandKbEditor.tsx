@@ -7,6 +7,7 @@ import { CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import { activateBrandSectionVersionAction, getBrandSectionDetailAction, saveBrandSectionVersionAction } from "@/app/(admin)/actions/brand-kb";
 import { SECTION_HELP, SECTION_LABEL } from "@/lib/brand-kb/constants";
 import type { BrandSectionKey } from "@/lib/generated/prisma/client";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Detail = Awaited<ReturnType<typeof getBrandSectionDetailAction>>;
 type Section = NonNullable<NonNullable<Detail>["section"]>;
@@ -31,30 +32,40 @@ export default function BrandKbEditor({
 
   const save = async () => {
     setBusy(true);
-    setError(null);
-    setSaved(false);
-    const result = await saveBrandSectionVersionAction(sectionKey, { content, changeNote: changeNote || undefined });
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      setError(null);
+      setSaved(false);
+      const result = await saveBrandSectionVersionAction(sectionKey, { content, changeNote: changeNote || undefined });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setChangeNote("");
+      setSaved(true);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
     }
-    setChangeNote("");
-    setSaved(true);
-    router.refresh();
   };
 
   const rollback = async (versionId: string) => {
     if (!section) return;
     setBusy(true);
-    setError(null);
-    const result = await activateBrandSectionVersionAction(section.id, versionId);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      setError(null);
+      const result = await activateBrandSectionVersionAction(section.id, versionId);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
     }
-    router.refresh();
   };
 
   return (

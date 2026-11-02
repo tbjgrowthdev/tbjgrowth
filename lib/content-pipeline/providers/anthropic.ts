@@ -1,5 +1,6 @@
 import type { AiProvider } from "./types";
 import { AiProviderError } from "./types";
+import { providerFetch, textRequestTimeoutMs } from "./http";
 import { redactSecret } from "./catalog";
 
 // Raw fetch against the Anthropic Messages API — same house convention as
@@ -19,7 +20,7 @@ export function createAnthropicProvider(apiKey: string | null, modelOverride?: s
     async complete(system, userPrompt, maxTokens) {
       if (!apiKey) throw new AiProviderError("No Anthropic API key is configured (Settings → AI Provider, or ANTHROPIC_API_KEY)");
 
-      const res = await fetch(API_URL, {
+      const call = await providerFetch("Anthropic API", API_URL, {
         method: "POST",
         headers: {
           "x-api-key": apiKey,
@@ -32,14 +33,15 @@ export function createAnthropicProvider(apiKey: string | null, modelOverride?: s
           system,
           messages: [{ role: "user", content: userPrompt }],
         }),
-      });
+      }, textRequestTimeoutMs());
+      const res = call.res;
 
       if (!res.ok) {
-        const errorText = await res.text();
+        const errorText = await call.text();
         throw new AiProviderError(`Anthropic API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
-      const data: { content?: { type: string; text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } } = await res.json();
+      const data: { content?: { type: string; text?: string }[]; usage?: { input_tokens?: number; output_tokens?: number } } = await call.json();
       const text = data?.content?.find((block) => block.type === "text")?.text;
       if (typeof text !== "string") {
         throw new AiProviderError("Anthropic API response had no text content");

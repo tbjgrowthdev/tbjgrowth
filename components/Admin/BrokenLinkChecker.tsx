@@ -3,16 +3,24 @@
 import { useState } from "react";
 import { checkBrokenLinks } from "@/app/(admin)/actions/seo-audit";
 import { Link2Off, PlayCircle } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 export default function BrokenLinkChecker() {
   const [isRunning, setIsRunning] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [result, setResult] = useState<{ checked: number; broken: { path: string; status: number | "error" }[] } | null>(null);
 
   const runCheck = async () => {
     setIsRunning(true);
-    const res = await checkBrokenLinks();
-    setResult(res);
-    setIsRunning(false);
+    try {
+      setActionError(null);
+      const res = await checkBrokenLinks();
+      setResult(res);
+    } catch (err) {
+      setActionError(describeActionError(err, "Link scan failed"));
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   return (
@@ -32,6 +40,7 @@ export default function BrokenLinkChecker() {
         </button>
       </div>
 
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400 mb-3">{actionError}</p>}
       {!result && (
         <p className="text-sm text-caption">
           Scans internal links found inside published posts, pages, and case studies for broken (4xx/5xx) responses.

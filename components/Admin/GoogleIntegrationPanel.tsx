@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { disconnectGoogle, updateGoogleConfig } from "@/app/(admin)/actions/google";
 import { CheckCircle2, AlertCircle, LogOut } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Integration = {
   connectedEmail: string | null;
@@ -30,11 +31,16 @@ export default function GoogleIntegrationPanel({
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setSaveMsg(null);
-    const result = await updateGoogleConfig({ ga4PropertyId, gscSiteUrl });
-    setSaveMsg(result.success ? "Saved." : result.error || "Failed to save");
-    router.refresh();
-    setIsSaving(false);
+    try {
+      setSaveMsg(null);
+      const result = await updateGoogleConfig({ ga4PropertyId, gscSiteUrl });
+      setSaveMsg(result.success ? "Saved." : result.error || "Failed to save");
+      router.refresh();
+    } catch (err) {
+      setSaveMsg(describeActionError(err, "Failed to save"));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDisconnect = async () => {

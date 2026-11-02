@@ -7,6 +7,7 @@ import { CheckCircle2, Loader2, RotateCcw, AlertTriangle } from "lucide-react";
 import { activatePromptVersionAction, getPromptTemplateDetailAction, savePromptVersionAction } from "@/app/(admin)/actions/content-pipeline";
 import { CATEGORY_LABEL, WIRED_CATEGORIES } from "@/lib/content-pipeline/prompt-constants";
 import type { PromptCategory } from "@/lib/generated/prisma/client";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Detail = Awaited<ReturnType<typeof getPromptTemplateDetailAction>>;
 type Template = NonNullable<NonNullable<Detail>["template"]>;
@@ -43,36 +44,46 @@ export default function PromptEditor({
 
   const save = async () => {
     setBusy(true);
-    setError(null);
-    setSaved(false);
-    const result = await savePromptVersionAction(category, {
-      name,
-      description: description || undefined,
-      systemPrompt: systemPrompt || undefined,
-      bodyTemplate,
-      changeNote: changeNote || undefined,
-    });
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      setError(null);
+      setSaved(false);
+      const result = await savePromptVersionAction(category, {
+        name,
+        description: description || undefined,
+        systemPrompt: systemPrompt || undefined,
+        bodyTemplate,
+        changeNote: changeNote || undefined,
+      });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setChangeNote("");
+      setSaved(true);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
     }
-    setChangeNote("");
-    setSaved(true);
-    router.refresh();
   };
 
   const rollback = async (versionId: string) => {
     if (!template) return;
     setBusy(true);
-    setError(null);
-    const result = await activatePromptVersionAction(template.id, versionId);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      setError(null);
+      const result = await activatePromptVersionAction(template.id, versionId);
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
     }
-    router.refresh();
   };
 
   return (

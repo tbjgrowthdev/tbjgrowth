@@ -4,6 +4,7 @@ import { useState } from "react";
 import { runGscImport, getGscData } from "@/app/(admin)/actions/gsc-import";
 import type { GscData } from "@/app/(admin)/actions/gsc-import";
 import { Download, AlertCircle, CheckCircle2, Filter } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const CONTENT_TYPE_LABEL: Record<string, string> = {
   POST: "Blog Post",
@@ -43,18 +44,23 @@ export default function GscImportManager({
 
   const handleImport = async () => {
     setImporting(true);
-    setError(null);
-    setImportMsg(null);
-    const result = await runGscImport(startDate, endDate);
-    if (result.success && result.result) {
-      setImportMsg(
-        `Imported ${result.result.rowsImported.toLocaleString()} rows — ${result.result.mappedToContent.toLocaleString()} mapped to CMS content, ${result.result.unmapped.toLocaleString()} unmapped.`
-      );
-      await refreshData();
-    } else {
-      setError(result.error || "Import failed");
+    try {
+      setError(null);
+      setImportMsg(null);
+      const result = await runGscImport(startDate, endDate);
+      if (result.success && result.result) {
+        setImportMsg(
+          `Imported ${result.result.rowsImported.toLocaleString()} rows — ${result.result.mappedToContent.toLocaleString()} mapped to CMS content, ${result.result.unmapped.toLocaleString()} unmapped.`
+        );
+        await refreshData();
+      } else {
+        setError(result.error || "Import failed");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Import failed"));
+    } finally {
+      setImporting(false);
     }
-    setImporting(false);
   };
 
   const handleApplyFilters = async () => {

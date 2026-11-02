@@ -10,6 +10,7 @@ import {
   markOrphanPageResolvedAction,
   scanAndUpsertOrphanPagesAction,
 } from "@/app/(admin)/actions/orphan-pages";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Row = Awaited<ReturnType<typeof listOrphanPagesAction>>[number];
 
@@ -37,26 +38,36 @@ export default function OrphanPagesListClient({ pages }: { pages: Row[] }) {
 
   const scan = async () => {
     setScanning(true);
-    setError(null);
-    const result = await scanAndUpsertOrphanPagesAction();
-    setScanning(false);
-    if (!result.success) {
-      setError(result.error || "Scan failed");
-      return;
+    try {
+      setError(null);
+      const result = await scanAndUpsertOrphanPagesAction();
+      if (!result.success) {
+        setError(result.error || "Scan failed");
+        return;
+      }
+      setLastFlagged(result.data.flagged);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Scan failed"));
+    } finally {
+      setScanning(false);
     }
-    setLastFlagged(result.data.flagged);
-    router.refresh();
   };
 
   const act = async (id: string, fn: (id: string) => Promise<{ success: boolean; error?: string }>) => {
     setBusyId(id);
-    const result = await fn(id);
-    setBusyId(null);
-    if (!result.success) {
-      setError(result.error || "Something went wrong");
-      return;
+    try {
+      const result = await fn(id);
+      if (!result.success) {
+        setError(result.error || "Something went wrong");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Something went wrong"));
+    } finally {
+      setBusyId(null);
     }
-    router.refresh();
   };
 
   return (

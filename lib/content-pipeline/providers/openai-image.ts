@@ -1,5 +1,6 @@
 import type { AiImageProvider } from "./types";
 import { AiProviderError } from "./types";
+import { providerFetch, imageRequestTimeoutMs } from "./http";
 import { redactSecret } from "./catalog";
 
 const API_URL = "https://api.openai.com/v1/images/generations";
@@ -14,18 +15,19 @@ export function createOpenAiImageProvider(apiKey: string | null, modelOverride?:
     async generateImage(prompt) {
       if (!apiKey) throw new AiProviderError("No OpenAI API key is configured (Settings → AI Provider, or OPENAI_API_KEY)");
 
-      const res = await fetch(API_URL, {
+      const call = await providerFetch("OpenAI Images API", API_URL, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model, prompt, size: "1024x1024", n: 1 }),
-      });
+      }, imageRequestTimeoutMs());
+      const res = call.res;
 
       if (!res.ok) {
-        const errorText = await res.text();
+        const errorText = await call.text();
         throw new AiProviderError(`OpenAI Images API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
-      const data: { data?: { b64_json?: string }[] } = await res.json();
+      const data: { data?: { b64_json?: string }[] } = await call.json();
       const b64 = data?.data?.[0]?.b64_json;
       if (!b64) {
         throw new AiProviderError("OpenAI Images API response had no image data");

@@ -10,6 +10,7 @@ import {
   revokeAllOtherSessions,
 } from "@/app/(admin)/actions/security";
 import { ShieldCheck, ShieldOff, Smartphone, AlertCircle, CheckCircle2, Monitor, LogOut, History } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type AdminSession = {
   id: string;
@@ -80,56 +81,76 @@ function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
 
   const startSetup = async () => {
     setBusy(true);
-    setError(null);
-    const result = await beginTwoFactorSetup();
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to start setup");
-      return;
+    try {
+      setError(null);
+      const result = await beginTwoFactorSetup();
+      if (!result.success) {
+        setError(result.error || "Failed to start setup");
+        return;
+      }
+      setQrSvg(result.qrSvg!);
+      setSecret(result.secret!);
+      setStep("setup");
+    } catch (err) {
+      setError(describeActionError(err, "Failed to start setup"));
+    } finally {
+      setBusy(false);
     }
-    setQrSvg(result.qrSvg!);
-    setSecret(result.secret!);
-    setStep("setup");
   };
 
   const confirmSetup = async () => {
     setBusy(true);
-    setError(null);
-    const result = await confirmTwoFactorSetup(code);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to confirm setup");
-      return;
+    try {
+      setError(null);
+      const result = await confirmTwoFactorSetup(code);
+      if (!result.success) {
+        setError(result.error || "Failed to confirm setup");
+        return;
+      }
+      setBackupCodes(result.backupCodes!);
+      setEnabled(true);
+      setStep("backupCodes");
+    } catch (err) {
+      setError(describeActionError(err, "Failed to confirm setup"));
+    } finally {
+      setBusy(false);
     }
-    setBackupCodes(result.backupCodes!);
-    setEnabled(true);
-    setStep("backupCodes");
   };
 
   const handleDisable = async () => {
     setBusy(true);
-    setError(null);
-    const result = await disableTwoFactor(password);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to disable");
-      return;
+    try {
+      setError(null);
+      const result = await disableTwoFactor(password);
+      if (!result.success) {
+        setError(result.error || "Failed to disable");
+        return;
+      }
+      setEnabled(false);
+      reset();
+    } catch (err) {
+      setError(describeActionError(err, "Failed to disable"));
+    } finally {
+      setBusy(false);
     }
-    setEnabled(false);
-    reset();
   };
 
   const handleRegenerate = async () => {
     setBusy(true);
-    setError(null);
-    const result = await regenerateBackupCodes(password);
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Failed to regenerate codes");
-      return;
+    try {
+      setError(null);
+      const result = await regenerateBackupCodes(password);
+      if (!result.success) {
+        setError(result.error || "Failed to regenerate codes");
+        return;
+      }
+      setBackupCodes(result.backupCodes!);
+      setStep("backupCodes");
+    } catch (err) {
+      setError(describeActionError(err, "Failed to regenerate codes"));
+    } finally {
+      setBusy(false);
     }
-    setBackupCodes(result.backupCodes!);
-    setStep("backupCodes");
   };
 
   return (
@@ -255,22 +276,35 @@ function SessionsCard({
 }) {
   const [sessions, setSessions] = useState(initialSessions);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   const handleRevoke = async (id: string) => {
     setBusyId(id);
-    const result = await revokeMySession(id);
-    setBusyId(null);
-    if (result.success) {
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+    setSessionError(null);
+    try {
+      const result = await revokeMySession(id);
+      if (result.success) {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+      }
+    } catch (err) {
+      setSessionError(describeActionError(err, "Failed to sign out that session"));
+    } finally {
+      setBusyId(null);
     }
   };
 
   const handleRevokeAllOthers = async () => {
     setBusyId("all");
-    const result = await revokeAllOtherSessions();
-    setBusyId(null);
-    if (result.success) {
-      setSessions((prev) => prev.filter((s) => s.id === currentSessionId));
+    setSessionError(null);
+    try {
+      const result = await revokeAllOtherSessions();
+      if (result.success) {
+        setSessions((prev) => prev.filter((s) => s.id === currentSessionId));
+      }
+    } catch (err) {
+      setSessionError(describeActionError(err, "Failed to sign out other sessions"));
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -291,6 +325,7 @@ function SessionsCard({
           </button>
         )}
       </div>
+      {sessionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{sessionError}</p>}
       <div className="space-y-2">
         {sessions.map((s) => {
           const isCurrent = s.id === currentSessionId;

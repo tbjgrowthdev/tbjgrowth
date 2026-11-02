@@ -1,5 +1,6 @@
 import type { AiProvider } from "./types";
 import { AiProviderError } from "./types";
+import { providerFetch, textRequestTimeoutMs } from "./http";
 import { PROVIDER_KEY_ENV, PROVIDER_LABEL, redactSecret } from "./catalog";
 
 /**
@@ -70,18 +71,19 @@ export function createOpenAiCompatibleProvider(api: OpenAiCompatibleApi, apiKey:
     async complete(system, userPrompt, maxTokens) {
       if (!apiKey) throw new AiProviderError(`No ${label} API key is configured (Settings → AI Provider, or ${PROVIDER_KEY_ENV[api.name]})`);
 
-      const res = await fetch(`${api.baseUrl}/chat/completions`, {
+      const call = await providerFetch(`${label} API`, `${api.baseUrl}/chat/completions`, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify(buildCompatibleRequestBody(api, model, system, userPrompt, maxTokens)),
-      });
+      }, textRequestTimeoutMs());
+      const res = call.res;
 
       if (!res.ok) {
-        const errorText = await res.text();
+        const errorText = await call.text();
         throw new AiProviderError(`${label} API request failed (${res.status}): ${redactSecret(errorText, apiKey).slice(0, 2000)}`);
       }
 
-      const data: ChatCompletionResponse = await res.json();
+      const data: ChatCompletionResponse = await call.json();
       const text = data?.choices?.[0]?.message?.content;
       if (typeof text !== "string") {
         throw new AiProviderError(`${label} API response had no text content`);

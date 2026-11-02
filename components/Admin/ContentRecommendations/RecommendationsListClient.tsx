@@ -9,6 +9,7 @@ import {
   markRecommendationInProgressAction,
   scanAndUpsertRecommendationsAction,
 } from "@/app/(admin)/actions/content-recommendations";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Recommendation = Awaited<ReturnType<typeof listRecommendationsAction>>[number];
 
@@ -27,34 +28,49 @@ export default function RecommendationsListClient({ recommendations }: { recomme
 
   const scan = async () => {
     setScanning(true);
-    setError(null);
-    const result = await scanAndUpsertRecommendationsAction();
-    setScanning(false);
-    if (!result.success) {
-      setError(result.error || "Scan failed");
-      return;
+    try {
+      setError(null);
+      const result = await scanAndUpsertRecommendationsAction();
+      if (!result.success) {
+        setError(result.error || "Scan failed");
+        return;
+      }
+      setLastFlagged(result.data.flagged);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Scan failed"));
+    } finally {
+      setScanning(false);
     }
-    setLastFlagged(result.data.flagged);
-    router.refresh();
   };
 
   const dismiss = async (id: string) => {
     setBusyId(id);
-    const result = await dismissRecommendationAction(id);
-    setBusyId(null);
-    if (!result.success) {
-      setError(result.error || "Failed to dismiss");
-      return;
+    try {
+      const result = await dismissRecommendationAction(id);
+      if (!result.success) {
+        setError(result.error || "Failed to dismiss");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Failed to dismiss"));
+    } finally {
+      setBusyId(null);
     }
-    router.refresh();
   };
 
   const createContent = async (rec: Recommendation) => {
     setBusyId(rec.id);
-    await markRecommendationInProgressAction(rec.id);
-    setBusyId(null);
-    const params = new URLSearchParams({ topic: rec.topic, contentType: rec.contentType, keyword: rec.keyword, format: rec.suggestedFormat });
-    router.push(`/admin/ai-pipeline/new?${params.toString()}`);
+    try {
+      await markRecommendationInProgressAction(rec.id);
+      const params = new URLSearchParams({ topic: rec.topic, contentType: rec.contentType, keyword: rec.keyword, format: rec.suggestedFormat });
+      router.push(`/admin/ai-pipeline/new?${params.toString()}`);
+    } catch (err) {
+      setError(describeActionError(err, "Could not start this recommendation"));
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (

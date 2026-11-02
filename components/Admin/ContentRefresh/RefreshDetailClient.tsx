@@ -14,6 +14,7 @@ import {
 } from "@/app/(admin)/actions/content-refresh";
 import { SIGNAL_LABEL, type DetectedSignal } from "@/lib/content-refresh/types";
 import { STAGE_LABEL } from "@/lib/content-pipeline/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Detail = Awaited<ReturnType<typeof getRefreshDetailAction>>;
 type Refresh = NonNullable<Detail>["refresh"];
@@ -36,14 +37,19 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
 
   const act = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
     setBusy(true);
-    setError(null);
-    const result = await fn();
-    setBusy(false);
-    if (!result.success) {
-      setError(result.error || "Something went wrong");
-      return;
+    try {
+      setError(null);
+      const result = await fn();
+      if (!result.success) {
+        setError(result.error || "Something went wrong");
+        return;
+      }
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Something went wrong"));
+    } finally {
+      setBusy(false);
     }
-    router.refresh();
   };
 
   const editorHref = content ? (refresh.contentType === "POST" ? `/admin/posts/${refresh.contentId}` : `/admin/cases/${refresh.contentId}`) : null;

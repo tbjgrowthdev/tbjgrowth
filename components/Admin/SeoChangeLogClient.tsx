@@ -7,6 +7,7 @@ import { getChangeImpactAction } from "@/app/(admin)/actions/seo-change-log";
 import type { ChangeImpact } from "@/lib/seo-change-log/impact";
 import type { SeoChangeEntry, SeoChangeField } from "@/lib/seo-change-log/types";
 import type { ExperimentContentType } from "@/lib/seo-experiments/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const TYPE_LABEL: Record<ExperimentContentType, string> = {
   POST: "Blog Post",
@@ -39,11 +40,16 @@ function ImpactPanel({ entry }: { entry: SeoChangeEntry }) {
 
   const load = async () => {
     setLoading(true);
-    setError(null);
-    const result = await getChangeImpactAction(entry.contentType, entry.contentId, entry.changedAt.toISOString(), windowDays);
-    setLoading(false);
-    if (result.success) setImpact(result.data);
-    else setError(result.error);
+    try {
+      setError(null);
+      const result = await getChangeImpactAction(entry.contentType, entry.contentId, entry.changedAt.toISOString(), windowDays);
+      if (result.success) setImpact(result.data);
+      else setError(result.error);
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

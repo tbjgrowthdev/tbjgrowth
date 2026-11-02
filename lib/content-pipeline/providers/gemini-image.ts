@@ -1,5 +1,6 @@
 import type { AiImageProvider } from "./types";
 import { AiProviderError } from "./types";
+import { providerFetch, imageRequestTimeoutMs } from "./http";
 import { redactSecret } from "./catalog";
 
 // Gemini's image-capable chat model, via the same generateContent endpoint
@@ -18,18 +19,19 @@ export function createGeminiImageProvider(apiKey: string | null, modelOverride?:
       if (!apiKey) throw new AiProviderError("No Gemini API key is configured (Settings → AI Provider, or GEMINI_API_KEY)");
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-      const res = await fetch(url, {
+      const call = await providerFetch("Gemini image API", url, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }] }),
-      });
+      }, imageRequestTimeoutMs());
+      const res = call.res;
 
       if (!res.ok) {
-        const errorText = await res.text();
+        const errorText = await call.text();
         throw new AiProviderError(`Gemini image API request failed (${res.status}): ${redactSecret(errorText, apiKey)}`);
       }
 
-      const data: { candidates?: { content?: { parts?: { inlineData?: { data?: string; mimeType?: string } }[] } }[] } = await res.json();
+      const data: { candidates?: { content?: { parts?: { inlineData?: { data?: string; mimeType?: string } }[] } }[] } = await call.json();
       const inline = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
       if (!inline?.data) {
         throw new AiProviderError("Gemini image API response had no inline image data");

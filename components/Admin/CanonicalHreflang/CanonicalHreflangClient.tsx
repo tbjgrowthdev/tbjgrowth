@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
 import { getCanonicalHreflangReport } from "@/app/(admin)/actions/canonical-hreflang";
 import type { CanonicalContentType, CanonicalIssue, HreflangIssue } from "@/lib/canonical-hreflang";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Result = Awaited<ReturnType<typeof getCanonicalHreflangReport>>;
 
@@ -63,12 +64,19 @@ function IssueRow({ contentType, contentId, title, path, badge, badgeStyle, deta
 export default function CanonicalHreflangClient({ initialResult }: { initialResult: Result }) {
   const [result, setResult] = useState(initialResult);
   const [scanning, setScanning] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const scan = async () => {
     setScanning(true);
-    const next = await getCanonicalHreflangReport();
-    setResult(next);
-    setScanning(false);
+    try {
+      setActionError(null);
+      const next = await getCanonicalHreflangReport();
+      setResult(next);
+    } catch (err) {
+      setActionError(describeActionError(err, "Scan failed"));
+    } finally {
+      setScanning(false);
+    }
   };
 
   if (!result.success) {
@@ -99,6 +107,8 @@ export default function CanonicalHreflangClient({ initialResult }: { initialResu
           Scan Now
         </button>
       </div>
+
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
 
       <p className="text-xs text-caption">
         Last scanned {new Date(scannedAt).toLocaleString()} · {scannedCount} item(s) checked

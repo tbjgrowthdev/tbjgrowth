@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, RefreshCw } from "lucide-react";
 import { listRefreshCandidatesAction, scanAndUpsertCandidatesAction } from "@/app/(admin)/actions/content-refresh";
 import { SIGNAL_LABEL, type DetectedSignal } from "@/lib/content-refresh/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Candidate = Awaited<ReturnType<typeof listRefreshCandidatesAction>>[number];
 
@@ -34,15 +35,20 @@ export default function RefreshListClient({ candidates }: { candidates: Candidat
 
   const scan = async () => {
     setScanning(true);
-    setError(null);
-    const result = await scanAndUpsertCandidatesAction();
-    setScanning(false);
-    if (!result.success) {
-      setError(result.error || "Scan failed");
-      return;
+    try {
+      setError(null);
+      const result = await scanAndUpsertCandidatesAction();
+      if (!result.success) {
+        setError(result.error || "Scan failed");
+        return;
+      }
+      setLastFlagged(result.data.flagged);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Scan failed"));
+    } finally {
+      setScanning(false);
     }
-    setLastFlagged(result.data.flagged);
-    router.refresh();
   };
 
   return (

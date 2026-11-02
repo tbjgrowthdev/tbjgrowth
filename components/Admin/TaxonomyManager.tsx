@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, AlertCircle } from "lucide-react";
 import DeleteButton from "./DeleteButton";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type TaxonomyItem = {
   id: string;
@@ -35,17 +36,22 @@ export default function TaxonomyManager({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
+    try {
+      setError(null);
 
-    const result = await createAction({ name, description: description || undefined });
-    if (result.success) {
-      setName("");
-      setDescription("");
-      router.refresh();
-    } else {
-      setError(result.error || `Failed to create ${entityName}`);
+      const result = await createAction({ name, description: description || undefined });
+      if (result.success) {
+        setName("");
+        setDescription("");
+        router.refresh();
+      } else {
+        setError(result.error || `Failed to create ${entityName}`);
+      }
+    } catch (err) {
+      setError(describeActionError(err, `Failed to create ${entityName}`));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (

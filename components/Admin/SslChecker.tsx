@@ -3,16 +3,24 @@
 import { useState } from "react";
 import { checkTlsCertificate } from "@/app/(admin)/actions/technical";
 import { ShieldCheck, ShieldAlert, PlayCircle } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 export default function SslChecker() {
   const [isChecking, setIsChecking] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [result, setResult] = useState<Awaited<ReturnType<typeof checkTlsCertificate>> | null>(null);
 
   const runCheck = async () => {
     setIsChecking(true);
-    const res = await checkTlsCertificate();
-    setResult(res);
-    setIsChecking(false);
+    try {
+      setActionError(null);
+      const res = await checkTlsCertificate();
+      setResult(res);
+    } catch (err) {
+      setActionError(describeActionError(err, "Certificate check failed"));
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   return (
@@ -29,6 +37,7 @@ export default function SslChecker() {
         </button>
       </div>
 
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400 mb-2">{actionError}</p>}
       {!result && <p className="text-xs text-caption">Click "Check Now" to verify the live certificate.</p>}
 
       {result && (

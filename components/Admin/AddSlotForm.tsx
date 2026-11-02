@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSlot, createSlotsBulk } from "@/app/(admin)/actions/booking";
 import { Plus, AlertCircle, CalendarPlus } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 export default function AddSlotForm() {
   const router = useRouter();
@@ -17,35 +18,45 @@ export default function AddSlotForm() {
   const handleSingleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
-    const result = await createSlot({ startsAt: single.startsAt, duration: Number(single.duration) });
-    if (result.success) {
-      setSingle({ startsAt: "", duration: 30 });
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to add slot.");
+    try {
+      setError(null);
+      const result = await createSlot({ startsAt: single.startsAt, duration: Number(single.duration) });
+      if (result.success) {
+        setSingle({ startsAt: "", duration: 30 });
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to add slot.");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to add slot."));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
-    const result = await createSlotsBulk({
-      date: bulk.date,
-      startTime: bulk.startTime,
-      endTime: bulk.endTime,
-      interval: Number(bulk.interval),
-      duration: Number(bulk.duration),
-    });
-    if (result.success) {
-      setBulk({ ...bulk, date: "" });
-      router.refresh();
-    } else {
-      setError(result.error || "Failed to generate slots.");
+    try {
+      setError(null);
+      const result = await createSlotsBulk({
+        date: bulk.date,
+        startTime: bulk.startTime,
+        endTime: bulk.endTime,
+        interval: Number(bulk.interval),
+        duration: Number(bulk.duration),
+      });
+      if (result.success) {
+        setBulk({ ...bulk, date: "" });
+        router.refresh();
+      } else {
+        setError(result.error || "Failed to generate slots.");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Failed to generate slots."));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (

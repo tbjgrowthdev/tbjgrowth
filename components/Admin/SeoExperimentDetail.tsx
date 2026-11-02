@@ -6,6 +6,7 @@ import { Rocket, RotateCcw, RefreshCw, Trash2, AlertCircle } from "lucide-react"
 import type { getSeoExperiment } from "@/app/(admin)/actions/seo-experiments";
 import { launchSeoExperimentAction, revertSeoExperimentAction, evaluateSeoExperimentAction as evaluateAction, deleteSeoExperimentAction } from "@/app/(admin)/actions/seo-experiments";
 import type { ExperimentResults } from "@/lib/seo-experiments/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Experiment = NonNullable<Awaited<ReturnType<typeof getSeoExperiment>>>;
 type WindowInfo = { isWindowComplete: boolean; daysElapsed: number; daysRemaining: number };
@@ -57,44 +58,64 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
 
   const handleLaunch = async () => {
     setBusy(true);
-    setError(null);
-    const result = await launchSeoExperimentAction(experiment.id);
-    setBusy(false);
-    if (result.success) router.refresh();
-    else setError(result.error);
+    try {
+      setError(null);
+      const result = await launchSeoExperimentAction(experiment.id);
+      if (result.success) router.refresh();
+      else setError(result.error);
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleRevert = async () => {
     if (!confirm("Revert to the before value? The experiment will stop tracking.")) return;
     setBusy(true);
-    setError(null);
-    const result = await revertSeoExperimentAction(experiment.id);
-    setBusy(false);
-    if (result.success) router.refresh();
-    else setError(result.error);
+    try {
+      setError(null);
+      const result = await revertSeoExperimentAction(experiment.id);
+      if (result.success) router.refresh();
+      else setError(result.error);
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleEvaluate = async () => {
     setBusy(true);
-    setError(null);
-    const result = await evaluateAction(experiment.id);
-    setBusy(false);
-    if (result.success) {
-      setResults(result.data.results);
-      setWindowInfo(result.data);
-      router.refresh();
-    } else {
-      setError(result.error);
+    try {
+      setError(null);
+      const result = await evaluateAction(experiment.id);
+      if (result.success) {
+        setResults(result.data.results);
+        setWindowInfo(result.data);
+        router.refresh();
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleDelete = async () => {
     if (!confirm("Delete this experiment? This can't be undone.")) return;
     setBusy(true);
-    const result = await deleteSeoExperimentAction(experiment.id);
-    setBusy(false);
-    if (result.success) router.push("/admin/seo-experiments");
-    else setError(result.error);
+    try {
+      const result = await deleteSeoExperimentAction(experiment.id);
+      if (result.success) router.push("/admin/seo-experiments");
+      else setError(result.error);
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

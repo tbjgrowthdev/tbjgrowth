@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createSeoExperimentAction } from "@/app/(admin)/actions/seo-experiments";
 import { AlertCircle, Save } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 
@@ -77,21 +78,26 @@ export default function NewSeoExperimentForm({ content }: { content: ContentItem
       return;
     }
     setIsSubmitting(true);
-    setError(null);
-    const result = await createSeoExperimentAction({
-      name: name.trim() || `${VARIABLE_OPTIONS.find((v) => v.value === variable)!.label} test on ${selected.title}`,
-      contentType: selected.contentType,
-      contentId: selected.contentId,
-      variable,
-      afterValue,
-      baselineWindowDays: Number(baselineWindowDays),
-      evaluationWindowDays: Number(evaluationWindowDays),
-    });
-    setIsSubmitting(false);
-    if (result.success) {
-      router.push(`/admin/seo-experiments/${result.data.id}`);
-    } else {
-      setError(result.error);
+    try {
+      setError(null);
+      const result = await createSeoExperimentAction({
+        name: name.trim() || `${VARIABLE_OPTIONS.find((v) => v.value === variable)!.label} test on ${selected.title}`,
+        contentType: selected.contentType,
+        contentId: selected.contentId,
+        variable,
+        afterValue,
+        baselineWindowDays: Number(baselineWindowDays),
+        evaluationWindowDays: Number(evaluationWindowDays),
+      });
+      if (result.success) {
+        router.push(`/admin/seo-experiments/${result.data.id}`);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(describeActionError(err, `${VARIABLE_OPTIONS.find((v) => v.value === variable)!.label} test on ${selected.title}`));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

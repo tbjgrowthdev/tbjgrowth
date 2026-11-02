@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, RefreshCw } from "lucide-react";
 import { listHealthScoresAction, scanAndUpsertHealthScoresAction } from "@/app/(admin)/actions/content-health";
 import { FACTOR_LABEL, GRADE_LABEL, type FactorScore } from "@/lib/content-health/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Score = Awaited<ReturnType<typeof listHealthScoresAction>>[number];
 
@@ -31,15 +32,20 @@ export default function ContentHealthListClient({ scores }: { scores: Score[] })
 
   const scan = async () => {
     setScanning(true);
-    setError(null);
-    const result = await scanAndUpsertHealthScoresAction();
-    setScanning(false);
-    if (!result.success) {
-      setError(result.error || "Scan failed");
-      return;
+    try {
+      setError(null);
+      const result = await scanAndUpsertHealthScoresAction();
+      if (!result.success) {
+        setError(result.error || "Scan failed");
+        return;
+      }
+      setLastScored(result.data.scored);
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err, "Scan failed"));
+    } finally {
+      setScanning(false);
     }
-    setLastScored(result.data.scored);
-    router.refresh();
   };
 
   return (

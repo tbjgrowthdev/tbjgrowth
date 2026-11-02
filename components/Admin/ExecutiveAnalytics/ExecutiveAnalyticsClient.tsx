@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { getExecutiveAnalyticsAction } from "@/app/(admin)/actions/executive-analytics";
 import { WINDOW_OPTIONS, type ExecutiveAnalyticsData } from "@/lib/executive-analytics/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const GRADE_STYLE: Record<string, string> = {
   EXCELLENT: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
@@ -95,13 +96,20 @@ export default function ExecutiveAnalyticsClient({ initialData, initialDays }: {
   const [data, setData] = useState(initialData);
   const [days, setDays] = useState(initialDays);
   const [loading, setLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const changeWindow = async (next: number) => {
     setDays(next);
     setLoading(true);
-    const result = await getExecutiveAnalyticsAction(next);
-    setData(result);
-    setLoading(false);
+    try {
+      setActionError(null);
+      const result = await getExecutiveAnalyticsAction(next);
+      setData(result);
+    } catch (err) {
+      setActionError(describeActionError(err, "Could not load that time window"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!data) {
@@ -139,6 +147,8 @@ export default function ExecutiveAnalyticsClient({ initialData, initialDays }: {
           ))}
         </div>
       </div>
+
+      {actionError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{actionError}</p>}
 
       {/* Traffic / Leads / Conversion / Cost */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

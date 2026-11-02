@@ -24,6 +24,7 @@ import {
   updatePendingImageAltText,
 } from "@/lib/content-pipeline/stages";
 import { getAllJobs, getJobsForRun } from "@/lib/content-pipeline/jobs";
+import { AI_STAGE_RUNNERS } from "@/lib/content-pipeline/stage-runners";
 import { getCostSummary } from "@/lib/content-pipeline/costs";
 import { activatePromptVersion, getPromptTemplateDetail, listPromptTemplates, savePromptVersion } from "@/lib/content-pipeline/prompt-library";
 import type { PromptCategory } from "@/lib/generated/prisma/client";
@@ -125,18 +126,6 @@ export async function getAllJobsAction() {
   return guardRead("CREATE", () => [], () => getAllJobs());
 }
 
-const RETRY_BY_STAGE: Record<string, (runId: string) => Promise<{ success: boolean; error?: string }>> = {
-  SEARCH_INTENT: runSearchIntentStage,
-  RESEARCH: runResearchStage,
-  OUTLINE: runOutlineStage,
-  DRAFT: runDraftStage,
-  IMAGE: runImageStage,
-  SEO: runSeoStage,
-  INTERNAL_LINKS: runInternalLinksStage,
-  SCHEMA: runSchemaStage,
-  QA: runQaStage,
-};
-
 // Used by the global Job Queue list to retry a FAILED job without
 // navigating into that run's wizard first. Reuses the exact same
 // stage-advance functions the wizard calls — a retry from here and a click
@@ -145,9 +134,9 @@ const RETRY_BY_STAGE: Record<string, (runId: string) => Promise<{ success: boole
 // and INTERNAL_LINKS are the two deliberate exceptions that always do
 // real work (see their own stage functions' comments).
 export async function retryJobAction(runId: string, stage: string) {
-  const fn = RETRY_BY_STAGE[stage];
-  if (!fn) return { success: false, error: `Stage "${stage}" cannot be retried from here` };
-  return guardMutation(stage === "DRAFT" ? "CREATE" : "EDIT", () => fn(runId));
+  const runner = AI_STAGE_RUNNERS[stage];
+  if (!runner) return { success: false, error: `Stage "${stage}" cannot be retried from here` };
+  return guardMutation(runner.permission, () => runner.run(runId));
 }
 
 export async function getCostSummaryAction() {

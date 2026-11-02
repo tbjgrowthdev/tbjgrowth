@@ -4,6 +4,7 @@ import { useState } from "react";
 import { runGa4Import, getGa4Data } from "@/app/(admin)/actions/ga4-import";
 import type { Ga4Data } from "@/app/(admin)/actions/ga4-import";
 import { Download, AlertCircle, CheckCircle2, Filter, ArrowRight } from "lucide-react";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 const CONTENT_TYPE_LABEL: Record<string, string> = {
   POST: "Blog Post",
@@ -41,18 +42,23 @@ export default function Ga4ImportManager({
 
   const handleImport = async () => {
     setImporting(true);
-    setError(null);
-    setImportMsg(null);
-    const result = await runGa4Import(startDate, endDate);
-    if (result.success && result.result) {
-      setImportMsg(
-        `Imported ${result.result.rowsImported.toLocaleString()} rows — ${result.result.mappedToContent.toLocaleString()} mapped to CMS content, ${result.result.unmapped.toLocaleString()} unmapped.`
-      );
-      await refreshData();
-    } else {
-      setError(result.error || "Import failed");
+    try {
+      setError(null);
+      setImportMsg(null);
+      const result = await runGa4Import(startDate, endDate);
+      if (result.success && result.result) {
+        setImportMsg(
+          `Imported ${result.result.rowsImported.toLocaleString()} rows — ${result.result.mappedToContent.toLocaleString()} mapped to CMS content, ${result.result.unmapped.toLocaleString()} unmapped.`
+        );
+        await refreshData();
+      } else {
+        setError(result.error || "Import failed");
+      }
+    } catch (err) {
+      setError(describeActionError(err, "Import failed"));
+    } finally {
+      setImporting(false);
     }
-    setImporting(false);
   };
 
   const handleApplyFilters = async () => {

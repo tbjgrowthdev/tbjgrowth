@@ -195,3 +195,19 @@ export interface QaReport {
   checks: QaCheck[];
   summary: string;
 }
+
+/**
+ * How long a job may sit in PROCESSING before it counts as abandoned.
+ * Every provider call has its own timeout (providers/http.ts, 4 min by
+ * default) and a stage makes at most two text calls plus an image call,
+ * so a live job never gets near this. A job older than this was left
+ * behind by a request that died (dropped connection, worker cancelled).
+ */
+export const STALE_JOB_MS = 15 * 60 * 1000;
+
+/** Same rule the server uses, so the UI can tell "still running" from "abandoned". */
+export function isJobStale(job: { status: string; startedAt: Date | string | null }, now = Date.now()) {
+  if (job.status !== "PROCESSING" && job.status !== "QUEUED") return false;
+  if (!job.startedAt) return true;
+  return now - new Date(job.startedAt).getTime() > STALE_JOB_MS;
+}

@@ -36,8 +36,21 @@ type CloudinaryUploadResponse = {
   width: number;
   height: number;
   bytes: number;
-  original_filename: string;
+  original_filename?: string;
 };
+
+// Files are sent to Cloudinary as base64 data URIs, which carry no filename,
+// so Cloudinary omits original_filename from its response. Fall back to the
+// browser File's own name, then to the last segment of the public_id.
+function resolveFilename(data: CloudinaryUploadResponse, fileName?: string): string {
+  const fromFile = fileName?.replace(/\.[^./\\]+$/, "").trim();
+  return (
+    data.original_filename?.trim() ||
+    fromFile ||
+    data.public_id.split("/").pop() ||
+    "untitled"
+  );
+}
 
 async function uploadDataUriToCloudinary(dataUri: string, folder: string): Promise<CloudinaryUploadResponse> {
   const { cloudName, apiKey, apiSecret } = getCredentials();
@@ -138,19 +151,20 @@ export async function uploadAndRegisterMedia(
   const folder = opts.folder?.trim() || "Uncategorized";
 
   const data = await uploadFileToCloudinary(file, "tbj-growth");
+  const filename = resolveFilename(data, file.name);
 
   const asset = await prisma.mediaAsset.create({
     data: {
       publicId: data.public_id,
       url: data.secure_url,
-      filename: data.original_filename,
+      filename,
       format: data.format,
       width: data.width,
       height: data.height,
       bytes: data.bytes,
       folder,
       altText,
-      title: opts.title?.trim() || data.original_filename,
+      title: opts.title?.trim() || filename,
       uploadedById: session.user.id,
       uploadedByName: session.user.name ?? null,
       uploadedByEmail: session.user.email ?? null,
@@ -188,7 +202,7 @@ export async function uploadAndRegisterGeneratedImage(
     data: {
       publicId: data.public_id,
       url: data.secure_url,
-      filename: data.original_filename,
+      filename: resolveFilename(data),
       format: data.format,
       width: data.width,
       height: data.height,

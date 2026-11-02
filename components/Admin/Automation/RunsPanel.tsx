@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { approveAutomationStepAction, listAutomationRunsAction, rejectAutomationStepAction } from "@/app/(admin)/actions/automation";
 import { ACTION_LABEL, EVENT_LABEL } from "@/lib/automation/types";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type Run = Awaited<ReturnType<typeof listAutomationRunsAction>>[number];
 
@@ -38,23 +39,33 @@ export default function RunsPanel({ initialRuns }: { initialRuns: Run[] }) {
 
   const handleApprove = async (stepId: string) => {
     setBusyStepId(stepId);
-    setError(null);
-    const result = await approveAutomationStepAction(stepId);
-    setBusyStepId(null);
-    if (!result.success) setError(result.error);
-    await refresh();
-    router.refresh();
+    try {
+      setError(null);
+      const result = await approveAutomationStepAction(stepId);
+      if (!result.success) setError(result.error);
+      await refresh();
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusyStepId(null);
+    }
   };
 
   const handleReject = async (stepId: string) => {
     if (!confirm("Reject this step? The whole run will stop — later steps will never run.")) return;
     setBusyStepId(stepId);
-    setError(null);
-    const result = await rejectAutomationStepAction(stepId);
-    setBusyStepId(null);
-    if (!result.success) setError(result.error);
-    await refresh();
-    router.refresh();
+    try {
+      setError(null);
+      const result = await rejectAutomationStepAction(stepId);
+      if (!result.success) setError(result.error);
+      await refresh();
+      router.refresh();
+    } catch (err) {
+      setError(describeActionError(err));
+    } finally {
+      setBusyStepId(null);
+    }
   };
 
   if (runs.length === 0) {

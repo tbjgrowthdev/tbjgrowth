@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, RotateCcw } from "lucide-react";
-import { retryJobAction, getAllJobsAction } from "@/app/(admin)/actions/content-pipeline";
+import { getAllJobsAction } from "@/app/(admin)/actions/content-pipeline";
 import { STAGE_LABEL } from "@/lib/content-pipeline/types";
+import { requestPipelineStage } from "@/lib/admin/action-errors";
 
 type Job = Awaited<ReturnType<typeof getAllJobsAction>>[number];
 
@@ -25,13 +26,20 @@ export default function JobQueueClient({ jobs }: { jobs: Job[] }) {
     if (!job.pipelineRunId) return; // Content Refresh jobs: regenerate from the refresh's own detail page instead.
     setRetrying(job.id);
     setError(null);
-    const result = await retryJobAction(job.pipelineRunId, job.stage);
-    setRetrying(null);
-    if (!result.success) {
-      setError(result.error || "Retry failed");
-      return;
+    try {
+      // Same streaming endpoint the wizard uses, so a long retry (Draft) keeps its connection alive.
+      const result = await requestPipelineStage(job.pipelineRunId, job.stage);
+      if (!result.success) {
+        setError(
+          result.connectionLost
+            ? `${result.error} The retry may still finish on the server — open the run to follow it.`
+            : result.error || "Retry failed"
+        );
+      }
+    } finally {
+      setRetrying(null);
+      router.refresh();
     }
-    router.refresh();
   };
 
   const linkFor = (job: Job) => (job.pipelineRunId ? `/admin/ai-pipeline/${job.pipelineRunId}` : job.contentRefreshId ? `/admin/content-refresh/${job.contentRefreshId}` : null);
