@@ -6,6 +6,7 @@ import { createRedirect, updateRedirect, deleteRedirect, bulkImportRedirects } f
 import { AlertCircle, AlertTriangle, CheckCircle2, Plus, Upload, Search, Pencil, X, Save, Link2, RotateCw, Copy } from "lucide-react";
 import DeleteButton from "./DeleteButton";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type RedirectItem = {
   id: string;
@@ -64,7 +65,7 @@ export default function RedirectsManager({ redirects, diagnostics }: { redirects
     try {
       setError(null);
 
-      const result = await createRedirect({ source, destination: statusCode === 410 ? undefined : destination, statusCode });
+      const result = await withToast(createRedirect({ source, destination: statusCode === 410 ? undefined : destination, statusCode }), { success: "Redirect created", error: "Couldn't create redirect" });
       if (result.success) {
         setSource("");
         setDestination("");
@@ -83,7 +84,7 @@ export default function RedirectsManager({ redirects, diagnostics }: { redirects
     setIsImporting(true);
     try {
       setImportResult(null);
-      const result = await bulkImportRedirects(csvText);
+      const result = await withToast(bulkImportRedirects(csvText), { success: "Redirects imported", error: "Couldn't import redirects" });
       setImportResult(`Imported ${result.created}, skipped ${result.skipped}${result.errors.length ? `, ${result.errors.length} errors` : ""}.`);
       setCsvText("");
       router.refresh();
@@ -108,11 +109,11 @@ export default function RedirectsManager({ redirects, diagnostics }: { redirects
     if (!editingId) return;
     setIsSaving(true);
     try {
-      const result = await updateRedirect(editingId, {
+      const result = await withToast(updateRedirect(editingId, {
         source: editSource,
         destination: editStatusCode === 410 ? undefined : editDestination,
         statusCode: editStatusCode,
-      });
+      }), { success: "Redirect updated", error: "Couldn't update redirect" });
       if (result.success) {
         setEditingId(null);
         router.refresh();

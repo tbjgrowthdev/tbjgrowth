@@ -7,6 +7,7 @@ import { LogoutButton } from "@/components/Admin/LogoutButton";
 import ThemeToggle from "@/components/Admin/ThemeToggle";
 import VisitSiteMenu from "@/components/Admin/VisitSiteMenu";
 import { AdminSidebarProvider, SidebarFrame, SidebarToggle } from "@/components/Admin/AdminSidebar";
+import { Toaster } from "@/components/Admin/Toast";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
 
@@ -318,6 +319,7 @@ export default async function AdminLayout({
         </div>
       </main>
     </div>
+    <Toaster />
     </AdminSidebarProvider>
   );
 }

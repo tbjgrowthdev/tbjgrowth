@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Upload } from "lucide-react";
 import { uploadMediaAsset } from "@/app/(admin)/actions/media";
 import type { MediaAsset } from "@/lib/generated/prisma/client";
+import { withToast } from "@/lib/admin/toast";
 
 interface MediaUploadModalProps {
   folders: string[];
@@ -33,11 +34,11 @@ export default function MediaUploadModal({ folders, onClose, onUploaded }: Media
     setUploading(true);
     setError(null);
     try {
-      const result = await uploadMediaAsset(file, {
+      const result = await withToast(uploadMediaAsset(file, {
         altText,
         title: title || undefined,
         folder: newFolder.trim() || folder || undefined,
-      });
+      }), { success: "Image uploaded", error: "Upload failed" });
       if (result.success && result.asset) {
         onUploaded(result.asset);
         onClose();

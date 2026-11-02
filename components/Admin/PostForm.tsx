@@ -18,6 +18,7 @@ import SchedulingPanel from "./SchedulingPanel";
 import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
 import { listTimezones } from "@/lib/scheduling";
 import ContentLockBanner from "./ContentLockBanner";
+import { withToast } from "@/lib/admin/toast";
 
 const TIMEZONES = listTimezones();
 const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
@@ -106,7 +107,7 @@ export default function PostForm({
           setLoading(false);
           return;
         }
-        const jobResult = await scheduleContentJob(
+        const jobResult = await withToast(scheduleContentJob(
           "POST",
           initialData.id,
           "UPDATE",
@@ -114,7 +115,7 @@ export default function PostForm({
           scheduleUpdateTime,
           scheduleUpdateTimezone,
           payload
-        );
+        ), { success: "Scheduled", error: "Couldn't schedule" });
         if (jobResult.success) {
           router.push("/admin/posts");
           router.refresh();
@@ -126,18 +127,18 @@ export default function PostForm({
       }
 
       const result = isExisting
-        ? await updatePost(initialData.id, { ...payload, changeSummary, expectedUpdatedAt: initialData.updatedAt })
-        : await createPost({ ...payload, changeSummary });
+        ? await withToast(updatePost(initialData.id, { ...payload, changeSummary, expectedUpdatedAt: initialData.updatedAt }), { success: "Post updated", error: "Couldn't update post" })
+        : await withToast(createPost({ ...payload, changeSummary }), { success: "Post created", error: "Couldn't create post" });
 
       if (result.success) {
         if (slugChanged && confirm(
           `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
         )) {
-          await createRedirect({
+          await withToast(createRedirect({
             source: `/blog/${originalSlug}`,
             destination: `/blog/${formData.slug}`,
             statusCode: 301,
-          });
+          }), { success: "Redirect created", error: "Couldn't create redirect" });
         }
         router.push("/admin/posts");
         router.refresh();

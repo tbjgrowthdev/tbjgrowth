@@ -11,6 +11,7 @@ import {
 } from "@/app/(admin)/actions/seo-performance-feedback";
 import { SIGNAL_LABEL, type PerformanceFeedbackSeverity, type PerformanceSignal } from "@/lib/seo-performance-feedback/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Row = Awaited<ReturnType<typeof listPerformanceFeedbackAction>>[number];
 
@@ -57,7 +58,7 @@ export default function PerformanceFeedbackListClient({ rows }: { rows: Row[] })
     setScanning(true);
     try {
       setError(null);
-      const result = await scanAndUpsertPerformanceFeedbackAction();
+      const result = await withToast(scanAndUpsertPerformanceFeedbackAction(), { success: "Scan complete", error: "Scan failed" });
       if (!result.success) {
         setError(result.error || "Scan failed");
         return;
@@ -74,7 +75,7 @@ export default function PerformanceFeedbackListClient({ rows }: { rows: Row[] })
   const dismiss = async (id: string) => {
     setBusyId(id);
     try {
-      const result = await dismissPerformanceFeedbackAction(id);
+      const result = await withToast(dismissPerformanceFeedbackAction(id), { success: "Performance feedback dismissed", error: "Couldn't dismiss performance feedback" });
       if (!result.success) {
         setError(result.error || "Something went wrong");
         return;

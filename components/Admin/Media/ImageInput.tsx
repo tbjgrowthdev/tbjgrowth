@@ -6,6 +6,7 @@ import { importMediaFromUrl, uploadMediaAsset } from "@/app/(admin)/actions/medi
 import { describeActionError } from "@/lib/admin/action-errors";
 import { isDisplayableImageUrl, isImportableImageUrl } from "@/lib/image-hosts";
 import MediaAssetPicker from "./MediaAssetPicker";
+import { toast, withToast } from "@/lib/admin/toast";
 
 // The one image field used everywhere the admin sets an image. Every
 // instance offers the same four ways in:
@@ -136,8 +137,10 @@ export default function ImageInput(props: SingleProps | GalleryProps) {
     try {
       const urls = await Promise.all(files.map((file) => uploadFile(file)));
       emit(urls.map((url) => ({ url, altText: altSuggestion })));
+      toast.success(urls.length > 1 ? `${urls.length} images uploaded` : "Image uploaded");
     } catch (err) {
       setError(describeActionError(err, "Upload failed"));
+      toast.error("Upload failed", { description: describeActionError(err, "The request failed") });
     } finally {
       setUploading(false);
     }
@@ -148,7 +151,7 @@ export default function ImageInput(props: SingleProps | GalleryProps) {
     setUploading(true);
     setError(null);
     try {
-      const results = await Promise.all(pending.map((p) => uploadMediaAsset(p.file, { altText: p.altText.trim(), folder })));
+      const results = await Promise.all(pending.map((p) => withToast(uploadMediaAsset(p.file, { altText: p.altText.trim(), folder }), { success: "Image uploaded", error: "Upload failed" })));
       const done: ImageSelection[] = [];
       let failure: string | undefined;
       results.forEach((r, i) => {
@@ -177,7 +180,7 @@ export default function ImageInput(props: SingleProps | GalleryProps) {
     setImporting(true);
     setError(null);
     try {
-      const result = await importMediaFromUrl(currentUrl.trim(), { altText: alt, folder });
+      const result = await withToast(importMediaFromUrl(currentUrl.trim(), { altText: alt, folder }), { success: "Image imported to the Media Library", error: "Couldn't import image" });
       if (result.success) {
         emit([{ url: result.url, altText: alt }]);
         setImportAlt("");

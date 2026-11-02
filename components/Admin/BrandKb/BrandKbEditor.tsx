@@ -8,6 +8,7 @@ import { activateBrandSectionVersionAction, getBrandSectionDetailAction, saveBra
 import { SECTION_HELP, SECTION_LABEL } from "@/lib/brand-kb/constants";
 import type { BrandSectionKey } from "@/lib/generated/prisma/client";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Detail = Awaited<ReturnType<typeof getBrandSectionDetailAction>>;
 type Section = NonNullable<NonNullable<Detail>["section"]>;
@@ -35,7 +36,7 @@ export default function BrandKbEditor({
     try {
       setError(null);
       setSaved(false);
-      const result = await saveBrandSectionVersionAction(sectionKey, { content, changeNote: changeNote || undefined });
+      const result = await withToast(saveBrandSectionVersionAction(sectionKey, { content, changeNote: changeNote || undefined }), { success: "Brand section saved", error: "Couldn't save brand section" });
       if (!result.success) {
         setError(result.error);
         return;
@@ -55,7 +56,7 @@ export default function BrandKbEditor({
     setBusy(true);
     try {
       setError(null);
-      const result = await activateBrandSectionVersionAction(section.id, versionId);
+      const result = await withToast(activateBrandSectionVersionAction(section.id, versionId), { success: "Version restored", error: "Couldn't restore version" });
       if (!result.success) {
         setError(result.error);
         return;

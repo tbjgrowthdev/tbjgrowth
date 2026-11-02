@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { runLinkCheckNow } from "@/app/(admin)/actions/link-monitor";
 import { PlayCircle, AlertTriangle, CheckCircle2, Link2Off, Globe, RotateCw, Link2 } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 type Finding = {
   category: "Internal 404" | "External Broken Link" | "Redirect Chain" | "Redirect Loop";
@@ -41,7 +42,7 @@ export default function LinkMonitorClient({ latest, history }: { latest: Run | n
     setIsRunning(true);
     setError(null);
     try {
-      const result = await runLinkCheckNow();
+      const result = await withToast(runLinkCheckNow(), { success: "Link check finished", error: "Link check failed" });
       if (result.success && result.run) {
         setCurrentRun(result.run);
       } else {

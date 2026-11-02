@@ -1,4 +1,7 @@
-import { Tiro_Bangla, Hind_Siliguri } from "next/font/google";
+// Self-hosted (app/fonts/, Google Fonts files under the SIL Open Font License)
+// instead of the Google font loader, whose build-time download intermittently
+// breaks Turbopack builds — see app/(public)/[locale]/layout.tsx.
+import localFont from "next/font/local";
 import { getPageMetadata, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import DateGurLandingClient from "./DateGurLandingClient";
@@ -7,16 +10,22 @@ import DateGurLandingClient from "./DateGurLandingClient";
 // across the rest of the site) don't have Bengali glyphs at all, so this
 // page needs its own Bengali-script font pairing: Tiro Bangla for the
 // literary display serif headings, Hind Siliguri for readable Bangla body copy.
-const tiroBangla = Tiro_Bangla({
-  subsets: ["bengali"],
+const tiroBangla = localFont({
+  src: "../../fonts/tiro-bangla-bengali-normal-400.woff2",
   weight: "400",
   variable: "--font-tiro-bangla",
+  display: "swap",
 });
 
-const hindSiliguri = Hind_Siliguri({
-  subsets: ["bengali"],
-  weight: ["400", "500", "600", "700"],
+const hindSiliguri = localFont({
+  src: [
+    { path: "../../fonts/hind-siliguri-bengali-normal-400.woff2", weight: "400", style: "normal" },
+    { path: "../../fonts/hind-siliguri-bengali-normal-500.woff2", weight: "500", style: "normal" },
+    { path: "../../fonts/hind-siliguri-bengali-normal-600.woff2", weight: "600", style: "normal" },
+    { path: "../../fonts/hind-siliguri-bengali-normal-700.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-hind-siliguri",
+  display: "swap",
 });
 
 export async function generateMetadata() {

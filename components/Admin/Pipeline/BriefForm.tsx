@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { createPipelineRunAction } from "@/app/(admin)/actions/content-pipeline";
 import type { Brief, PipelineContentType } from "@/lib/content-pipeline/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 export default function BriefForm({ initialTopic, initialContentType, initialNotes }: { initialTopic?: string; initialContentType?: PipelineContentType; initialNotes?: string } = {}) {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function BriefForm({ initialTopic, initialContentType, initialNot
         notes: notes || undefined,
         ...(contentType === "CASE_STUDY" ? { clientName, industry, serviceType, resultsHint: resultsHint || undefined } : {}),
       };
-      const result = await createPipelineRunAction(brief);
+      const result = await withToast(createPipelineRunAction(brief), { success: "Pipeline run started", error: "Couldn't start pipeline run" });
       if (!result.success || !result.data) {
         setError(!result.success ? result.error : "Failed to create pipeline run");
         return;

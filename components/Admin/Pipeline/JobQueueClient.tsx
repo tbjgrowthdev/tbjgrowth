@@ -7,6 +7,7 @@ import { Loader2, RotateCcw } from "lucide-react";
 import { getAllJobsAction } from "@/app/(admin)/actions/content-pipeline";
 import { STAGE_LABEL } from "@/lib/content-pipeline/types";
 import { requestPipelineStage } from "@/lib/admin/action-errors";
+import { toast } from "@/lib/admin/toast";
 
 type Job = Awaited<ReturnType<typeof getAllJobsAction>>[number];
 
@@ -29,6 +30,9 @@ export default function JobQueueClient({ jobs }: { jobs: Job[] }) {
     try {
       // Same streaming endpoint the wizard uses, so a long retry (Draft) keeps its connection alive.
       const result = await requestPipelineStage(job.pipelineRunId, job.stage);
+      if (result.success) toast.success(`${STAGE_LABEL[job.stage]} retried successfully`);
+      else if (result.connectionLost) toast.info("Lost connection during the retry", { description: "It may still finish on the server — open the run to follow it." });
+      else toast.error(`${STAGE_LABEL[job.stage]} retry failed`, result.error ? { description: result.error } : undefined);
       if (!result.success) {
         setError(
           result.connectionLost

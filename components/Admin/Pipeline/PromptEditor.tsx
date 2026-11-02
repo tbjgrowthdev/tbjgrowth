@@ -8,6 +8,7 @@ import { activatePromptVersionAction, getPromptTemplateDetailAction, savePromptV
 import { CATEGORY_LABEL, WIRED_CATEGORIES } from "@/lib/content-pipeline/prompt-constants";
 import type { PromptCategory } from "@/lib/generated/prisma/client";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Detail = Awaited<ReturnType<typeof getPromptTemplateDetailAction>>;
 type Template = NonNullable<NonNullable<Detail>["template"]>;
@@ -47,13 +48,13 @@ export default function PromptEditor({
     try {
       setError(null);
       setSaved(false);
-      const result = await savePromptVersionAction(category, {
+      const result = await withToast(savePromptVersionAction(category, {
         name,
         description: description || undefined,
         systemPrompt: systemPrompt || undefined,
         bodyTemplate,
         changeNote: changeNote || undefined,
-      });
+      }), { success: "Prompt version saved", error: "Couldn't save prompt version" });
       if (!result.success) {
         setError(result.error);
         return;
@@ -73,7 +74,7 @@ export default function PromptEditor({
     setBusy(true);
     try {
       setError(null);
-      const result = await activatePromptVersionAction(template.id, versionId);
+      const result = await withToast(activatePromptVersionAction(template.id, versionId), { success: "Prompt version activated", error: "Couldn't activate prompt version" });
       if (!result.success) {
         setError(result.error);
         return;

@@ -13,6 +13,7 @@ import {
   type AiProviderSettingsView,
 } from "@/app/(admin)/actions/ai-settings";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 const inputClass = "w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground";
 
@@ -100,7 +101,7 @@ function KeyRow({ status, testModel, disabled, onChange }: { status: AiKeyStatus
     setBusy("save");
     try {
       setMessage(null);
-      const result = await saveAiProviderKey({ provider: status.provider, apiKey: draft });
+      const result = await withToast(saveAiProviderKey({ provider: status.provider, apiKey: draft }), { success: "AI provider key saved", error: "Couldn't save AI provider key" });
       if (result.success) {
         setDraft(""); // drop the plaintext key from the browser as soon as it's stored
         onChange(result.data);
@@ -119,7 +120,7 @@ function KeyRow({ status, testModel, disabled, onChange }: { status: AiKeyStatus
     setBusy("remove");
     try {
       setMessage(null);
-      const result = await removeAiProviderKey({ provider: status.provider });
+      const result = await withToast(removeAiProviderKey({ provider: status.provider }), { success: "AI provider key removed", error: "Couldn't remove AI provider key" });
       setConfirmRemove(false);
       if (result.success) {
         onChange(result.data);
@@ -138,7 +139,7 @@ function KeyRow({ status, testModel, disabled, onChange }: { status: AiKeyStatus
     setBusy("test");
     try {
       setMessage(null);
-      const result = await testAiProviderConnection({ provider: status.provider, model: testModel });
+      const result = await withToast(testAiProviderConnection({ provider: status.provider, model: testModel }), { success: "Connection test passed", error: "Connection test failed" });
       setMessage(result.success ? { ok: true, text: `Responded in ${result.data.latencyMs} ms (${result.data.model}).` } : { ok: false, text: result.error });
     } catch (err) {
       setMessage({ ok: false, text: describeActionError(err) });
@@ -261,7 +262,7 @@ export default function AiProviderSettings({ initial }: { initial: AiProviderSet
     setSaving(true);
     try {
       setMessage(null);
-      const result = await saveAiProviderSettings({ textProvider: textProvider || null, textModel, imageProvider: imageProvider || null, imageModel });
+      const result = await withToast(saveAiProviderSettings({ textProvider: textProvider || null, textModel, imageProvider: imageProvider || null, imageModel }), { success: "AI provider settings saved", error: "Couldn't save AI provider settings" });
       if (result.success) {
         setMessage({ ok: true, text: "Saved. The next AI call uses this selection — no redeploy needed." });
         router.refresh();
@@ -280,7 +281,7 @@ export default function AiProviderSettings({ initial }: { initial: AiProviderSet
     try {
       setMessage(null);
       const provider = textProvider || initial.env.textProvider;
-      const result = await testAiProviderConnection({ provider, model: textProvider ? textModel : "" });
+      const result = await withToast(testAiProviderConnection({ provider, model: textProvider ? textModel : "" }), { success: "Connection test passed", error: "Connection test failed" });
       setMessage(
         result.success
           ? { ok: true, text: `${label(provider)} (${result.data.model}) responded in ${result.data.latencyMs} ms.` }

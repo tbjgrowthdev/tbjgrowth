@@ -11,6 +11,7 @@ import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import { parseServiceAreas } from "@/lib/locations";
 import ContentLockBanner from "./ContentLockBanner";
+import { withToast } from "@/lib/admin/toast";
 
 // Mirrors lib/i18n.ts's Market union — kept as a plain string on the model
 // (not a DB enum), so this list is the single source of truth for valid values.
@@ -134,13 +135,13 @@ export default function LocationForm({ initialData = null }: { initialData?: Loc
       const isExisting = Boolean(initialData?.id);
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
 
-      const result = isExisting ? await updateLocation(initialData!.id!, dataToSave) : await createLocation(dataToSave);
+      const result = isExisting ? await withToast(updateLocation(initialData!.id!, dataToSave), { success: "Location updated", error: "Couldn't update location" }) : await withToast(createLocation(dataToSave), { success: "Location created", error: "Couldn't create location" });
 
       if (result.success) {
         const locationId = result.location?.id ?? initialData?.id;
         const cleanFaqs = faqs.map((f) => ({ question: f.question.trim(), answer: f.answer.trim() })).filter((f) => f.question && f.answer);
         if (locationId) {
-          await replaceLocationFaqs(locationId, cleanFaqs);
+          await withToast(replaceLocationFaqs(locationId, cleanFaqs), { success: null, error: "Couldn't save FAQs" });
         }
 
         if (
@@ -149,7 +150,7 @@ export default function LocationForm({ initialData = null }: { initialData?: Loc
             `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
           )
         ) {
-          await createRedirect({ source: `/locations/${originalSlug}`, destination: `/locations/${formData.slug}`, statusCode: 301 });
+          await withToast(createRedirect({ source: `/locations/${originalSlug}`, destination: `/locations/${formData.slug}`, statusCode: 301 }), { success: "Redirect created", error: "Couldn't create redirect" });
         }
         router.push("/admin/locations");
       } else {

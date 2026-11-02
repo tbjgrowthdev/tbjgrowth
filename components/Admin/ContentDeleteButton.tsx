@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Trash2, AlertTriangle, Link2, Menu, FileText, Code2, Route, Languages } from "lucide-react";
 import { checkContentDependencies } from "@/app/(admin)/actions/dependencies";
+import { toast } from "@/lib/admin/toast";
+import { describeActionError } from "@/lib/admin/action-errors";
 import type { ContentKind, DeleteOptions, DependencyCategory, DependencyFinding } from "@/lib/dependency-check";
 
 const CATEGORY_ICON: Record<DependencyCategory, typeof Link2> = {
@@ -38,6 +40,8 @@ export default function ContentDeleteButton({ id, kind, onDelete, entityName = "
       setFindings(results);
       setChangedSinceCheck(false);
       setShowModal(true);
+    } catch (error) {
+      toast.error("Couldn't check what links to this", { description: describeActionError(error, "The request failed") });
     } finally {
       setChecking(false);
     }
@@ -56,9 +60,13 @@ export default function ContentDeleteButton({ id, kind, onDelete, entityName = "
         return;
       }
       if (!result.success) {
-        alert(result.error || `Failed to delete ${entityName}`);
+        toast.error(`Couldn't delete ${entityName}`, result.error ? { description: result.error } : undefined);
+      } else {
+        toast.success(`${entityName.charAt(0).toUpperCase() + entityName.slice(1)} deleted`);
       }
       setShowModal(false);
+    } catch (error) {
+      toast.error(`Couldn't delete ${entityName}`, { description: describeActionError(error, "The request failed") });
     } finally {
       setDeleting(false);
     }

@@ -12,6 +12,7 @@ import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import { buildAutoSchema } from "@/lib/schema-engine";
 import ContentLockBanner from "./ContentLockBanner";
+import { withToast } from "@/lib/admin/toast";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 
@@ -135,8 +136,8 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
 
       const result = isExisting
-        ? await updateService(initialData.id, dataToSave)
-        : await createService(dataToSave);
+        ? await withToast(updateService(initialData.id, dataToSave), { success: "Service updated", error: "Couldn't update service" })
+        : await withToast(createService(dataToSave), { success: "Service created", error: "Couldn't create service" });
 
       if (result.success) {
         const serviceId = result.service?.id ?? initialData?.id;
@@ -144,17 +145,17 @@ export default function ServiceForm({ initialData = null }: { initialData?: any 
           .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
           .filter((f) => f.question && f.answer);
         if (serviceId) {
-          await replaceServiceFaqs(serviceId, cleanFaqs);
+          await withToast(replaceServiceFaqs(serviceId, cleanFaqs), { success: null, error: "Couldn't save FAQs" });
         }
 
         if (slugChanged && confirm(
           `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
         )) {
-          await createRedirect({
+          await withToast(createRedirect({
             source: `/services/${originalSlug}`,
             destination: `/services/${formData.slug}`,
             statusCode: 301,
-          });
+          }), { success: "Redirect created", error: "Couldn't create redirect" });
         }
         router.push("/admin/services");
       } else {

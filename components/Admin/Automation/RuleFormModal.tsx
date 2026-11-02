@@ -19,6 +19,7 @@ import {
 } from "@/lib/automation/types";
 import type { ContentType, PerformanceFeedbackSeverity } from "@/lib/generated/prisma/client";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 const CONTENT_TYPES: ContentType[] = ["POST", "PAGE", "CASE_STUDY"];
 const SEVERITIES: PerformanceFeedbackSeverity[] = ["HIGH", "MEDIUM", "LOW"];
@@ -119,7 +120,7 @@ export default function RuleFormModal({ existing, onClose, onSaved }: { existing
         conditions: { contentTypes: contentTypes.length ? contentTypes : undefined, severities: isSignalEvent && severities.length ? severities : undefined } as RuleConditions,
         actions: steps,
       };
-      const result = existing ? await updateAutomationRuleAction(existing.id, input) : await createAutomationRuleAction(input);
+      const result = existing ? await withToast(updateAutomationRuleAction(existing.id, input), { success: "Automation rule updated", error: "Couldn't update automation rule" }) : await withToast(createAutomationRuleAction(input), { success: "Automation rule created", error: "Couldn't create automation rule" });
       if (!result.success) {
         setError(result.error);
         return;

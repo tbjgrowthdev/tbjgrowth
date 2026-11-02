@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPartner, updatePartner } from "@/app/(admin)/actions/partners";
 import { Save, AlertCircle } from "lucide-react";
 import ImageInput from "./Media/ImageInput";
+import { withToast } from "@/lib/admin/toast";
 
 export default function PartnerForm({ initialData = null }: { initialData?: any }) {
   const router = useRouter();
@@ -34,8 +35,8 @@ export default function PartnerForm({ initialData = null }: { initialData?: any 
       };
 
       const result = initialData
-        ? await updatePartner(initialData.id, dataToSave)
-        : await createPartner(dataToSave);
+        ? await withToast(updatePartner(initialData.id, dataToSave), { success: "Partner updated", error: "Couldn't update partner" })
+        : await withToast(createPartner(dataToSave), { success: "Partner created", error: "Couldn't create partner" });
 
       if (result.success) {
         router.push("/admin/partners");

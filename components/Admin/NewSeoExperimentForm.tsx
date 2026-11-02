@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { createSeoExperimentAction } from "@/app/(admin)/actions/seo-experiments";
 import { AlertCircle, Save } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 const RichTextEditor = dynamic(() => import("./Editor"), { ssr: false });
 
@@ -80,7 +81,7 @@ export default function NewSeoExperimentForm({ content }: { content: ContentItem
     setIsSubmitting(true);
     try {
       setError(null);
-      const result = await createSeoExperimentAction({
+      const result = await withToast(createSeoExperimentAction({
         name: name.trim() || `${VARIABLE_OPTIONS.find((v) => v.value === variable)!.label} test on ${selected.title}`,
         contentType: selected.contentType,
         contentId: selected.contentId,
@@ -88,7 +89,7 @@ export default function NewSeoExperimentForm({ content }: { content: ContentItem
         afterValue,
         baselineWindowDays: Number(baselineWindowDays),
         evaluationWindowDays: Number(evaluationWindowDays),
-      });
+      }), { success: "SEO experiment created", error: "Couldn't create SEO experiment" });
       if (result.success) {
         router.push(`/admin/seo-experiments/${result.data.id}`);
       } else {

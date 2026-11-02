@@ -7,6 +7,7 @@ import { uploadImage } from "@/lib/cloudinary";
 import { parseSocialLinks } from "@/lib/utils";
 import ImageInput from "./Media/ImageInput";
 import { Save, AlertCircle, CheckCircle2, KeyRound, User as UserIcon } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 type AdminUser = {
   id: string;
@@ -50,7 +51,7 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
     setSuccessMsg(null);
 
     try {
-      const result = await updateProfile({
+      const result = await withToast(updateProfile({
         name: formData.name,
         email: formData.email,
         bio: formData.bio,
@@ -60,7 +61,7 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
           twitter: formData.twitter,
           linkedin: formData.linkedin,
         }),
-      });
+      }), { success: "Profile updated", error: "Couldn't update profile" });
 
       if (result.success) {
         setSuccessMsg("Profile updated successfully.");
@@ -226,10 +227,10 @@ function PasswordForm() {
 
     setIsSubmitting(true);
     try {
-      const result = await changePassword({
+      const result = await withToast(changePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
-      });
+      }), { success: "Password changed", error: "Couldn't change password" });
 
       if (result.success) {
         setSuccessMsg("Password changed successfully.");

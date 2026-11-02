@@ -1,21 +1,27 @@
-import { Playfair_Display, Work_Sans } from "next/font/google";
+// Self-hosted (app/fonts/, Google Fonts files under the SIL Open Font License)
+// instead of the Google font loader, whose build-time download intermittently
+// breaks Turbopack builds — see app/(public)/[locale]/layout.tsx.
+import localFont from "next/font/local";
 import { getPageMetadata, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import IvoryLaneLandingClient from "./IvoryLaneLandingClient";
 
 // Scoped to this page only — a warm, editorial, romantic identity independent
 // of the rest of the site and of the other /landing-pages/* pages.
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+const playfair = localFont({
+  src: [
+    { path: "../../fonts/playfair-display-latin-normal-400-700.woff2", weight: "400 700", style: "normal" },
+    { path: "../../fonts/playfair-display-latin-italic-400-700.woff2", weight: "400 700", style: "italic" },
+  ],
   variable: "--font-playfair",
+  display: "swap",
 });
 
-const workSans = Work_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+const workSans = localFont({
+  src: "../../fonts/work-sans-latin-normal-300-600.woff2",
+  weight: "300 600",
   variable: "--font-work-sans",
+  display: "swap",
 });
 
 export async function generateMetadata() {

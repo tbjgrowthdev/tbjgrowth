@@ -6,6 +6,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { listHealthScoresAction, scanAndUpsertHealthScoresAction } from "@/app/(admin)/actions/content-health";
 import { FACTOR_LABEL, GRADE_LABEL, type FactorScore } from "@/lib/content-health/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Score = Awaited<ReturnType<typeof listHealthScoresAction>>[number];
 
@@ -34,7 +35,7 @@ export default function ContentHealthListClient({ scores }: { scores: Score[] })
     setScanning(true);
     try {
       setError(null);
-      const result = await scanAndUpsertHealthScoresAction();
+      const result = await withToast(scanAndUpsertHealthScoresAction(), { success: "Scan complete", error: "Scan failed" });
       if (!result.success) {
         setError(result.error || "Scan failed");
         return;

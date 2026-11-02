@@ -11,6 +11,7 @@ import {
   scanAndUpsertOrphanPagesAction,
 } from "@/app/(admin)/actions/orphan-pages";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Row = Awaited<ReturnType<typeof listOrphanPagesAction>>[number];
 
@@ -40,7 +41,7 @@ export default function OrphanPagesListClient({ pages }: { pages: Row[] }) {
     setScanning(true);
     try {
       setError(null);
-      const result = await scanAndUpsertOrphanPagesAction();
+      const result = await withToast(scanAndUpsertOrphanPagesAction(), { success: "Scan complete", error: "Scan failed" });
       if (!result.success) {
         setError(result.error || "Scan failed");
         return;
@@ -55,9 +56,10 @@ export default function OrphanPagesListClient({ pages }: { pages: Row[] }) {
   };
 
   const act = async (id: string, fn: (id: string) => Promise<{ success: boolean; error?: string }>) => {
+    const messages = fn === markOrphanPageResolvedAction ? { success: "Marked as resolved", error: "Couldn't mark as resolved" } : { success: "Dismissed", error: "Couldn't dismiss" };
     setBusyId(id);
     try {
-      const result = await fn(id);
+      const result = await withToast(fn(id), messages);
       if (!result.success) {
         setError(result.error || "Something went wrong");
         return;

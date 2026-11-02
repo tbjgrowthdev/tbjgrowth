@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { DeleteOptions, DependencyFinding } from "@/lib/dependency-check";
+import { toast } from "@/lib/admin/toast";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type DeleteResult = { success?: boolean; error?: string; dependencies?: DependencyFinding[] } | void | null | undefined;
 
@@ -29,11 +31,13 @@ export default function DeleteButton({ id, onDelete, entityName = "item" }: Dele
           result = await onDelete(id, { force: true });
         }
         if (result && result.success === false) {
-          alert(result.error || `Failed to delete ${entityName}.`);
+          toast.error(`Couldn't delete ${entityName}`, result.error ? { description: result.error } : undefined);
+        } else {
+          toast.success(`${entityName.charAt(0).toUpperCase() + entityName.slice(1)} deleted`);
         }
       } catch (error) {
         console.error(`Failed to delete ${entityName}`, error);
-        alert(`Failed to delete ${entityName}.`);
+        toast.error(`Couldn't delete ${entityName}`, { description: describeActionError(error, "The request failed") });
       } finally {
         setIsDeleting(false);
       }

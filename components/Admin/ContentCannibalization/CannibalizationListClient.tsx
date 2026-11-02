@@ -12,6 +12,7 @@ import {
 } from "@/app/(admin)/actions/content-cannibalization";
 import { ACTION_EXPLANATION, ACTION_LABEL, type CannibalizationActionType, type SharedQuery } from "@/lib/content-cannibalization/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Pair = Awaited<ReturnType<typeof listCannibalizationPairsAction>>[number];
 
@@ -51,7 +52,7 @@ export default function CannibalizationListClient({ pairs }: { pairs: Pair[] }) 
     setScanning(true);
     try {
       setError(null);
-      const result = await scanAndUpsertCannibalizationPairsAction();
+      const result = await withToast(scanAndUpsertCannibalizationPairsAction(), { success: "Scan complete", error: "Scan failed" });
       if (!result.success) {
         setError(result.error || "Scan failed");
         return;
@@ -66,9 +67,10 @@ export default function CannibalizationListClient({ pairs }: { pairs: Pair[] }) 
   };
 
   const act = async (id: string, fn: (id: string) => Promise<{ success: boolean; error?: string }>) => {
+    const messages = fn === markCannibalizationResolvedAction ? { success: "Marked as resolved", error: "Couldn't mark as resolved" } : { success: "Dismissed", error: "Couldn't dismiss" };
     setBusyId(id);
     try {
-      const result = await fn(id);
+      const result = await withToast(fn(id), messages);
       if (!result.success) {
         setError(result.error || "Something went wrong");
         return;

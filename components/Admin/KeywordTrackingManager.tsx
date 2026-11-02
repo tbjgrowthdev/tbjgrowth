@@ -14,6 +14,7 @@ import {
 import { Plus, AlertCircle, AlertTriangle, PlayCircle, Globe2, Pencil, RefreshCw, Check, X } from "lucide-react";
 import DeleteButton from "./DeleteButton";
 import RankSparkline from "./RankSparkline";
+import { withToast } from "@/lib/admin/toast";
 
 type SearchIntent = "INFORMATIONAL" | "NAVIGATIONAL" | "COMMERCIAL" | "TRANSACTIONAL";
 type KeywordStatus = "ACTIVE" | "PAUSED" | "ARCHIVED";
@@ -96,13 +97,13 @@ export default function KeywordTrackingManager({
   const handleAddKeyword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const result = await createTrackedKeyword({
+    const result = await withToast(createTrackedKeyword({
       term,
       targetUrl: targetUrl || undefined,
       searchIntent,
       country,
       language,
-    });
+    }), { success: "Keyword added", error: "Couldn't add keyword" });
     if (result.success) {
       setTerm("");
       setTargetUrl("");
@@ -118,7 +119,7 @@ export default function KeywordTrackingManager({
   const handleRunCheck = async (id: string) => {
     setCheckingId(id);
     setCheckError(null);
-    const result = await runRankCheck(id);
+    const result = await withToast(runRankCheck(id), { success: "Rank check finished", error: "Rank check failed" });
     if (!result.success) {
       setCheckError(result.error || "Rank check failed");
     }
@@ -156,7 +157,7 @@ export default function KeywordTrackingManager({
   const saveEdit = async (id: string) => {
     if (!editState) return;
     setSavingEdit(true);
-    const result = await updateTrackedKeyword(id, editState);
+    const result = await withToast(updateTrackedKeyword(id, editState), { success: "Keyword updated", error: "Couldn't update keyword" });
     setSavingEdit(false);
     if (result.success) {
       setEditingId(null);
@@ -170,7 +171,7 @@ export default function KeywordTrackingManager({
   const handleAddCompetitor = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const result = await createCompetitorDomain({ domain, name: competitorName || undefined });
+    const result = await withToast(createCompetitorDomain({ domain, name: competitorName || undefined }), { success: "Competitor added", error: "Couldn't add competitor" });
     if (result.success) {
       setDomain("");
       setCompetitorName("");

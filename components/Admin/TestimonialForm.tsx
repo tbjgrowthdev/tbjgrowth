@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createTestimonial, updateTestimonial } from "@/app/(admin)/actions/testimonials";
 import { Save, AlertCircle } from "lucide-react";
 import ImageInput from "./Media/ImageInput";
+import { withToast } from "@/lib/admin/toast";
 
 const GRADIENTS = [
   { label: "Blue to Cyan", value: "from-blue-500 to-cyan-500" },
@@ -61,8 +62,8 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
       };
 
       const result = initialData
-        ? await updateTestimonial(initialData.id, dataToSave)
-        : await createTestimonial(dataToSave);
+        ? await withToast(updateTestimonial(initialData.id, dataToSave), { success: "Testimonial updated", error: "Couldn't update testimonial" })
+        : await withToast(createTestimonial(dataToSave), { success: "Testimonial created", error: "Couldn't create testimonial" });
 
       if (result.success) {
         router.push("/admin/testimonials");

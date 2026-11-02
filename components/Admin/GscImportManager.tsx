@@ -5,6 +5,7 @@ import { runGscImport, getGscData } from "@/app/(admin)/actions/gsc-import";
 import type { GscData } from "@/app/(admin)/actions/gsc-import";
 import { Download, AlertCircle, CheckCircle2, Filter } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 const CONTENT_TYPE_LABEL: Record<string, string> = {
   POST: "Blog Post",
@@ -47,7 +48,7 @@ export default function GscImportManager({
     try {
       setError(null);
       setImportMsg(null);
-      const result = await runGscImport(startDate, endDate);
+      const result = await withToast(runGscImport(startDate, endDate), { success: "Search Console import finished", error: "Search Console import failed" });
       if (result.success && result.result) {
         setImportMsg(
           `Imported ${result.result.rowsImported.toLocaleString()} rows — ${result.result.mappedToContent.toLocaleString()} mapped to CMS content, ${result.result.unmapped.toLocaleString()} unmapped.`

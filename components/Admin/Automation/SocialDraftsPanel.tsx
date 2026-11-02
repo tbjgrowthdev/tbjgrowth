@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { dismissSocialDraftAction, listSocialDraftsAction } from "@/app/(admin)/actions/automation";
+import { withToast } from "@/lib/admin/toast";
 
 type Draft = Awaited<ReturnType<typeof listSocialDraftsAction>>[number];
 
@@ -29,7 +30,7 @@ export default function SocialDraftsPanel({ initialDrafts }: { initialDrafts: Dr
 
   const handleDismiss = async (id: string) => {
     setDrafts((prev) => prev.filter((d) => d.id !== id));
-    await dismissSocialDraftAction(id);
+    await withToast(dismissSocialDraftAction(id), { success: "Social draft dismissed", error: "Couldn't dismiss social draft" });
   };
 
   if (drafts.length === 0) {

@@ -11,6 +11,7 @@ import {
 } from "@/app/(admin)/actions/translations";
 import type { TranslatableKind } from "@/lib/translation";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 const LONG_TEXT_FIELDS = new Set(["content", "excerpt", "detailIntro", "ogDescription", "twitterDescription"]);
 
@@ -78,7 +79,7 @@ export default function TranslationEditor({
     try {
       setError(null);
       setMessage(null);
-      const result = await saveTranslationDraft(contentType, contentId, locale, { ...values, expectedUpdatedAt: updatedAt });
+      const result = await withToast(saveTranslationDraft(contentType, contentId, locale, { ...values, expectedUpdatedAt: updatedAt }), { success: "Translation draft saved", error: "Couldn't save translation draft" });
       if (result.success && result.translation) {
         setUpdatedAt(result.translation.updatedAt);
         setStatus(result.translation.status);
@@ -99,7 +100,7 @@ export default function TranslationEditor({
     try {
       setError(null);
       setMessage(null);
-      const result = await publishTranslation(contentType, contentId, locale);
+      const result = await withToast(publishTranslation(contentType, contentId, locale), { success: "Translation published", error: "Couldn't publish translation" });
       if (result.success && result.translation) {
         setStatus(result.translation.status);
         setUpdatedAt(result.translation.updatedAt);
@@ -120,7 +121,7 @@ export default function TranslationEditor({
     try {
       setError(null);
       setMessage(null);
-      const result = await unpublishTranslation(contentType, contentId, locale);
+      const result = await withToast(unpublishTranslation(contentType, contentId, locale), { success: "Translation unpublished", error: "Couldn't unpublish translation" });
       if (result.success && result.translation) {
         setStatus(result.translation.status);
         setUpdatedAt(result.translation.updatedAt);
@@ -142,7 +143,7 @@ export default function TranslationEditor({
     setIsDeleting(true);
     setError(null);
     try {
-      const result = await deleteTranslation(contentType, contentId, locale);
+      const result = await withToast(deleteTranslation(contentType, contentId, locale), { success: "Translation deleted", error: "Couldn't delete translation" });
       if (result.success) {
         // Leaves isDeleting on while navigating away, so the button can't be clicked twice.
         router.push("/admin/translations");

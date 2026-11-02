@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSystem, updateSystem } from "@/app/(admin)/actions/systems";
 import { Save, AlertCircle } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 const GRADIENTS = [
   { label: "Blue to Cyan", value: "from-blue-500 to-cyan-500" },
@@ -63,8 +64,8 @@ export default function SystemForm({ initialData = null }: { initialData?: any }
       };
 
       const result = initialData
-        ? await updateSystem(initialData.id, dataToSave)
-        : await createSystem(dataToSave);
+        ? await withToast(updateSystem(initialData.id, dataToSave), { success: "System updated", error: "Couldn't update system" })
+        : await withToast(createSystem(dataToSave), { success: "System created", error: "Couldn't create system" });
 
       if (result.success) {
         router.push("/admin/systems");

@@ -10,6 +10,7 @@ import {
   scanAndUpsertRecommendationsAction,
 } from "@/app/(admin)/actions/content-recommendations";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Recommendation = Awaited<ReturnType<typeof listRecommendationsAction>>[number];
 
@@ -30,7 +31,7 @@ export default function RecommendationsListClient({ recommendations }: { recomme
     setScanning(true);
     try {
       setError(null);
-      const result = await scanAndUpsertRecommendationsAction();
+      const result = await withToast(scanAndUpsertRecommendationsAction(), { success: "Scan complete", error: "Scan failed" });
       if (!result.success) {
         setError(result.error || "Scan failed");
         return;
@@ -47,7 +48,7 @@ export default function RecommendationsListClient({ recommendations }: { recomme
   const dismiss = async (id: string) => {
     setBusyId(id);
     try {
-      const result = await dismissRecommendationAction(id);
+      const result = await withToast(dismissRecommendationAction(id), { success: "Recommendation dismissed", error: "Couldn't dismiss recommendation" });
       if (!result.success) {
         setError(result.error || "Failed to dismiss");
         return;
@@ -63,7 +64,7 @@ export default function RecommendationsListClient({ recommendations }: { recomme
   const createContent = async (rec: Recommendation) => {
     setBusyId(rec.id);
     try {
-      await markRecommendationInProgressAction(rec.id);
+      await withToast(markRecommendationInProgressAction(rec.id), { success: null, error: "Couldn't update recommendation" });
       const params = new URLSearchParams({ topic: rec.topic, contentType: rec.contentType, keyword: rec.keyword, format: rec.suggestedFormat });
       router.push(`/admin/ai-pipeline/new?${params.toString()}`);
     } catch (err) {

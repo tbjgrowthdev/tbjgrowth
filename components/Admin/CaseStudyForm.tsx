@@ -18,6 +18,7 @@ import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import { buildAutoSchema } from "@/lib/schema-engine";
 import ImageInput from "./Media/ImageInput";
+import { withToast } from "@/lib/admin/toast";
 
 const TIMEZONES = listTimezones();
 const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
@@ -91,7 +92,7 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
           setLoading(false);
           return;
         }
-        const jobResult = await scheduleContentJob(
+        const jobResult = await withToast(scheduleContentJob(
           "CASE_STUDY",
           initialData.id,
           "UPDATE",
@@ -99,7 +100,7 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
           scheduleUpdateTime,
           scheduleUpdateTimezone,
           payload
-        );
+        ), { success: "Scheduled", error: "Couldn't schedule" });
         if (jobResult.success) {
           router.push("/admin/cases");
           router.refresh();
@@ -111,18 +112,18 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
       }
 
       const result = isExisting
-        ? await updateCaseStudy(initialData.id, { ...payload, changeSummary, expectedUpdatedAt: initialData.updatedAt })
-        : await createCaseStudy({ ...payload, changeSummary });
+        ? await withToast(updateCaseStudy(initialData.id, { ...payload, changeSummary, expectedUpdatedAt: initialData.updatedAt }), { success: "Case study updated", error: "Couldn't update case study" })
+        : await withToast(createCaseStudy({ ...payload, changeSummary }), { success: "Case study created", error: "Couldn't create case study" });
 
       if (result.success) {
         if (slugChanged && confirm(
           `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
         )) {
-          await createRedirect({
+          await withToast(createRedirect({
             source: `/case-studies/${originalSlug}`,
             destination: `/case-studies/${formData.slug}`,
             statusCode: 301,
-          });
+          }), { success: "Redirect created", error: "Couldn't create redirect" });
         }
         router.push("/admin/cases");
         router.refresh();

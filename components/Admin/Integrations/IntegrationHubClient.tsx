@@ -13,6 +13,7 @@ import {
 import type { getProviderFieldDefsAction } from "@/app/(admin)/actions/integrations";
 import type { IntegrationProvider } from "@/lib/integrations/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type StatusView = Awaited<ReturnType<typeof listIntegrationStatusesAction>>[number];
 type FieldDef = Awaited<ReturnType<typeof getProviderFieldDefsAction>>[number];
@@ -113,7 +114,7 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
   const handleSave = async (provider: IntegrationProvider, credentials: Record<string, string>) => {
     setError(null);
     try {
-      const result = await saveIntegrationCredentialsAction(provider, credentials);
+      const result = await withToast(saveIntegrationCredentialsAction(provider, credentials), { success: "Integration credentials saved", error: "Couldn't save integration credentials" });
       if (!result.success) {
         setError(result.error);
         return;
@@ -129,7 +130,7 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
     setBusyId(provider);
     try {
       setError(null);
-      const result = await testIntegrationAction(provider);
+      const result = await withToast(testIntegrationAction(provider), { success: "Connection test passed", error: "Connection test failed" });
       if (!result.success) setError(result.error);
       router.refresh();
     } catch (err) {
@@ -144,7 +145,7 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
     setBusyId(provider);
     try {
       setError(null);
-      const result = await disconnectIntegrationAction(provider);
+      const result = await withToast(disconnectIntegrationAction(provider), { success: "Integration disconnected", error: "Couldn't disconnect integration" });
       if (!result.success) setError(result.error);
       router.refresh();
     } catch (err) {

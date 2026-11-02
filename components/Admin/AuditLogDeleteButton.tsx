@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteAuditLog } from "@/app/(admin)/actions/audit";
+import { withToast } from "@/lib/admin/toast";
 
 export default function AuditLogDeleteButton({ id }: { id: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -11,7 +12,7 @@ export default function AuditLogDeleteButton({ id }: { id: string }) {
     if (!confirm("Permanently delete this audit log entry? This cannot be undone.")) return;
     setIsDeleting(true);
     try {
-      const result = await deleteAuditLog(id);
+      const result = await withToast(deleteAuditLog(id), { success: "Audit log deleted", error: "Couldn't delete audit log" });
       if (!result.success) {
         alert(result.error || "Failed to delete entry");
       }

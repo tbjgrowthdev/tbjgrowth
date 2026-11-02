@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getContentVersionHistory, compareContentVersions, restoreContentVersion } from "@/app/(admin)/actions/versioning";
 import { History, RotateCcw, GitCompare } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 type ContentType = "POST" | "PAGE" | "CASE_STUDY";
 
@@ -52,7 +53,7 @@ export default function VersionHistoryPanel({ contentType, contentId }: { conten
     if (!confirm(`Restore version ${versionNumber}? This won't delete any history — it creates a new version with that content.`)) return;
     setRestoring(versionNumber);
     try {
-      const result = await restoreContentVersion(contentType, contentId, versionNumber);
+      const result = await withToast(restoreContentVersion(contentType, contentId, versionNumber), { success: "Version restored", error: "Couldn't restore version" });
       if (result.success) {
         window.location.reload();
       } else {

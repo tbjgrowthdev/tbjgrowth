@@ -15,6 +15,7 @@ import {
 import { SIGNAL_LABEL, type DetectedSignal } from "@/lib/content-refresh/types";
 import { STAGE_LABEL } from "@/lib/content-pipeline/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Detail = Awaited<ReturnType<typeof getRefreshDetailAction>>;
 type Refresh = NonNullable<Detail>["refresh"];
@@ -131,7 +132,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
           <button
             type="button"
             disabled={busy}
-            onClick={() => act(() => generateRefreshDraftAction(refresh.id))}
+            onClick={() => act(() => withToast(generateRefreshDraftAction(refresh.id), { success: "Refresh draft generated", error: "Couldn't generate refresh draft" }))}
             className="flex items-center gap-2 px-5 py-2.5 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm font-medium"
           >
             {busy && <Loader2 size={16} className="animate-spin" />}
@@ -144,7 +145,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
             <button
               type="button"
               disabled={busy}
-              onClick={() => act(() => approveRefreshDraftAction(refresh.id))}
+              onClick={() => act(() => withToast(approveRefreshDraftAction(refresh.id), { success: "Refresh draft approved", error: "Couldn't approve refresh draft" }))}
               className="px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm font-medium"
             >
               Approve
@@ -152,7 +153,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
             <button
               type="button"
               disabled={busy}
-              onClick={() => act(() => rejectRefreshDraftAction(refresh.id))}
+              onClick={() => act(() => withToast(rejectRefreshDraftAction(refresh.id), { success: "Refresh draft rejected", error: "Couldn't reject refresh draft" }))}
               className="px-4 py-2 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm"
             >
               Reject
@@ -160,7 +161,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
             <button
               type="button"
               disabled={busy}
-              onClick={() => act(() => generateRefreshDraftAction(refresh.id))}
+              onClick={() => act(() => withToast(generateRefreshDraftAction(refresh.id), { success: "Refresh draft generated", error: "Couldn't generate refresh draft" }))}
               className="px-4 py-2 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm"
             >
               Regenerate
@@ -172,7 +173,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
           <button
             type="button"
             disabled={busy}
-            onClick={() => act(() => applyRefreshDraftAction(refresh.id))}
+            onClick={() => act(() => withToast(applyRefreshDraftAction(refresh.id), { success: "Refresh applied to the content", error: "Couldn't apply refresh" }))}
             className="flex items-center gap-2 px-5 py-2.5 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm font-medium"
           >
             {busy && <Loader2 size={16} className="animate-spin" />}

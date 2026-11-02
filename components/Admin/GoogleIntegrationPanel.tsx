@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { disconnectGoogle, updateGoogleConfig } from "@/app/(admin)/actions/google";
 import { CheckCircle2, AlertCircle, LogOut } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Integration = {
   connectedEmail: string | null;
@@ -33,7 +34,7 @@ export default function GoogleIntegrationPanel({
     setIsSaving(true);
     try {
       setSaveMsg(null);
-      const result = await updateGoogleConfig({ ga4PropertyId, gscSiteUrl });
+      const result = await withToast(updateGoogleConfig({ ga4PropertyId, gscSiteUrl }), { success: "Google settings saved", error: "Couldn't save Google settings" });
       setSaveMsg(result.success ? "Saved." : result.error || "Failed to save");
       router.refresh();
     } catch (err) {
@@ -46,7 +47,7 @@ export default function GoogleIntegrationPanel({
   const handleDisconnect = async () => {
     if (!confirm("Disconnect Google Analytics & Search Console? You'll need to reconnect to see live data again.")) return;
     setIsDisconnecting(true);
-    await disconnectGoogle();
+    await withToast(disconnectGoogle(), { success: "Google disconnected", error: "Couldn't disconnect Google" });
     router.refresh();
     setIsDisconnecting(false);
   };

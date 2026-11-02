@@ -15,6 +15,7 @@ import RuleFormModal from "./RuleFormModal";
 import RunsPanel from "./RunsPanel";
 import SocialDraftsPanel from "./SocialDraftsPanel";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Rule = Awaited<ReturnType<typeof listAutomationRulesAction>>[number];
 type RunsProp = Parameters<typeof RunsPanel>[0]["initialRuns"];
@@ -40,7 +41,7 @@ function TestRunRow({ rule }: { rule: Rule }) {
     setRunning(true);
     try {
       setStatus(null);
-      const result = await runAutomationRuleManuallyAction(rule.id, contentType, contentId.trim());
+      const result = await withToast(runAutomationRuleManuallyAction(rule.id, contentType, contentId.trim()), { success: "Automation run started", error: "Couldn't start automation run" });
       setStatus(result.success ? "Started — check the Runs tab." : result.error);
     } catch (err) {
       setStatus(describeActionError(err));
@@ -79,13 +80,13 @@ function RulesPanel({ initialRules }: { initialRules: Rule[] }) {
 
   const handleToggle = async (rule: Rule) => {
     setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, enabled: !r.enabled } : r)));
-    const result = await toggleAutomationRuleAction(rule.id, !rule.enabled);
+    const result = await withToast(toggleAutomationRuleAction(rule.id, !rule.enabled), { success: "Automation rule updated", error: "Couldn't update automation rule" });
     if (!result.success) await refresh();
   };
 
   const handleDelete = async (rule: Rule) => {
     if (!confirm(`Delete rule "${rule.name}"? Its past runs stay in the Runs tab.`)) return;
-    const result = await deleteAutomationRuleAction(rule.id);
+    const result = await withToast(deleteAutomationRuleAction(rule.id), { success: "Automation rule deleted", error: "Couldn't delete automation rule" });
     if (result.success) setRules((prev) => prev.filter((r) => r.id !== rule.id));
   };
 

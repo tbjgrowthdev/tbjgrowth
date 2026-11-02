@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createFaq, updateFaq } from "@/app/(admin)/actions/faqs";
 import { Save, AlertCircle } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 export default function FaqForm({ initialData = null }: { initialData?: any }) {
   const router = useRouter();
@@ -33,8 +34,8 @@ export default function FaqForm({ initialData = null }: { initialData?: any }) {
       };
 
       const result = initialData
-        ? await updateFaq(initialData.id, dataToSave)
-        : await createFaq(dataToSave);
+        ? await withToast(updateFaq(initialData.id, dataToSave), { success: "FAQ updated", error: "Couldn't update FAQ" })
+        : await withToast(createFaq(dataToSave), { success: "FAQ created", error: "Couldn't create FAQ" });
 
       if (result.success) {
         router.push("/admin/faqs");

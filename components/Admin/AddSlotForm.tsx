@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createSlot, createSlotsBulk } from "@/app/(admin)/actions/booking";
 import { Plus, AlertCircle, CalendarPlus } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 export default function AddSlotForm() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function AddSlotForm() {
     setIsSubmitting(true);
     try {
       setError(null);
-      const result = await createSlot({ startsAt: single.startsAt, duration: Number(single.duration) });
+      const result = await withToast(createSlot({ startsAt: single.startsAt, duration: Number(single.duration) }), { success: "Slot created", error: "Couldn't create slot" });
       if (result.success) {
         setSingle({ startsAt: "", duration: 30 });
         router.refresh();
@@ -39,13 +40,13 @@ export default function AddSlotForm() {
     setIsSubmitting(true);
     try {
       setError(null);
-      const result = await createSlotsBulk({
+      const result = await withToast(createSlotsBulk({
         date: bulk.date,
         startTime: bulk.startTime,
         endTime: bulk.endTime,
         interval: Number(bulk.interval),
         duration: Number(bulk.duration),
-      });
+      }), { success: "Slots created", error: "Couldn't create slots" });
       if (result.success) {
         setBulk({ ...bulk, date: "" });
         router.refresh();

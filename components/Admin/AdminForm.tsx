@@ -6,6 +6,7 @@ import { createAdmin } from "@/app/(admin)/actions/admins";
 import { Save, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Role } from "@/lib/generated/prisma/client";
+import { withToast } from "@/lib/admin/toast";
 
 export default function AdminForm() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AdminForm() {
     setError(null);
 
     try {
-      const result = await createAdmin(formData);
+      const result = await withToast(createAdmin(formData), { success: "Team member created", error: "Couldn't create team member" });
 
       if (result.success) {
         router.push("/admin/admins");

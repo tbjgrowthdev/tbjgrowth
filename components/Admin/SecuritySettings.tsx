@@ -11,6 +11,7 @@ import {
 } from "@/app/(admin)/actions/security";
 import { ShieldCheck, ShieldOff, Smartphone, AlertCircle, CheckCircle2, Monitor, LogOut, History } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type AdminSession = {
   id: string;
@@ -83,7 +84,7 @@ function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
     setBusy(true);
     try {
       setError(null);
-      const result = await beginTwoFactorSetup();
+      const result = await withToast(beginTwoFactorSetup(), { success: null, error: "Couldn't start two-factor setup" });
       if (!result.success) {
         setError(result.error || "Failed to start setup");
         return;
@@ -102,7 +103,7 @@ function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
     setBusy(true);
     try {
       setError(null);
-      const result = await confirmTwoFactorSetup(code);
+      const result = await withToast(confirmTwoFactorSetup(code), { success: "Two-factor authentication enabled", error: "Couldn't enable two-factor authentication" });
       if (!result.success) {
         setError(result.error || "Failed to confirm setup");
         return;
@@ -121,7 +122,7 @@ function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
     setBusy(true);
     try {
       setError(null);
-      const result = await disableTwoFactor(password);
+      const result = await withToast(disableTwoFactor(password), { success: "Two-factor authentication disabled", error: "Couldn't disable two-factor authentication" });
       if (!result.success) {
         setError(result.error || "Failed to disable");
         return;
@@ -139,7 +140,7 @@ function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
     setBusy(true);
     try {
       setError(null);
-      const result = await regenerateBackupCodes(password);
+      const result = await withToast(regenerateBackupCodes(password), { success: "Backup codes regenerated", error: "Couldn't regenerate backup codes" });
       if (!result.success) {
         setError(result.error || "Failed to regenerate codes");
         return;
@@ -282,7 +283,7 @@ function SessionsCard({
     setBusyId(id);
     setSessionError(null);
     try {
-      const result = await revokeMySession(id);
+      const result = await withToast(revokeMySession(id), { success: "Session signed out", error: "Couldn't sign out that session" });
       if (result.success) {
         setSessions((prev) => prev.filter((s) => s.id !== id));
       }
@@ -297,7 +298,7 @@ function SessionsCard({
     setBusyId("all");
     setSessionError(null);
     try {
-      const result = await revokeAllOtherSessions();
+      const result = await withToast(revokeAllOtherSessions(), { success: "Other sessions signed out", error: "Couldn't sign out other sessions" });
       if (result.success) {
         setSessions((prev) => prev.filter((s) => s.id === currentSessionId));
       }

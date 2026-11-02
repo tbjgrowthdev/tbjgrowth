@@ -12,6 +12,7 @@ import {
   overridePSeoPage,
 } from "@/app/(admin)/actions/programmatic-seo";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Dataset = {
   id: string;
@@ -60,7 +61,7 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
     try {
       setUploadError(null);
       setUploadWarnings([]);
-      const result = await uploadPSeoDataset(templateId, uploadName.trim() || "Untitled dataset", csvText);
+      const result = await withToast(uploadPSeoDataset(templateId, uploadName.trim() || "Untitled dataset", csvText), { success: "Dataset uploaded", error: "Couldn't upload dataset" });
       if (!result.success) {
         setUploadError(result.error);
         return;
@@ -79,7 +80,7 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
   const handleGenerate = async (datasetId: string) => {
     setGeneratingId(datasetId);
     setGenSummary(null);
-    const result = await runPSeoGeneration(datasetId);
+    const result = await withToast(runPSeoGeneration(datasetId), { success: "Pages generated", error: "Page generation failed" });
     setGeneratingId(null);
     if (result.success) {
       setGenSummary(`Generated ${result.data.generated} page(s) — ${result.data.published} published, ${result.data.needsReview} need review.`);
@@ -112,7 +113,7 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
   const handleOverride = async (pageId: string, datasetId: string) => {
     setBusyPageId(pageId);
     try {
-      const result = await overridePSeoPage(pageId);
+      const result = await withToast(overridePSeoPage(pageId), { success: "Page marked as manually edited", error: "Couldn't update page" });
       if (result.success) await loadPages(datasetId);
     } catch (err) {
       setGenSummary(describeActionError(err, "Override failed"));
@@ -123,7 +124,7 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
 
   const handleDeleteDataset = async (datasetId: string) => {
     if (!confirm("Delete this dataset and every page generated from it? This can't be undone.")) return;
-    await deletePSeoDataset(datasetId);
+    await withToast(deletePSeoDataset(datasetId), { success: "Dataset deleted", error: "Couldn't delete dataset" });
     router.refresh();
   };
 

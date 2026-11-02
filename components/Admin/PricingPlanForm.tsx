@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPricingPlan, updatePricingPlan } from "@/app/(admin)/actions/pricing";
 import { Save, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { withToast } from "@/lib/admin/toast";
 
 export default function PricingPlanForm({ initialData }: { initialData?: any }) {
   const router = useRouter();
@@ -28,8 +29,8 @@ export default function PricingPlanForm({ initialData }: { initialData?: any }) 
 
     try {
       const result = initialData?.id
-        ? await updatePricingPlan(initialData.id, formData)
-        : await createPricingPlan(formData);
+        ? await withToast(updatePricingPlan(initialData.id, formData), { success: "Pricing plan updated", error: "Couldn't update pricing plan" })
+        : await withToast(createPricingPlan(formData), { success: "Pricing plan created", error: "Couldn't create pricing plan" });
 
       if (result.success) {
         router.push("/admin/pricing");

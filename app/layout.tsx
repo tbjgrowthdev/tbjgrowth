@@ -1,18 +1,25 @@
 
 
 import type { Metadata } from "next";
-import { Inter, Syne } from "next/font/google";
+// Self-hosted (app/fonts/, Google Fonts files under the SIL Open Font License)
+// instead of the Google font loader, whose build-time download intermittently
+// breaks Turbopack builds — see app/(public)/[locale]/layout.tsx.
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({
+const inter = localFont({
+  src: "./fonts/inter-latin-normal-100-900.woff2",
+  weight: "100 900",
   variable: "--font-inter",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-const syne = Syne({
+const syne = localFont({
+  src: "./fonts/syne-latin-normal-400-800.woff2",
+  weight: "400 800",
   variable: "--font-syne",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

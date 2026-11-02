@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cancelBooking } from "@/app/(admin)/actions/booking";
 import { XCircle } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 export default function CancelBookingButton({ id }: { id: string }) {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function CancelBookingButton({ id }: { id: string }) {
   const handleClick = async () => {
     if (!confirm("Cancel this booking? The slot will become available again.")) return;
     setIsCancelling(true);
-    await cancelBooking(id);
+    await withToast(cancelBooking(id), { success: "Booking cancelled", error: "Couldn't cancel booking" });
     router.refresh();
     setIsCancelling(false);
   };

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { markLeadAsRead } from "@/app/(admin)/actions/forms";
 import { CheckCheck } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 export default function MarkReadButton({ id }: { id: string }) {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function MarkReadButton({ id }: { id: string }) {
 
   const handleClick = async () => {
     setIsMarking(true);
-    await markLeadAsRead(id);
+    await withToast(markLeadAsRead(id), { success: "Lead marked as read", error: "Couldn't update lead" });
     router.refresh();
     setIsMarking(false);
   };

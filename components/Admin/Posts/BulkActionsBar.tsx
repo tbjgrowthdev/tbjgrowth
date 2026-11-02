@@ -11,6 +11,7 @@ import {
 } from "@/app/(admin)/actions/bulk-posts";
 import type { WorkflowAction } from "@/lib/workflow";
 import { AlertTriangle, Tag, Folder, UserCog, Search, CalendarClock, Archive, X, Loader2 } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 type Option = { id: string; label: string };
 
@@ -100,7 +101,7 @@ export default function BulkActionsBar({
   const requestStatusChange = (action: WorkflowAction) => {
     setConfirmAction({
       label: `${STATUS_LABEL[action]} ${selectedIds.length} post${selectedIds.length === 1 ? "" : "s"}? This changes what's visible on the live site.`,
-      run: () => bulkChangeStatus(selectedIds, action),
+      run: () => withToast(bulkChangeStatus(selectedIds, action), { success: "Posts updated", error: "Couldn't update posts" }),
     });
   };
 
@@ -111,7 +112,7 @@ export default function BulkActionsBar({
     }
     setConfirmAction({
       label: `Schedule ${selectedIds.length} post${selectedIds.length === 1 ? "" : "s"} to publish on ${date} at ${time} (${timezone})?`,
-      run: () => bulkSchedule(selectedIds, date, time, timezone),
+      run: () => withToast(bulkSchedule(selectedIds, date, time, timezone), { success: "Posts scheduled", error: "Couldn't schedule posts" }),
     });
   };
 
@@ -175,7 +176,7 @@ export default function BulkActionsBar({
               </option>
             ))}
           </select>
-          <SubmitButton disabled={!categoryId || busy} onClick={() => run(() => bulkAssignCategory(selectedIds, categoryId))} busy={busy} label="Assign" />
+          <SubmitButton disabled={!categoryId || busy} onClick={() => run(() => withToast(bulkAssignCategory(selectedIds, categoryId), { success: "Category assigned", error: "Couldn't assign category" }))} busy={busy} label="Assign" />
         </Panel>
       )}
 
@@ -197,7 +198,7 @@ export default function BulkActionsBar({
               );
             })}
           </div>
-          <SubmitButton disabled={tagIds.length === 0 || busy} onClick={() => run(() => bulkAssignTags(selectedIds, tagIds))} busy={busy} label="Assign" />
+          <SubmitButton disabled={tagIds.length === 0 || busy} onClick={() => run(() => withToast(bulkAssignTags(selectedIds, tagIds), { success: "Tags assigned", error: "Couldn't assign tags" }))} busy={busy} label="Assign" />
         </Panel>
       )}
 
@@ -211,7 +212,7 @@ export default function BulkActionsBar({
               </option>
             ))}
           </select>
-          <SubmitButton disabled={!authorId || busy} onClick={() => run(() => bulkReassignAuthor(selectedIds, authorId))} busy={busy} label="Reassign" />
+          <SubmitButton disabled={!authorId || busy} onClick={() => run(() => withToast(bulkReassignAuthor(selectedIds, authorId), { success: "Author reassigned", error: "Couldn't reassign author" }))} busy={busy} label="Reassign" />
         </Panel>
       )}
 
@@ -235,10 +236,13 @@ export default function BulkActionsBar({
             disabled={(!isIndexable && !twitterCard) || busy}
             onClick={() =>
               run(() =>
-                bulkUpdateSeo(selectedIds, {
-                  isIndexable: isIndexable === "" ? undefined : isIndexable === "true",
-                  twitterCard: twitterCard || undefined,
-                })
+                withToast(
+                  bulkUpdateSeo(selectedIds, {
+                    isIndexable: isIndexable === "" ? undefined : isIndexable === "true",
+                    twitterCard: twitterCard || undefined,
+                  }),
+                  { success: "SEO settings updated", error: "Couldn't update SEO settings" }
+                )
               )
             }
             busy={busy}

@@ -123,3 +123,17 @@
     background-color: var(--caption-fg);
   }
 }
+
+/* Admin toast time-left bar (components/Admin/Toast.tsx). */
+@keyframes toast-progress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+.toast-progress {
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-progress { animation: none; }
+}

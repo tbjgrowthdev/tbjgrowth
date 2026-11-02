@@ -6,6 +6,7 @@ import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
 import { listTimezones } from "@/lib/scheduling";
 import type { WorkflowAction } from "@/lib/workflow";
 import { History, Send, CheckCircle2, XCircle, MessageSquareWarning, CalendarClock, Rocket, Archive, RotateCcw, EyeOff } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 const TIMEZONES = listTimezones();
 const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
@@ -20,6 +21,20 @@ const STATUS_LABEL: Record<Status, { label: string; className: string }> = {
   SCHEDULED: { label: "Scheduled", className: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400" },
   PUBLISHED: { label: "Published", className: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" },
   ARCHIVED: { label: "Archived", className: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" },
+};
+
+// Toast text for each workflow step (the panel's own inline status/error stays as it was).
+const DONE_MESSAGE: Record<WorkflowAction, string> = {
+  submit: "Submitted for review",
+  resubmit: "Re-submitted for review",
+  approve: "Approved",
+  reject: "Rejected",
+  requestChanges: "Changes requested",
+  publish: "Published",
+  unpublish: "Unpublished",
+  schedule: "Scheduled",
+  archive: "Archived",
+  restore: "Restored to draft",
 };
 
 type ActionDef = { action: WorkflowAction; label: string; icon: typeof Send; needsComment?: boolean; danger?: boolean };
@@ -114,7 +129,10 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
     setIsRunning(true);
     setError(null);
     try {
-      const result = await onTransition(contentId, def.action, commentText);
+      const result = await withToast(onTransition(contentId, def.action, commentText), {
+        success: DONE_MESSAGE[def.action] ?? `${def.label}: done`,
+        error: `Couldn't ${def.label.toLowerCase()}`,
+      });
       if (result.success) {
         setPendingAction(null);
         setComment("");
@@ -150,7 +168,7 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
     setIsRunning(true);
     setError(null);
     try {
-      const jobResult = await scheduleContentJob(contentType, contentId, "PUBLISH", scheduleDate, scheduleTime, scheduleTimezone);
+      const jobResult = await withToast(scheduleContentJob(contentType, contentId, "PUBLISH", scheduleDate, scheduleTime, scheduleTimezone), { success: "Scheduled", error: "Couldn't schedule" });
       if (!jobResult.success) {
         setError(jobResult.error || "Failed to schedule");
         return;

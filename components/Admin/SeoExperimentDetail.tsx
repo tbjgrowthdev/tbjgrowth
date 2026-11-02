@@ -7,6 +7,7 @@ import type { getSeoExperiment } from "@/app/(admin)/actions/seo-experiments";
 import { launchSeoExperimentAction, revertSeoExperimentAction, evaluateSeoExperimentAction as evaluateAction, deleteSeoExperimentAction } from "@/app/(admin)/actions/seo-experiments";
 import type { ExperimentResults } from "@/lib/seo-experiments/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Experiment = NonNullable<Awaited<ReturnType<typeof getSeoExperiment>>>;
 type WindowInfo = { isWindowComplete: boolean; daysElapsed: number; daysRemaining: number };
@@ -60,7 +61,7 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
     setBusy(true);
     try {
       setError(null);
-      const result = await launchSeoExperimentAction(experiment.id);
+      const result = await withToast(launchSeoExperimentAction(experiment.id), { success: "SEO experiment launched", error: "Couldn't launch SEO experiment" });
       if (result.success) router.refresh();
       else setError(result.error);
     } catch (err) {
@@ -75,7 +76,7 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
     setBusy(true);
     try {
       setError(null);
-      const result = await revertSeoExperimentAction(experiment.id);
+      const result = await withToast(revertSeoExperimentAction(experiment.id), { success: "SEO experiment reverted", error: "Couldn't revert SEO experiment" });
       if (result.success) router.refresh();
       else setError(result.error);
     } catch (err) {
@@ -89,7 +90,7 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
     setBusy(true);
     try {
       setError(null);
-      const result = await evaluateAction(experiment.id);
+      const result = await withToast(evaluateAction(experiment.id), { success: "Results updated", error: "Couldn't evaluate experiment" });
       if (result.success) {
         setResults(result.data.results);
         setWindowInfo(result.data);
@@ -108,7 +109,7 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
     if (!confirm("Delete this experiment? This can't be undone.")) return;
     setBusy(true);
     try {
-      const result = await deleteSeoExperimentAction(experiment.id);
+      const result = await withToast(deleteSeoExperimentAction(experiment.id), { success: "SEO experiment deleted", error: "Couldn't delete SEO experiment" });
       if (result.success) router.push("/admin/seo-experiments");
       else setError(result.error);
     } catch (err) {

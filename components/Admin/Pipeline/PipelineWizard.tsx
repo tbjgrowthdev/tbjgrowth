@@ -20,6 +20,7 @@ import { PIPELINE_STAGE_ORDER, STAGE_LABEL, STALE_JOB_MS, isJobStale, nextStage 
 import type { Brief, Research, SearchIntent, Outline, QaReport, QaCheck, LinkSuggestion, GeneratedImage } from "@/lib/content-pipeline/types";
 import { describeActionError, requestPipelineStage } from "@/lib/admin/action-errors";
 import ImageInput from "@/components/Admin/Media/ImageInput";
+import { toast, withToast } from "@/lib/admin/toast";
 
 type RunAndContent = NonNullable<Awaited<ReturnType<typeof getPipelineRunAction>>> & { jobs: Awaited<ReturnType<typeof getJobsForRunAction>> };
 type Job = RunAndContent["jobs"][number];
@@ -127,13 +128,18 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
           router.refresh();
           if (attempts.some((j) => j.status === "COMPLETED")) {
             setError(null);
+            toast.success(`${label} complete`);
           } else {
             const failed = attempts.find((j) => j.status === "FAILED");
             setError(failed ? `${label} failed: ${failed.error || "unknown error"}` : `${reason} ${label} never started on the server — try again.`);
+            toast.error(`${label} failed`, { description: failed?.error || "It never started on the server — try again." });
           }
           return;
         }
-        if (mountedRef.current) setError(`${label} still hasn't reported a result. Reload this page in a few minutes to check.`);
+        if (mountedRef.current) {
+          setError(`${label} still hasn't reported a result. Reload this page in a few minutes to check.`);
+          toast.info(`${label} is taking longer than expected`, { description: "Reload the page in a few minutes to check." });
+        }
       } finally {
         setNotice(null);
       }
@@ -153,6 +159,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
     try {
       const result = await requestPipelineStage(run.id, stage);
       if (result.success) {
+        toast.success(`${stageName(stage)} complete`);
         router.refresh();
         return;
       }
@@ -172,6 +179,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
         return;
       }
       setError(result.error || `${stageName(stage)} failed`);
+      toast.error(`${stageName(stage)} failed`, result.error ? { description: result.error } : undefined);
       router.refresh(); // shows the FAILED job row and its Retry label
     } finally {
       setBusyBoth(false);
@@ -354,7 +362,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
             <button
               type="button"
               disabled={busy}
-              onClick={() => act(() => skipImageStageAction(run.id))}
+              onClick={() => act(() => withToast(skipImageStageAction(run.id), { success: "Image step skipped", error: "Couldn't skip image step" }))}
               className="px-5 py-3 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm whitespace-nowrap"
             >
               Skip
@@ -469,7 +477,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
       )}
 
       {run.stage === "QA" && (
-        <ActionBar busy={busy} label="Approve for publish" onClick={() => act(() => approveRunAction(run.id))} />
+        <ActionBar busy={busy} label="Approve for publish" onClick={() => act(() => withToast(approveRunAction(run.id), { success: "Approved for publishing", error: "Couldn't approve" }))} />
       )}
 
       {run.stage === "APPROVAL" && <PublishPanel runId={run.id} busy={busy} act={act} />}
@@ -643,7 +651,7 @@ function ImageReviewCard({
     setSavingAlt(true);
     setError(null);
     try {
-      const result = await updatePendingImageAltTextAction(runId, altText);
+      const result = await withToast(updatePendingImageAltTextAction(runId, altText), { success: "Alt text saved", error: "Couldn't save alt text" });
       if (!result.success) {
         setError(result.error || "Failed to save alt text");
         return;
@@ -701,7 +709,7 @@ function ImageReviewCard({
               <button
                 type="button"
                 disabled={busy || altTextChanged}
-                onClick={() => act(() => attachGeneratedImageAction(runId))}
+                onClick={() => act(() => withToast(attachGeneratedImageAction(runId), { success: "Image attached", error: "Couldn't attach image" }))}
                 className="px-3 py-1.5 bg-brand-orange-deep text-white rounded-md hover:bg-brand-orange disabled:opacity-50 text-xs font-medium"
                 title={altTextChanged ? "Save your alt text edit first" : undefined}
               >
@@ -727,7 +735,7 @@ function ImageReviewCard({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => act(() => skipImageStageAction(runId))}
+                onClick={() => act(() => withToast(skipImageStageAction(runId), { success: "Image step skipped", error: "Couldn't skip image step" }))}
                 className="px-3 py-1.5 text-caption hover:text-foreground text-xs underline"
               >
                 Skip
@@ -785,7 +793,7 @@ function OwnImagePanel({
           type="button"
           disabled={busy || !url.trim() || !altText.trim()}
           title={!altText.trim() ? "Add alt text first" : undefined}
-          onClick={() => act(() => attachOwnImageAction(runId, url, altText), "Failed to attach the image")}
+          onClick={() => act(() => withToast(attachOwnImageAction(runId, url, altText), { success: "Image attached", error: "Couldn't attach image" }), "Failed to attach the image")}
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm font-medium"
         >
           {busy && <Loader2 size={14} className="animate-spin" />}
@@ -830,7 +838,7 @@ function InternalLinksReviewCard({
     setDecidingId(suggestionId);
     setError(null);
     try {
-      const result = await decideLinkSuggestionAction(runId, suggestionId, decision);
+      const result = await withToast(decideLinkSuggestionAction(runId, suggestionId, decision), { success: null, error: "Couldn't record decision" });
       if (!result.success) {
         setError(result.error || "Failed to record decision");
         return;
@@ -843,7 +851,7 @@ function InternalLinksReviewCard({
     }
   };
 
-  const apply = () => act(() => applyInternalLinksAction(runId), "Failed to apply internal links");
+  const apply = () => act(() => withToast(applyInternalLinksAction(runId), { success: "Internal links applied", error: "Couldn't apply internal links" }), "Failed to apply internal links");
 
   if (!suggestions) {
     return <ActionBar busy={busy} label="Generate Internal Link Suggestions" onClick={generate} />;
@@ -938,7 +946,14 @@ function PublishPanel({
   const [showSchedule, setShowSchedule] = useState(false);
 
   const act = (mode: "publish" | "submit" | "schedule") =>
-    runAct(() => publishRunAction(runId, mode, mode === "schedule" ? { date, time, timezone } : undefined), "Failed to publish");
+    runAct(
+      () =>
+        withToast(publishRunAction(runId, mode, mode === "schedule" ? { date, time, timezone } : undefined), {
+          success: mode === "publish" ? "Published" : mode === "submit" ? "Submitted for review" : "Publishing scheduled",
+          error: mode === "publish" ? "Couldn't publish" : mode === "submit" ? "Couldn't submit for review" : "Couldn't schedule",
+        }),
+      "Failed to publish"
+    );
 
   return (
     <div className="bg-card rounded-lg shadow-sm border border-border p-5 space-y-4">

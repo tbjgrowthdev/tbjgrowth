@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { scheduleContentJob, cancelContentScheduledJob, getContentScheduledJobs } from "@/app/(admin)/actions/scheduling";
 import { listTimezones } from "@/lib/scheduling";
 import { CalendarClock, EyeOff, X, AlertTriangle } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 const TIMEZONES = listTimezones();
 const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
@@ -50,7 +51,7 @@ export default function SchedulingPanel({ contentType, contentId }: { contentTyp
     setSaving(true);
     setError(null);
     try {
-      const result = await scheduleContentJob(contentType, contentId, "UNPUBLISH", date, time, timezone);
+      const result = await withToast(scheduleContentJob(contentType, contentId, "UNPUBLISH", date, time, timezone), { success: "Scheduled", error: "Couldn't schedule" });
       if (result.success) {
         setShowUnpublishPicker(false);
         setDate("");
@@ -65,7 +66,7 @@ export default function SchedulingPanel({ contentType, contentId }: { contentTyp
 
   const handleCancel = async (id: string) => {
     if (!confirm("Cancel this scheduled action?")) return;
-    const result = await cancelContentScheduledJob(id);
+    const result = await withToast(cancelContentScheduledJob(id), { success: "Scheduled job cancelled", error: "Couldn't cancel scheduled job" });
     if (result.success) {
       await refresh();
     } else {

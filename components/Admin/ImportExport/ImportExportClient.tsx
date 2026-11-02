@@ -23,6 +23,8 @@ import {
   importSeo,
 } from "@/app/(admin)/actions/import-export";
 import { bulkImportRedirects } from "@/app/(admin)/actions/redirects";
+import { toast } from "@/lib/admin/toast";
+import { describeActionError } from "@/lib/admin/action-errors";
 
 type ImportResult = { created: number; updated: number; skipped: number; errors: string[] };
 type ImportResponse = ({ success: true } & ImportResult) | { success: false; error: string };
@@ -85,13 +87,22 @@ function Section({
   const handleExport = async () => {
     setIsExporting(true);
     setError(null);
-    const res = await onExport();
-    if (res.success) {
-      download(fileName, res.data, mime);
-    } else {
-      setError(res.error || "Export failed");
+    try {
+      const res = await onExport();
+      if (res.success) {
+        download(fileName, res.data, mime);
+        toast.success(`${title} exported`, { description: fileName });
+      } else {
+        setError(res.error || "Export failed");
+        toast.error(`Couldn't export ${title.toLowerCase()}`, res.error ? { description: res.error } : undefined);
+      }
+    } catch (err) {
+      const message = describeActionError(err, "Export failed");
+      setError(message);
+      toast.error(`Couldn't export ${title.toLowerCase()}`, { description: message });
+    } finally {
+      setIsExporting(false);
     }
-    setIsExporting(false);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,11 +117,14 @@ function Section({
       if (res.success) {
         setResult(res);
         router.refresh();
+        toast.success(`${title} imported`);
       } else {
         setError(res.error || "Import failed");
+        toast.error(`Couldn't import ${title.toLowerCase()}`, res.error ? { description: res.error } : undefined);
       }
     } catch (err: any) {
       setError(err.message || "Could not read file");
+      toast.error(`Couldn't import ${title.toLowerCase()}`, { description: describeActionError(err, "Could not read file") });
     }
     setIsImporting(false);
     if (fileInputRef.current) fileInputRef.current.value = "";

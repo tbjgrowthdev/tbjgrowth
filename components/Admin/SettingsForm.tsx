@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { updateSiteSettings, generateIndexNowKey } from "@/app/(admin)/actions/settings";
 import { Save, AlertCircle, RefreshCw } from "lucide-react";
 import ImageInput from "./Media/ImageInput";
+import { withToast } from "@/lib/admin/toast";
 
 export default function SettingsForm({ initialData = null }: { initialData?: any }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
     setGeneratingKey(true);
     setError(null);
     try {
-      const result = await generateIndexNowKey();
+      const result = await withToast(generateIndexNowKey(), { success: "IndexNow key generated", error: "Couldn't generate IndexNow key" });
       if (result.success) {
         setIndexNowKey(result.key);
         setSuccessMsg("IndexNow key generated.");
@@ -66,11 +67,11 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
     setSuccessMsg(null);
 
     try {
-      const result = await updateSiteSettings(initialData.id, {
+      const result = await withToast(updateSiteSettings(initialData.id, {
         ...formData,
         usdPerGbp: parseFloat(formData.usdPerGbp) || null,
         bdtPerGbp: parseFloat(formData.bdtPerGbp) || null,
-      });
+      }), { success: "Settings saved", error: "Couldn't save settings" });
 
       if (result.success) {
         setSuccessMsg("Settings updated successfully.");

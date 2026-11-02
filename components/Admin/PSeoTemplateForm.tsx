@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createPSeoTemplate, updatePSeoTemplate, deletePSeoTemplate } from "@/app/(admin)/actions/programmatic-seo";
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type InitialData = Partial<{
   id: string;
@@ -69,7 +70,7 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
         requiredColumns: JSON.stringify(requiredColumns.map((c) => c.trim()).filter(Boolean)),
       };
 
-      const result = initialData?.id ? await updatePSeoTemplate(initialData.id, dataToSave) : await createPSeoTemplate(dataToSave);
+      const result = initialData?.id ? await withToast(updatePSeoTemplate(initialData.id, dataToSave), { success: "Template updated", error: "Couldn't update template" }) : await withToast(createPSeoTemplate(dataToSave), { success: "Template created", error: "Couldn't create template" });
 
       if (result.success) {
         router.push(initialData?.id ? `/admin/programmatic-seo/${initialData.id}` : `/admin/programmatic-seo/${result.data.id}`);
@@ -88,7 +89,7 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
     if (!confirm("Delete this template, every dataset uploaded to it, and every page it generated? This can't be undone.")) return;
     setIsDeleting(true);
     try {
-      const result = await deletePSeoTemplate(initialData.id);
+      const result = await withToast(deletePSeoTemplate(initialData.id), { success: "Template deleted", error: "Couldn't delete template" });
       if (result.success) {
         router.push("/admin/programmatic-seo");
       } else {

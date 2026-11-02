@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle2, Clock, XCircle, ChevronDown, ChevronUp } fro
 import { approveAutomationStepAction, listAutomationRunsAction, rejectAutomationStepAction } from "@/app/(admin)/actions/automation";
 import { ACTION_LABEL, EVENT_LABEL } from "@/lib/automation/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Run = Awaited<ReturnType<typeof listAutomationRunsAction>>[number];
 
@@ -41,7 +42,7 @@ export default function RunsPanel({ initialRuns }: { initialRuns: Run[] }) {
     setBusyStepId(stepId);
     try {
       setError(null);
-      const result = await approveAutomationStepAction(stepId);
+      const result = await withToast(approveAutomationStepAction(stepId), { success: "Automation step approved", error: "Couldn't approve automation step" });
       if (!result.success) setError(result.error);
       await refresh();
       router.refresh();
@@ -57,7 +58,7 @@ export default function RunsPanel({ initialRuns }: { initialRuns: Run[] }) {
     setBusyStepId(stepId);
     try {
       setError(null);
-      const result = await rejectAutomationStepAction(stepId);
+      const result = await withToast(rejectAutomationStepAction(stepId), { success: "Automation step rejected", error: "Couldn't reject automation step" });
       if (!result.success) setError(result.error);
       await refresh();
       router.refresh();

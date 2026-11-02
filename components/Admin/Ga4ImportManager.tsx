@@ -5,6 +5,7 @@ import { runGa4Import, getGa4Data } from "@/app/(admin)/actions/ga4-import";
 import type { Ga4Data } from "@/app/(admin)/actions/ga4-import";
 import { Download, AlertCircle, CheckCircle2, Filter, ArrowRight } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 const CONTENT_TYPE_LABEL: Record<string, string> = {
   POST: "Blog Post",
@@ -45,7 +46,7 @@ export default function Ga4ImportManager({
     try {
       setError(null);
       setImportMsg(null);
-      const result = await runGa4Import(startDate, endDate);
+      const result = await withToast(runGa4Import(startDate, endDate), { success: "GA4 import finished", error: "GA4 import failed" });
       if (result.success && result.result) {
         setImportMsg(
           `Imported ${result.result.rowsImported.toLocaleString()} rows — ${result.result.mappedToContent.toLocaleString()} mapped to CMS content, ${result.result.unmapped.toLocaleString()} unmapped.`

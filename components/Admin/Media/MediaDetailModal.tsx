@@ -7,6 +7,7 @@ import { cloudinaryUrl } from "@/lib/cloudinary-url";
 import { updateMediaMetadata, replaceMediaAsset } from "@/app/(admin)/actions/media";
 import MediaDeleteButton from "./MediaDeleteButton";
 import type { MediaAsset } from "@/lib/generated/prisma/client";
+import { withToast } from "@/lib/admin/toast";
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -36,7 +37,7 @@ export default function MediaDetailModal({ asset, onClose, onUpdated, onDeleted,
     setSaving(true);
     setError(null);
     try {
-      const result = await updateMediaMetadata(asset.id, { title, altText, folder });
+      const result = await withToast(updateMediaMetadata(asset.id, { title, altText, folder }), { success: "Media details saved", error: "Couldn't save media details" });
       if (result.success && result.asset) {
         onUpdated(result.asset);
       } else {
@@ -57,7 +58,7 @@ export default function MediaDetailModal({ asset, onClose, onUpdated, onDeleted,
     setReplacing(true);
     setError(null);
     try {
-      const result = await replaceMediaAsset(asset.id, replaceFile, altText);
+      const result = await withToast(replaceMediaAsset(asset.id, replaceFile, altText), { success: "Image replaced", error: "Couldn't replace image" });
       if (result.success && result.asset) {
         onUpdated(result.asset);
         setReplaceFile(null);

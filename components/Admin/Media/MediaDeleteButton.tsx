@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteMediaAsset } from "@/app/(admin)/actions/media";
+import { withToast } from "@/lib/admin/toast";
 
 export default function MediaDeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -15,7 +16,7 @@ export default function MediaDeleteButton({ id, onDeleted }: { id: string; onDel
 
     setIsDeleting(true);
     try {
-      const result = await deleteMediaAsset(id);
+      const result = await withToast(deleteMediaAsset(id), { success: "Image deleted", error: "Couldn't delete image" });
       if (result.success) {
         onDeleted();
       } else {

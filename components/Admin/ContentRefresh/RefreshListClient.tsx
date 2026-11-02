@@ -7,6 +7,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { listRefreshCandidatesAction, scanAndUpsertCandidatesAction } from "@/app/(admin)/actions/content-refresh";
 import { SIGNAL_LABEL, type DetectedSignal } from "@/lib/content-refresh/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import { withToast } from "@/lib/admin/toast";
 
 type Candidate = Awaited<ReturnType<typeof listRefreshCandidatesAction>>[number];
 
@@ -37,7 +38,7 @@ export default function RefreshListClient({ candidates }: { candidates: Candidat
     setScanning(true);
     try {
       setError(null);
-      const result = await scanAndUpsertCandidatesAction();
+      const result = await withToast(scanAndUpsertCandidatesAction(), { success: "Scan complete", error: "Scan failed" });
       if (!result.success) {
         setError(result.error || "Scan failed");
         return;

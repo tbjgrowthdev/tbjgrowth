@@ -5,6 +5,7 @@ import { getAssignableUsers } from "@/app/(admin)/actions/admins";
 import { assignContentUser, setContentReviewDeadline, submitSeoReview } from "@/app/(admin)/actions/workflow";
 import type { AssignmentRole } from "@/lib/workflow";
 import { UserCheck, CalendarClock, Search, ThumbsUp, ThumbsDown } from "lucide-react";
+import { withToast } from "@/lib/admin/toast";
 
 type ContentType = "POST" | "PAGE" | "CASE_STUDY";
 type TeamMember = { id: string; name: string | null; email: string | null; role: string };
@@ -58,7 +59,7 @@ export default function AssignmentPanel({
     setter(userId);
     setSaving(role);
     try {
-      const result = await assignContentUser(contentType, contentId, role, userId || null);
+      const result = await withToast(assignContentUser(contentType, contentId, role, userId || null), { success: "Assignment updated", error: "Couldn't update assignment" });
       if (!result.success) alert(result.error || "Failed to assign");
     } finally {
       setSaving(null);
@@ -69,7 +70,7 @@ export default function AssignmentPanel({
     setDeadline(value);
     setSaving("deadline");
     try {
-      const result = await setContentReviewDeadline(contentType, contentId, value || null);
+      const result = await withToast(setContentReviewDeadline(contentType, contentId, value || null), { success: "Review deadline set", error: "Couldn't set review deadline" });
       if (!result.success) alert(result.error || "Failed to set deadline");
     } finally {
       setSaving(null);
@@ -83,7 +84,7 @@ export default function AssignmentPanel({
     }
     setSaving("seo");
     try {
-      const result = await submitSeoReview(contentType, contentId, approved, seoComment || undefined);
+      const result = await withToast(submitSeoReview(contentType, contentId, approved, seoComment || undefined), { success: "SEO review submitted", error: "Couldn't submit SEO review" });
       setSeoMessage(result.success ? (approved ? "SEO approved." : "SEO changes requested.") : result.error || "Failed");
       if (result.success) setSeoComment("");
     } finally {
