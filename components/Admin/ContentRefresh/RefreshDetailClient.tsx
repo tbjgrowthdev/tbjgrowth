@@ -98,7 +98,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
           <h2 className="font-semibold text-foreground mb-3">Current live content</h2>
           <p className="text-sm font-medium text-foreground mb-2">{content.title}</p>
           <div
-            className="prose prose-sm max-w-none text-sm text-caption max-h-48 overflow-y-auto scrollbar-thin border border-border rounded-md p-4"
+            className="prose prose-sm dark:prose-invert max-w-none text-sm text-caption max-h-48 overflow-y-auto scrollbar-thin border border-border rounded-md p-4"
             dangerouslySetInnerHTML={{ __html: content.content }}
           />
         </div>
@@ -110,7 +110,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
           {refresh.changeSummary && <p className="text-sm text-caption mb-3 italic">{refresh.changeSummary}</p>}
           <p className="text-sm font-medium text-foreground mb-2">{refresh.draftTitle}</p>
           <div
-            className="prose prose-sm max-w-none text-sm text-caption max-h-64 overflow-y-auto scrollbar-thin border border-border rounded-md p-4 mb-3"
+            className="prose prose-sm dark:prose-invert max-w-none text-sm text-caption max-h-64 overflow-y-auto scrollbar-thin border border-border rounded-md p-4 mb-3"
             dangerouslySetInnerHTML={{ __html: refresh.draftContent }}
           />
           <dl className="grid grid-cols-1 gap-2 text-sm">

@@ -1,5 +1,7 @@
 "use client";
 
+import ImageInput from "./Media/ImageInput";
+
 export type SocialSeoData = {
   ogTitle: string;
   ogDescription: string;
@@ -55,16 +57,15 @@ export default function SocialSeoFields({
               className={inputClass}
             />
           </div>
-          <div className="space-y-2">
-            <label className={labelClass}>OG Image URL</label>
-            <input
-              type="text"
-              value={data.ogImage}
-              onChange={(e) => onChange("ogImage", e.target.value)}
-              className={inputClass}
-              placeholder="https://..."
-            />
-          </div>
+          <ImageInput
+            label="OG Image"
+            folder="SEO"
+            value={data.ogImage}
+            onChange={(url) => onChange("ogImage", url)}
+            defaultAltText={data.ogTitle}
+            helpText="Recommended size: 1200 × 630 px."
+            previewClassName="w-40 h-[84px]"
+          />
         </div>
       </div>
 
@@ -102,16 +103,14 @@ export default function SocialSeoFields({
               className={inputClass}
             />
           </div>
-          <div className="space-y-2">
-            <label className={labelClass}>Twitter Image URL</label>
-            <input
-              type="text"
-              value={data.twitterImage}
-              onChange={(e) => onChange("twitterImage", e.target.value)}
-              className={inputClass}
-              placeholder="https://..."
-            />
-          </div>
+          <ImageInput
+            label="Twitter Image"
+            folder="SEO"
+            value={data.twitterImage}
+            onChange={(url) => onChange("twitterImage", url)}
+            defaultAltText={data.twitterTitle || data.ogTitle}
+            previewClassName="w-40 h-[84px]"
+          />
         </div>
       </div>
     </div>

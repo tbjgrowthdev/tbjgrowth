@@ -202,7 +202,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               Project Gallery
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {study.imageGallery.map((url: string, i: number) => (
+              {study.imageGallery.filter(isValidImageSrc).map((url: string, i: number) => (
                 <div key={url} className="relative aspect-video rounded-xl overflow-hidden border border-border">
                   <Image src={cloudinaryUrl(url)} alt={`${study.title} gallery image ${i + 1}`} fill className="object-cover" />
                 </div>

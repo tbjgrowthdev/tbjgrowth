@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTestimonial, updateTestimonial } from "@/app/(admin)/actions/testimonials";
 import { Save, AlertCircle } from "lucide-react";
+import ImageInput from "./Media/ImageInput";
 
 const GRADIENTS = [
   { label: "Blue to Cyan", value: "from-blue-500 to-cyan-500" },
@@ -120,23 +121,13 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-muted mb-1">Industry</label>
             <input
               type="text"
               name="industry"
               value={formData.industry}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted mb-1">Avatar (Initials or URL)</label>
-            <input
-              type="text"
-              name="avatar"
-              value={formData.avatar}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
@@ -152,6 +143,19 @@ export default function TestimonialForm({ initialData = null }: { initialData?: 
               className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
             />
           </div>
+        </div>
+        <div className="mb-4">
+          <ImageInput
+            label="Avatar"
+            folder="Testimonials"
+            value={formData.avatar}
+            onChange={(url) => setFormData((prev) => ({ ...prev, avatar: url }))}
+            defaultAltText={formData.clientName}
+            placeholder="Initials (e.g. JD) or an image URL"
+            helpText="Type initials to show a text avatar, or add a photo. Left empty, the author's initials are used."
+            allowText
+            previewClassName="w-16 h-16 rounded-full"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-muted mb-1">Quote</label>

@@ -5,6 +5,7 @@ import {
   applyInternalLinks,
   approveRunForPublish,
   attachGeneratedImage,
+  attachOwnImage,
   createPipelineRun,
   decideLinkSuggestion,
   deletePipelineRun,
@@ -72,6 +73,10 @@ export async function advanceImageAction(runId: string) {
 
 export async function attachGeneratedImageAction(runId: string) {
   return guardMutation("EDIT", () => attachGeneratedImage(runId));
+}
+
+export async function attachOwnImageAction(runId: string, url: string, altText: string) {
+  return guardMutation("EDIT", () => attachOwnImage(runId, url, altText));
 }
 
 export async function skipImageStageAction(runId: string) {

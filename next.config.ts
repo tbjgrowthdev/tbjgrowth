@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import { ALLOWED_IMAGE_HOSTS } from "./lib/image-hosts";
 
 // Next.js's own hydration bootstrap and framer-motion's inline style
 // attributes both need 'unsafe-inline' for script-src/style-src — this app
@@ -22,7 +23,7 @@ const CSP = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://res.cloudinary.com https://picsum.photos https://images.unsplash.com",
+  `img-src 'self' data: blob: ${ALLOWED_IMAGE_HOSTS.map((host) => `https://${host}`).join(" ")}`,
   "font-src 'self' data:",
   "connect-src 'self'",
   "frame-src 'none'",
@@ -55,20 +56,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-    ],
+    remotePatterns: ALLOWED_IMAGE_HOSTS.map((hostname) => ({ protocol: "https" as const, hostname })),
   },
   async headers() {
     return [

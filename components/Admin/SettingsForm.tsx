@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateSiteSettings, generateIndexNowKey } from "@/app/(admin)/actions/settings";
 import { Save, AlertCircle, RefreshCw } from "lucide-react";
+import ImageInput from "./Media/ImageInput";
 
 export default function SettingsForm({ initialData = null }: { initialData?: any }) {
   const router = useRouter();
@@ -262,17 +263,16 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
           <p className="text-sm text-caption mb-4">
             Used for OpenGraph/Twitter previews when a page, post, case study, or service has no image of its own set.
           </p>
-          <div>
-            <label className="block text-sm font-medium text-muted mb-1">Default OG Image URL</label>
-            <input
-              type="text"
-              name="defaultOgImage"
-              value={formData.defaultOgImage}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
-              placeholder="https://example.com/default-share-image.png"
-            />
-          </div>
+          <ImageInput
+            label="Default OG Image"
+            folder="SEO"
+            value={formData.defaultOgImage}
+            onChange={(url) => setFormData((prev) => ({ ...prev, defaultOgImage: url }))}
+            defaultAltText="TBJ Growth default social share image"
+            placeholder="https://example.com/default-share-image.png"
+            helpText="Recommended size: 1200 × 630 px."
+            previewClassName="w-40 h-[84px]"
+          />
         </div>
 
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border md:col-span-2">

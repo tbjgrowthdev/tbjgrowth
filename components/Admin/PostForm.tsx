@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { createPost, updatePost, transitionPost } from "@/app/(admin)/actions/posts";
 import { createRedirect } from "@/app/(admin)/actions/redirects";
 import dynamic from "next/dynamic";
-import { uploadMediaAsset } from "@/app/(admin)/actions/media";
 import { slugify } from "@/lib/utils";
-import { AlertCircle, Upload, FolderOpen, CalendarClock } from "lucide-react";
-import MediaAssetPicker from "./Media/MediaAssetPicker";
+import { AlertCircle, CalendarClock } from "lucide-react";
+import ImageInput from "./Media/ImageInput";
 import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import { buildAutoSchema } from "@/lib/schema-engine";
@@ -80,47 +79,7 @@ export default function PostForm({
   const [scheduleUpdateTime, setScheduleUpdateTime] = useState("09:00");
   const [scheduleUpdateTimezone, setScheduleUpdateTimezone] = useState(BROWSER_TIMEZONE);
 
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
-  const [pendingAltText, setPendingAltText] = useState("");
-  const [showMediaPicker, setShowMediaPicker] = useState(false);
-
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPendingFile(file);
-    setPendingPreviewUrl(URL.createObjectURL(file));
-    setPendingAltText(formData.featuredImageAlt || "");
-    setUploadError("");
-  };
-
-  const handleCancelPending = () => {
-    setPendingFile(null);
-    setPendingPreviewUrl(null);
-    setPendingAltText("");
-  };
-
-  const handleConfirmUpload = async () => {
-    if (!pendingFile || !pendingAltText.trim()) return;
-    setUploadingImage(true);
-    setUploadError("");
-    try {
-      const result = await uploadMediaAsset(pendingFile, { altText: pendingAltText, folder: "Blog" });
-      if (result.success && result.url) {
-        setFormData({ ...formData, featuredImage: result.url, featuredImageAlt: pendingAltText });
-        handleCancelPending();
-      } else {
-        setUploadError(result.error || "Image upload failed");
-      }
-    } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Image upload failed");
-    } finally {
-      setUploadingImage(false);
-    }
-  };
 
   const toggleId = (field: "categoryIds" | "tagIds", id: string) => {
     setFormData((prev) => ({
@@ -250,89 +209,16 @@ export default function PostForm({
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-muted">Featured Image</label>
-          <div className="flex items-center gap-3">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelected}
-              disabled={uploadingImage}
-              className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
-            />
-            <button
-              type="button"
-              onClick={() => setShowMediaPicker(true)}
-              className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm hover:bg-background whitespace-nowrap"
-            >
-              <FolderOpen size={16} />
-              Choose from Library
-            </button>
-          </div>
-          {uploadError && (
-            <div className="mt-2 text-sm text-red-600">{uploadError}</div>
-          )}
-
-          {pendingPreviewUrl && (
-            <div className="mt-2 space-y-2 p-4 border border-border rounded-lg bg-background">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={pendingPreviewUrl} alt="Preview" className="h-32 object-contain" />
-              <label className="block text-sm font-medium text-muted">
-                Alt Text <span className="text-red-500">(required to upload)</span>
-              </label>
-              <input
-                type="text"
-                value={pendingAltText}
-                onChange={(e) => setPendingAltText(e.target.value)}
-                placeholder="Describe the image for accessibility & image SEO"
-                className="w-full px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-brand-orange"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={uploadingImage || !pendingAltText.trim()}
-                  onClick={handleConfirmUpload}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm"
-                >
-                  <Upload size={16} />
-                  {uploadingImage ? "Uploading..." : "Upload image"}
-                </button>
-                <button type="button" onClick={handleCancelPending} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-tint">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {formData.featuredImage && !pendingPreviewUrl && (
-            <div className="mt-2 text-sm text-caption">
-              Image set (URL: {formData.featuredImage})
-            </div>
-          )}
-        </div>
-
-        {showMediaPicker && (
-          <MediaAssetPicker
-            onClose={() => setShowMediaPicker(false)}
-            onSelect={({ url, altText }) => {
-              setFormData({ ...formData, featuredImage: url, featuredImageAlt: altText });
-              setShowMediaPicker(false);
-            }}
-          />
-        )}
-
-        {formData.featuredImage && !pendingPreviewUrl && (
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-muted">Featured Image Alt Text</label>
-            <input
-              type="text"
-              value={formData.featuredImageAlt}
-              onChange={(e) => setFormData({ ...formData, featuredImageAlt: e.target.value })}
-              placeholder="Describe the image for accessibility & image SEO"
-              className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
-            />
-          </div>
-        )}
+        <ImageInput
+          label="Featured Image"
+          folder="Blog"
+          value={formData.featuredImage}
+          onChange={(url) => setFormData((prev) => ({ ...prev, featuredImage: url }))}
+          altText={formData.featuredImageAlt}
+          onAltTextChange={(alt) => setFormData((prev) => ({ ...prev, featuredImageAlt: alt }))}
+          defaultAltText={formData.title}
+          previewClassName="w-40 h-24"
+        />
 
         {categories.length > 0 && (
           <div className="space-y-2">

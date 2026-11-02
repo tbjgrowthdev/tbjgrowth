@@ -183,6 +183,61 @@ export async function uploadAndRegisterMedia(
   return { asset, url: asset.url };
 }
 
+/**
+ * Copies an image from a public URL into Cloudinary and registers it in the
+ * Media Library. Cloudinary fetches the URL itself (its upload API accepts a
+ * remote URL as `file`), so this server never downloads it. Used when an
+ * admin pastes a link to an image hosted somewhere the site can't display
+ * directly (the CSP only allows Cloudinary and a few image hosts).
+ */
+export async function uploadAndRegisterMediaFromUrl(sourceUrl: string, opts: { altText: string; folder?: string; title?: string }) {
+  const altText = opts.altText?.trim();
+  if (!altText) throw new Error("Alt text is required");
+
+  let parsed: URL;
+  try {
+    parsed = new URL(sourceUrl.trim());
+  } catch {
+    throw new Error("That isn't a valid image URL");
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") throw new Error("Only http(s) image URLs can be imported");
+
+  const session = await requirePermission("MEDIA_MANAGEMENT");
+  const folder = opts.folder?.trim() || "Uncategorized";
+  const data = await uploadDataUriToCloudinary(parsed.toString(), "tbj-growth");
+  const lastSegment = decodeURIComponent(parsed.pathname.split("/").filter(Boolean).pop() || "");
+  const filename = resolveFilename(data, lastSegment || undefined);
+
+  const asset = await prisma.mediaAsset.create({
+    data: {
+      publicId: data.public_id,
+      url: data.secure_url,
+      filename,
+      format: data.format,
+      width: data.width,
+      height: data.height,
+      bytes: data.bytes,
+      folder,
+      altText,
+      title: opts.title?.trim() || filename,
+      uploadedById: session.user.id,
+      uploadedByName: session.user.name ?? null,
+      uploadedByEmail: session.user.email ?? null,
+    },
+  });
+
+  await logAudit({
+    action: "create",
+    category: "Media",
+    entityType: "MediaAsset",
+    entityId: asset.id,
+    entityLabel: asset.title,
+    after: { url: asset.url, folder: asset.folder, altText: asset.altText, source: parsed.host, filename: asset.filename, format: asset.format, bytes: asset.bytes },
+  });
+
+  return { asset, url: asset.url };
+}
+
 // For the AI Content Pipeline's Image stage (lib/content-pipeline/
 // stages.ts) — same storage path as uploadAndRegisterMedia, but the real
 // alt text doesn't exist yet at upload time (it's generated in a later

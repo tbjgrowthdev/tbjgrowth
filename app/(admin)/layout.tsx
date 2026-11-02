@@ -4,6 +4,9 @@ import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
 import { LayoutDashboard, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink, Network, Layers, MapPin, FileStack, FlaskConical, GitCompare, Stethoscope, Plug, Zap, BarChart3, Gauge } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
+import ThemeToggle from "@/components/Admin/ThemeToggle";
+import VisitSiteMenu from "@/components/Admin/VisitSiteMenu";
+import { AdminSidebarProvider, SidebarFrame, SidebarToggle } from "@/components/Admin/AdminSidebar";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
 
@@ -35,10 +38,11 @@ export default async function AdminLayout({
   const canCreateContent = hasPermission(role, "CREATE");
 
   return (
+    <AdminSidebarProvider>
     <div className="h-screen bg-background flex overflow-hidden">
       {/* Sidebar — pinned to the viewport; only its own nav list scrolls if it's
           taller than the screen, independently of the main content below. */}
-      <aside className="w-64 flex-shrink-0 bg-card border-r border-border flex flex-col h-full">
+      <SidebarFrame>
         <div className="h-16 flex-shrink-0 flex items-center px-6 border-b border-border">
           <span className="text-xl font-bold text-foreground">TBJ Admin</span>
         </div>
@@ -281,31 +285,39 @@ export default async function AdminLayout({
             <LogoutButton />
           </div>
         </nav>
-      </aside>
+      </SidebarFrame>
 
       {/* Main Content — its own scroll region, independent of the sidebar's. */}
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Top Navbar — stays pinned above the scrolling content. */}
-        <header className="h-16 flex-shrink-0 bg-card border-b border-border flex items-center px-6 justify-between">
-          <div className="text-sm text-caption">Welcome back, {userName}</div>
-          <Link
-            href="/admin/profile"
-            className="relative w-8 h-8 rounded-full overflow-hidden bg-brand-orange-deep flex items-center justify-center text-white text-sm font-semibold hover:ring-2 hover:ring-brand-orange-light transition-all"
-            title="My Profile"
-          >
-            {isValidImageSrc(userImage) ? (
-              <Image src={userImage} alt={userName} fill className="object-cover" />
-            ) : (
-              <span>{userName.charAt(0).toUpperCase()}</span>
-            )}
-          </Link>
+        <header className="h-16 flex-shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <SidebarToggle />
+            <div className="text-sm text-caption truncate">Welcome back, {userName}</div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <VisitSiteMenu />
+            <ThemeToggle />
+            <Link
+              href="/admin/profile"
+              className="relative w-8 h-8 rounded-full overflow-hidden bg-brand-orange-deep flex items-center justify-center text-white text-sm font-semibold hover:ring-2 hover:ring-brand-orange-light transition-all"
+              title="My Profile"
+            >
+              {isValidImageSrc(userImage) ? (
+                <Image src={userImage} alt={userName} fill className="object-cover" />
+              ) : (
+                <span>{userName.charAt(0).toUpperCase()}</span>
+              )}
+            </Link>
+          </div>
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
           {children}
         </div>
       </main>
     </div>
+    </AdminSidebarProvider>
   );
 }

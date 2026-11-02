@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Star } from 'lucide-react';
+import ImageInput from './Media/ImageInput';
 
 interface SchemaBuilderProps {
   initialSchema: string;
@@ -132,7 +133,7 @@ export default function SchemaBuilder({ initialSchema, onChange, autoSchema }: S
           <>
             <div><label className={labelClass}>Name</label><input type="text" value={schemaData.name || ''} onChange={(e) => updateSchema('name', e.target.value)} className={inputClass} /></div>
             <div><label className={labelClass}>URL</label><input type="text" value={schemaData.url || ''} onChange={(e) => updateSchema('url', e.target.value)} className={inputClass} /></div>
-            <div><label className={labelClass}>Logo URL</label><input type="text" value={schemaData.logo || ''} onChange={(e) => updateSchema('logo', e.target.value)} className={inputClass} /></div>
+            <ImageInput label="Logo" folder="SEO" value={schemaData.logo || ''} onChange={(url) => updateSchema('logo', url)} defaultAltText={schemaData.name ? `${schemaData.name} logo` : ''} previewClassName="w-32 h-16 [&_img]:object-contain [&_img]:p-1" />
           </>
         );
 
@@ -166,7 +167,7 @@ export default function SchemaBuilder({ initialSchema, onChange, autoSchema }: S
         return (
           <>
             <div><label className={labelClass}>Headline</label><input type="text" value={schemaData.headline || ''} onChange={(e) => updateSchema('headline', e.target.value)} className={inputClass} /></div>
-            <div><label className={labelClass}>Image URL</label><input type="text" value={schemaData.image || ''} onChange={(e) => updateSchema('image', e.target.value)} className={inputClass} /></div>
+            <ImageInput label="Image" folder="SEO" value={schemaData.image || ''} onChange={(url) => updateSchema('image', url)} defaultAltText={schemaData.headline || ''} previewClassName="w-40 h-24" />
           </>
         );
 

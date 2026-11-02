@@ -13,11 +13,13 @@ import {
   getPipelineRunAction,
   getJobsForRunAction,
   skipImageStageAction,
+  attachOwnImageAction,
   updatePendingImageAltTextAction,
 } from "@/app/(admin)/actions/content-pipeline";
 import { PIPELINE_STAGE_ORDER, STAGE_LABEL, STALE_JOB_MS, isJobStale, nextStage } from "@/lib/content-pipeline/types";
 import type { Brief, Research, SearchIntent, Outline, QaReport, QaCheck, LinkSuggestion, GeneratedImage } from "@/lib/content-pipeline/types";
 import { describeActionError, requestPipelineStage } from "@/lib/admin/action-errors";
+import ImageInput from "@/components/Admin/Media/ImageInput";
 
 type RunAndContent = NonNullable<Awaited<ReturnType<typeof getPipelineRunAction>>> & { jobs: Awaited<ReturnType<typeof getJobsForRunAction>> };
 type Job = RunAndContent["jobs"][number];
@@ -53,6 +55,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
   const [error, setError] = useState<string | null>(null);
   // Shown while waiting on a stage whose request was lost but whose job may still be running.
   const [notice, setNotice] = useState<string | null>(null);
+  const [showOwnImage, setShowOwnImage] = useState(false);
   const busyRef = useRef(false);
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -203,6 +206,8 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
   const generatedImage = parse<GeneratedImage>(run.generatedImage);
 
   const upcoming = nextStage(run.stage);
+  const imageFolder = run.contentType === "CASE_STUDY" ? "Case Studies" : "Blog";
+  const imageAltSuggestion = outline?.title || brief?.topic || "";
   const currentIndex = PIPELINE_STAGE_ORDER.indexOf(run.stage);
   const pendingJob = upcoming ? jobs.find((j) => j.stage === upcoming) : undefined;
 
@@ -315,25 +320,49 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
       {content && run.stage !== "BRIEF" && run.stage !== "SEARCH_INTENT" && run.stage !== "RESEARCH" && run.stage !== "OUTLINE" && (
         <StageCard title="Draft" done>
           <p className="text-sm font-medium text-foreground mb-2">{content.title}</p>
-          <div className="prose prose-sm max-w-none text-sm text-caption max-h-64 overflow-y-auto scrollbar-thin border border-border rounded-md p-4" dangerouslySetInnerHTML={{ __html: content.content }} />
+          <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-caption max-h-64 overflow-y-auto scrollbar-thin border border-border rounded-md p-4" dangerouslySetInnerHTML={{ __html: content.content }} />
         </StageCard>
       )}
 
       {generatedImage && (
-        <ImageReviewCard runId={run.id} image={generatedImage} busy={busy} act={act} onRegenerate={() => runAiStage("IMAGE")} setError={setError} onDone={() => router.refresh()} />
+        <ImageReviewCard
+          runId={run.id}
+          image={generatedImage}
+          busy={busy}
+          act={act}
+          onRegenerate={() => runAiStage("IMAGE")}
+          setError={setError}
+          onDone={() => router.refresh()}
+          folder={imageFolder}
+          defaultAltText={imageAltSuggestion}
+        />
       )}
 
       {run.stage === "DRAFT" && !generatedImage && (
-        <div className="flex gap-2">
-          <ActionBar busy={busy} label="Generate Image" onClick={() => runAiStage("IMAGE")} />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => act(() => skipImageStageAction(run.id))}
-            className="px-5 py-3 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm whitespace-nowrap"
-          >
-            Skip
-          </button>
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <ActionBar busy={busy} label="Generate Image" onClick={() => runAiStage("IMAGE")} />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setShowOwnImage((v) => !v)}
+              aria-expanded={showOwnImage}
+              className="px-5 py-3 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm whitespace-nowrap"
+            >
+              Use my own image
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => act(() => skipImageStageAction(run.id))}
+              className="px-5 py-3 border border-border rounded-lg hover:bg-background disabled:opacity-50 text-sm whitespace-nowrap"
+            >
+              Skip
+            </button>
+          </div>
+          {showOwnImage && (
+            <OwnImagePanel runId={run.id} busy={busy} act={act} folder={imageFolder} defaultAltText={imageAltSuggestion} onCancel={() => setShowOwnImage(false)} />
+          )}
         </div>
       )}
       {content?.metaTitle && (
@@ -593,6 +622,8 @@ function ImageReviewCard({
   onRegenerate,
   setError,
   onDone,
+  folder,
+  defaultAltText,
 }: {
   runId: string;
   image: GeneratedImage;
@@ -601,9 +632,12 @@ function ImageReviewCard({
   onRegenerate: () => void;
   setError: (v: string | null) => void;
   onDone: () => void;
+  folder: string;
+  defaultAltText: string;
 }) {
   const [altText, setAltText] = useState(image.altText);
   const [savingAlt, setSavingAlt] = useState(false);
+  const [showOwnImage, setShowOwnImage] = useState(false);
 
   const saveAltText = async () => {
     setSavingAlt(true);
@@ -626,7 +660,7 @@ function ImageReviewCard({
 
   return (
     <StageCard title="Image" done={image.approved}>
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={image.url} alt={image.altText} className="w-40 h-40 object-cover rounded-md border border-border shrink-0" />
         <div className="flex-1 space-y-2">
@@ -656,7 +690,7 @@ function ImageReviewCard({
             )}
           </div>
           <div className="text-xs text-caption">
-            {image.provider} / {image.model}
+            {image.provider === "manual" ? "Chosen by you" : `${image.provider} / ${image.model}`}
           </div>
           {image.approved ? (
             <p className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
@@ -684,6 +718,15 @@ function ImageReviewCard({
               <button
                 type="button"
                 disabled={busy}
+                onClick={() => setShowOwnImage((v) => !v)}
+                aria-expanded={showOwnImage}
+                className="px-3 py-1.5 border border-border rounded-md hover:bg-background disabled:opacity-50 text-xs"
+              >
+                Use a different image
+              </button>
+              <button
+                type="button"
+                disabled={busy}
                 onClick={() => act(() => skipImageStageAction(runId))}
                 className="px-3 py-1.5 text-caption hover:text-foreground text-xs underline"
               >
@@ -693,7 +736,66 @@ function ImageReviewCard({
           )}
         </div>
       </div>
+      {showOwnImage && !image.approved && (
+        <div className="mt-4">
+          <OwnImagePanel runId={runId} busy={busy} act={act} folder={folder} defaultAltText={image.altText || defaultAltText} onCancel={() => setShowOwnImage(false)} />
+        </div>
+      )}
     </StageCard>
+  );
+}
+
+// Lets the human supply the featured image instead of generating one, with
+// the admin's shared image field (URL, upload, drag & drop, Media Library).
+// Attaching it completes the Image stage directly — see attachOwnImage in
+// lib/content-pipeline/stages.ts.
+function OwnImagePanel({
+  runId,
+  busy,
+  act,
+  folder,
+  defaultAltText,
+  onCancel,
+}: {
+  runId: string;
+  busy: boolean;
+  act: Act;
+  folder: string;
+  defaultAltText: string;
+  onCancel: () => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [altText, setAltText] = useState(defaultAltText);
+
+  return (
+    <div className="bg-card rounded-lg shadow-sm border border-border p-5 space-y-4">
+      <h3 className="font-semibold text-foreground">Use your own image</h3>
+      <ImageInput
+        label="Featured image"
+        folder={folder}
+        value={url}
+        onChange={setUrl}
+        altText={altText}
+        onAltTextChange={setAltText}
+        defaultAltText={defaultAltText}
+        previewClassName="w-40 h-24"
+      />
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={busy || !url.trim() || !altText.trim()}
+          title={!altText.trim() ? "Add alt text first" : undefined}
+          onClick={() => act(() => attachOwnImageAction(runId, url, altText), "Failed to attach the image")}
+          className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm font-medium"
+        >
+          {busy && <Loader2 size={14} className="animate-spin" />}
+          Attach image
+        </button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-tint">
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 

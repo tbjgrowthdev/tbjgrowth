@@ -1,15 +1,73 @@
 "use client";
 
+import { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { Bold, Italic, Strikethrough, Heading1, Heading2, List, ListOrdered, Quote, Undo, Redo } from 'lucide-react'
+import Image from '@tiptap/extension-image'
+import { Bold, Italic, Strikethrough, Heading1, Heading2, List, ListOrdered, Quote, Undo, Redo, ImagePlus, X } from 'lucide-react'
+import ImageInput from './Media/ImageInput'
 
 interface EditorProps {
   content: string;
   onChange: (content: string) => void;
 }
 
+// Insert-image dialog: the same image field as everywhere else in the
+// admin (URL, device upload, drag & drop / paste, Media Library), then the
+// image goes into the post at the cursor with its alt text.
+const InsertImageDialog = ({ editor, onClose }: { editor: any; onClose: () => void }) => {
+  const [url, setUrl] = useState('')
+  const [alt, setAlt] = useState('')
+
+  const insert = () => {
+    if (!url.trim()) return
+    editor.chain().focus().setImage({ src: url.trim(), alt: alt.trim() }).run()
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Insert image"
+        className="bg-card rounded-xl border border-border max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        // The editor sits inside the content form: Enter here must not submit it.
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onClose()
+          if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') e.preventDefault()
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">Insert image</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-caption hover:text-foreground">
+            <X size={20} />
+          </button>
+        </div>
+        <ImageInput folder="Content" value={url} onChange={setUrl} altText={alt} onAltTextChange={setAlt} previewClassName="w-32 h-24" />
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-tint">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={insert}
+            disabled={!url.trim() || !alt.trim()}
+            title={!alt.trim() ? 'Add alt text first' : undefined}
+            className="px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50 text-sm"
+          >
+            Insert image
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const MenuBar = ({ editor }: { editor: any }) => {
+  const [showImageDialog, setShowImageDialog] = useState(false)
+
   if (!editor) {
     return null
   }
@@ -86,6 +144,19 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <button
         type="button"
+        onClick={() => setShowImageDialog(true)}
+        className="p-2 rounded hover:bg-tint"
+        title="Insert image"
+        aria-label="Insert image"
+      >
+        <ImagePlus size={16} />
+      </button>
+      {showImageDialog && <InsertImageDialog editor={editor} onClose={() => setShowImageDialog(false)} />}
+
+      <div className="w-px h-6 bg-border mx-1 self-center" />
+
+      <button
+        type="button"
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().chain().focus().undo().run()}
         className="p-2 rounded hover:bg-tint disabled:opacity-50"
@@ -108,6 +179,8 @@ export default function RichTextEditor({ content, onChange }: EditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
+      // Block images only, and never inline base64: every image comes from a URL (usually the Media Library).
+      Image.configure({ inline: false, allowBase64: false }),
     ],
     content: content,
     onUpdate: ({ editor }) => {

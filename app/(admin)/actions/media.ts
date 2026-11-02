@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
-import { uploadAndRegisterMedia, uploadToCloudinary, destroyImage } from "@/lib/cloudinary";
+import { uploadAndRegisterMedia, uploadAndRegisterMediaFromUrl, uploadToCloudinary, destroyImage } from "@/lib/cloudinary";
 
 type SortBy = "createdAt" | "title" | "bytes";
 type SortOrder = "asc" | "desc";
@@ -79,6 +79,28 @@ export async function uploadMediaAsset(file: File, data: { altText: string; fold
     }
     console.error("Failed to upload media asset:", error);
     return { success: false, error: error.message || "Upload failed" };
+  }
+}
+
+// Same as uploadMediaAsset, for an image at a public URL instead of a file.
+export async function importMediaFromUrl(url: string, data: { altText: string; folder?: string; title?: string }) {
+  try {
+    await requirePermission("MEDIA_MANAGEMENT");
+    const { asset, url: storedUrl } = await uploadAndRegisterMediaFromUrl(url, data);
+    revalidatePath("/admin/media");
+    return { success: true as const, asset, url: storedUrl };
+  } catch (error: any) {
+    if (error instanceof AuthError) {
+      return { success: false as const, error: error.message };
+    }
+    console.error("Failed to import media from URL:", error);
+    const message = String(error?.message || "");
+    return {
+      success: false as const,
+      error: /Cloudinary upload failed/.test(message)
+        ? "Couldn't fetch an image from that URL. Check that it's a direct link to a public image file."
+        : message || "Import failed",
+    };
   }
 }
 

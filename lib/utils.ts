@@ -1,23 +1,21 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { isDisplayableImageUrl } from "./image-hosts";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 /**
- * next/image requires src to be an absolute URL or start with "/".
- * Guards against stale/malformed values (e.g. legacy "placeholder_url" rows).
+ * True when next/image can render `src`: a same-site path, or an https URL
+ * on one of the hosts in lib/image-hosts.ts (next/image throws for any other
+ * host, which would take the whole page down). Guards against stale or
+ * malformed values (e.g. legacy "placeholder_url" rows) and against an image
+ * URL pasted from a host the site doesn't allow — callers show their
+ * placeholder instead.
  */
 export function isValidImageSrc(src: unknown): src is string {
-  if (typeof src !== "string" || src.length === 0) return false;
-  if (src.startsWith("/")) return true;
-  try {
-    new URL(src);
-    return true;
-  } catch {
-    return false;
-  }
+  return typeof src === "string" && isDisplayableImageUrl(src);
 }
 
 /**

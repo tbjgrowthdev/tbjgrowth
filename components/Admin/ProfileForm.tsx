@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { updateProfile, changePassword } from "@/app/(admin)/actions/profile";
 import { uploadImage } from "@/lib/cloudinary";
-import { isValidImageSrc, parseSocialLinks } from "@/lib/utils";
+import { parseSocialLinks } from "@/lib/utils";
+import ImageInput from "./Media/ImageInput";
 import { Save, AlertCircle, CheckCircle2, KeyRound, User as UserIcon } from "lucide-react";
 
 type AdminUser = {
@@ -35,29 +35,12 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadError, setUploadError] = useState("");
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadingImage(true);
-      setUploadError("");
-      try {
-        const url = await uploadImage(e.target.files[0]);
-        setFormData((prev) => ({ ...prev, image: url }));
-      } catch (err) {
-        setUploadError(err instanceof Error ? err.message : "Image upload failed");
-      } finally {
-        setUploadingImage(false);
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,30 +97,16 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
             <h2 className="text-xl font-bold text-foreground">Profile</h2>
           </div>
 
-          <div className="flex items-center gap-5">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-2xl flex-shrink-0">
-              {isValidImageSrc(formData.image) ? (
-                <Image src={formData.image} alt="Avatar" fill className="object-cover" />
-              ) : (
-                <span>{(formData.name || "A").charAt(0).toUpperCase()}</span>
-              )}
-            </div>
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={uploadingImage}
-                className="block text-sm text-muted disabled:opacity-50"
-              />
-              {uploadingImage && (
-                <div className="mt-1 text-sm text-caption">Uploading...</div>
-              )}
-              {uploadError && (
-                <div className="mt-1 text-sm text-red-600">{uploadError}</div>
-              )}
-            </div>
-          </div>
+          <ImageInput
+            label="Profile Photo"
+            folder="Avatars"
+            value={formData.image}
+            onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
+            uploadFile={uploadImage}
+            defaultAltText={formData.name}
+            placeholder="Paste an image URL, or use the options below"
+            previewClassName="w-20 h-20 rounded-full"
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -216,7 +185,7 @@ export default function ProfileForm({ user }: { user: AdminUser }) {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={isSubmitting || uploadingImage}
+            disabled={isSubmitting}
             className="flex items-center gap-2 px-6 py-3 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors disabled:opacity-50"
           >
             <Save size={20} />

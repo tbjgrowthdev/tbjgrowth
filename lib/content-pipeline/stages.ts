@@ -13,6 +13,7 @@ import { estimateImageCostUsd } from "./pricing";
 import { getForbiddenTerms } from "@/lib/brand-kb/context";
 import { retrieveApprovedSources } from "@/lib/rag/retrieve";
 import { uploadAndRegisterGeneratedImage } from "@/lib/cloudinary";
+import { isDisplayableImageUrl } from "@/lib/image-hosts";
 import { checkAltText, checkDuplicateContent, checkLinks, checkMetadata, checkSchema, checkSeoHeadings } from "./quality-gate";
 import { getContentRecord, patchContent, publicUrlFor } from "./content-helpers";
 import {
@@ -531,6 +532,62 @@ export async function attachGeneratedImage(runId: string): Promise<StageResult> 
     if (error instanceof AuthError) return wrongStage(error.message);
     console.error(`Attach generated image failed for run ${runId}:`, error);
     return wrongStage(error.message || "Failed to attach generated image");
+  }
+}
+
+// The alternative to generating one: the human supplies the featured image
+// themselves (pasted URL, upload, or a Media Library pick — the admin's
+// shared image field) and it's attached straight away, since choosing it is
+// already the human decision approval stands for. Recorded on the run as an
+// approved GeneratedImage with provider "manual", so the wizard and the
+// audit trail treat it like an attached AI image.
+export async function attachOwnImage(runId: string, url: string, altText: string): Promise<StageResult> {
+  const src = url.trim();
+  const alt = altText.trim();
+  if (!src) return wrongStage("Choose an image first");
+  if (!alt) return wrongStage("Alt text is required");
+  if (!isDisplayableImageUrl(src)) {
+    return wrongStage("The site can't display images from that address. Import it into the Media Library first (the image field offers this), then try again.");
+  }
+  try {
+    const session = await requirePermission("EDIT");
+    const run = await getRunOrThrow(runId);
+    if (run.stage !== "DRAFT") return wrongStage(`Expected stage DRAFT, run is at ${run.stage}`);
+    if (!run.contentId) return wrongStage("This run has no draft content yet");
+
+    const patchResult = await patchContent(run.contentType as PipelineContentType, run.contentId, { featuredImage: src, featuredImageAlt: alt });
+    if (!patchResult.success) return wrongStage(patchResult.error || "Failed to attach the image to the content");
+
+    const asset = await prisma.mediaAsset.findFirst({ where: { url: src }, select: { id: true } });
+    const image: GeneratedImage = {
+      mediaAssetId: asset?.id ?? "",
+      url: src,
+      altText: alt,
+      provider: "manual",
+      model: "",
+      approved: true,
+      approvedAt: new Date().toISOString(),
+      approvedById: session.user.id,
+    };
+    const updated = await prisma.contentPipelineRun.update({
+      where: { id: runId },
+      data: { stage: "IMAGE", generatedImage: JSON.stringify(image) },
+    });
+
+    await logAudit({
+      action: "approve",
+      category: "Content",
+      entityType: "ContentPipelineRun",
+      entityId: runId,
+      entityLabel: asset?.id ?? src,
+      after: { source: "manual", url: src, mediaAssetId: asset?.id ?? null },
+    });
+    revalidatePath(`/admin/ai-pipeline/${runId}`);
+    return { success: true, data: updated };
+  } catch (error: any) {
+    if (error instanceof AuthError) return wrongStage(error.message);
+    console.error(`Attach own image failed for run ${runId}:`, error);
+    return wrongStage(error.message || "Failed to attach the image");
   }
 }
 
