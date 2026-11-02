@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Noto_Sans_Bengali, Noto_Sans_Arabic } from "next/font/google";
+import localFont from "next/font/local";
 import Footer from "@/components/HomeComponents/Footer";
 import Navbar from "@/components/HomeComponents/Navbar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
@@ -12,8 +12,31 @@ import { resolveRouteLocale } from "@/lib/i18n";
 // Inter/Syne (loaded in the root layout) are Latin-only and silently fall
 // back to tofu/system-sans for Bangla/Arabic script — these are the
 // non-Latin fonts for those two locales.
-const notoBengali = Noto_Sans_Bengali({ variable: "--font-bn", subsets: ["bengali"], weight: ["400", "500", "600", "700"] });
-const notoArabic = Noto_Sans_Arabic({ variable: "--font-ar", subsets: ["arabic"], weight: ["400", "500", "600", "700"] });
+//
+// Self-hosted (app/fonts/, the Google Fonts variable files for the bengali
+// and arabic subsets, weights 400–700, SIL Open Font License) rather than
+// next/font/google: that one downloads Google's CSS at build time, and when
+// Google serves these families from "fonts.gstatic.com/l/font?kit=…&…" URLs,
+// Turbopack's font loader fails the whole build ("next/font/google queries
+// have exactly one entry"). A local file needs no network at build time.
+//
+// The files only contain Bengali/Arabic glyphs, so no generated fallback
+// font is added: Latin text in these locales falls through to Inter (see
+// fontFamily below), same as the rest of the site.
+const notoBengali = localFont({
+  src: "../../fonts/noto-sans-bengali-variable.woff2",
+  variable: "--font-bn",
+  weight: "400 700",
+  display: "swap",
+  adjustFontFallback: false,
+});
+const notoArabic = localFont({
+  src: "../../fonts/noto-sans-arabic-variable.woff2",
+  variable: "--font-ar",
+  weight: "400 700",
+  display: "swap",
+  adjustFontFallback: false,
+});
 
 export default async function PublicLayout({
   children,
@@ -30,7 +53,12 @@ export default async function PublicLayout({
 
   const settings = await getSiteSettings();
   const fontVariable = locale.language === "bn" ? notoBengali.variable : locale.language === "ar" ? notoArabic.variable : "";
-  const fontFamily = locale.language === "bn" ? "var(--font-bn)" : locale.language === "ar" ? "var(--font-ar)" : undefined;
+  const fontFamily =
+    locale.language === "bn"
+      ? "var(--font-bn), var(--font-inter), sans-serif"
+      : locale.language === "ar"
+        ? "var(--font-ar), var(--font-inter), sans-serif"
+        : undefined;
 
   return (
     // display:contents keeps this element out of the root layout's
