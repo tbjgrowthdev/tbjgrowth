@@ -65,6 +65,8 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
   const pathname = usePathname();
   const barePath = pathWithoutLocale(pathname || "/", locale.prefix);
   const localizedHref = (href: string) => (href.startsWith("#") ? href : withLocalePrefix(locale.prefix, href));
+  // "Get Started": scrolls to the contact section on the home page, links to /contact everywhere else.
+  const ctaHref = barePath === "/" ? "#contact" : localizedHref("/contact");
 
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -272,8 +274,8 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
 
               {/* CTA Button */}
               <motion.a
-                href="#contact"
-                onClick={(e) => handleNavClick(e, "#contact")}
+                href={ctaHref}
+                onClick={(e) => handleNavClick(e, ctaHref)}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.3 }}
@@ -424,8 +426,8 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
 
                   {/* CTA */}
                   <motion.a
-                    href="#contact"
-                    onClick={(e) => handleNavClick(e, "#contact")}
+                    href={ctaHref}
+                    onClick={(e) => handleNavClick(e, ctaHref)}
                     whileTap={{ scale: 0.98 }}
                     className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-xl shadow-lg shadow-brand-orange/25 active:scale-95 transition-transform"
                   >
