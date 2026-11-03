@@ -25,6 +25,9 @@ const syne = localFont({
 export const metadata: Metadata = {
   title: "TBJ Growth | AI-Powered Digital Growth Agency",
   description: "Experience the complete business growth journey with TBJ Growth: Build, Attract, Convert, Automate, Scale.",
+  verification: {
+    google: "JOr0NxVw6eA8AXIKlo9_xiOVn-pkbgzn51iI2Fni6Ao",
+  },
 };
 
 export default function RootLayout({
