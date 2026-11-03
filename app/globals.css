@@ -242,3 +242,17 @@
 .article-body th { text-align: start; background: var(--tint-bg); color: var(--fg); font-weight: 700; }
 .article-body th, .article-body td { padding: 0.75rem 1rem; }
 .article-body tr + tr td { border-top: 1px solid var(--border-c); }
+
+/* SweetAlert2 dialogs (see lib/admin/dialog.ts) - follow the light/dark theme tokens */
+.swal2-container { z-index: 10000; }
+.tbj-swal-popup { background: var(--card-bg) !important; color: var(--fg) !important; border: 1px solid var(--border-c); border-radius: 1rem !important; font-family: var(--font-body), sans-serif; }
+.tbj-swal-title { color: var(--fg) !important; font-family: var(--font-heading), sans-serif; font-size: 1.25rem !important; }
+.tbj-swal-text { color: var(--muted-fg) !important; white-space: pre-line; font-size: 0.925rem !important; }
+.tbj-swal-confirm, .tbj-swal-cancel { border-radius: 0.5rem; padding: 0.55rem 1.25rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; margin: 0 0.25rem; }
+.tbj-swal-confirm { background: #E2571F; color: #fff; border: 1px solid #E2571F; }
+.tbj-swal-confirm:hover { background: #C4491A; }
+.tbj-swal-danger { background: #dc2626; border-color: #dc2626; }
+.tbj-swal-danger:hover { background: #b91c1c; }
+.tbj-swal-cancel { background: transparent; color: var(--fg); border: 1px solid var(--border-c); }
+.tbj-swal-cancel:hover { background: var(--tint-bg); }
+.tbj-swal-confirm:focus-visible, .tbj-swal-cancel:focus-visible { outline: 2px solid #F4732F; outline-offset: 2px; }

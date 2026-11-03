@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -45,7 +46,7 @@ export default function GoogleIntegrationPanel({
   };
 
   const handleDisconnect = async () => {
-    if (!confirm("Disconnect Google Analytics & Search Console? You'll need to reconnect to see live data again.")) return;
+    if (!(await confirmDialog({ title: "Disconnect Google Analytics & Search Console?", text: "You'll need to reconnect to see live data again.", confirmText: "Disconnect", danger: true }))) return;
     setIsDisconnecting(true);
     await withToast(disconnectGoogle(), { success: "Google disconnected", error: "Couldn't disconnect Google" });
     router.refresh();

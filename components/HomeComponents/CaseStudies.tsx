@@ -40,7 +40,7 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
       ref={cardRef}
       initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.1, duration: 0.6 }}
+      transition={{ delay: index * 0.05, duration: 0.39 }}
       className="group"
     >
       <Link
@@ -141,7 +141,7 @@ export default function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] 
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.39 }}
           className="text-center mb-12 lg:mb-16"
         >
           <motion.div
@@ -191,7 +191,7 @@ export default function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] 
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.2 }}
           className="text-center mt-12 lg:mt-16"
         >
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">

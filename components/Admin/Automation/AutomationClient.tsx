@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -85,7 +86,7 @@ function RulesPanel({ initialRules }: { initialRules: Rule[] }) {
   };
 
   const handleDelete = async (rule: Rule) => {
-    if (!confirm(`Delete rule "${rule.name}"? Its past runs stay in the Runs tab.`)) return;
+    if (!(await confirmDialog({ title: "Delete this rule?", text: `Rule "${rule.name}" will be deleted. Its past runs stay in the Runs tab.`, confirmText: "Delete", danger: true }))) return;
     const result = await withToast(deleteAutomationRuleAction(rule.id), { success: "Automation rule deleted", error: "Couldn't delete automation rule" });
     if (result.success) setRules((prev) => prev.filter((r) => r.id !== rule.id));
   };

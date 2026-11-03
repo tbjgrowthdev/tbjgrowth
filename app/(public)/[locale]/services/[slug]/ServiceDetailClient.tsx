@@ -69,7 +69,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05 }}
             className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg mb-6`}
           >
             <Icon className="w-8 h-8" />
@@ -78,7 +78,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
+            transition={{ delay: 0.07 }}
             className="text-4xl sm:text-5xl font-bold text-foreground mb-4 tracking-tight"
           >
             {heading}
@@ -88,7 +88,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
               className="text-lg text-muted mb-2"
             >
               {service.subtitle}
@@ -98,7 +98,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.13 }}
             className="text-muted leading-relaxed max-w-2xl"
           >
             {intro}
@@ -108,7 +108,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15 }}
               className="inline-flex items-center gap-3 mt-8 bg-stat rounded-2xl px-6 py-4 border border-border"
             >
               <div className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
@@ -136,7 +136,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: i * 0.025 }}
                     className="flex items-center gap-4 bg-card rounded-2xl p-5 border border-border hover:border-accent-border transition-colors"
                   >
                     <div className={`flex-shrink-0 p-2.5 rounded-xl bg-gradient-to-br ${bgGradient}`}>
@@ -163,7 +163,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
+                  transition={{ delay: i * 0.04 }}
                   className="relative"
                 >
                   <div
@@ -192,7 +192,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
+                  transition={{ delay: i * 0.025 }}
                   className="flex items-center gap-2.5"
                 >
                   <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
@@ -244,7 +244,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
                   <motion.div
                     initial={false}
                     animate={{ height: openFaq === i ? "auto" : 0, opacity: openFaq === i ? 1 : 0 }}
-                    transition={{ duration: 0.25 }}
+                    transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
                     <p className="pb-5 text-muted leading-relaxed whitespace-pre-line">{faq.answer}</p>

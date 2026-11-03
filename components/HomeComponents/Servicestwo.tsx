@@ -200,7 +200,7 @@ const previewMockups = {
             key={i}
             initial={{ height: 0 }}
             animate={{ height: `${h}%` }}
-            transition={{ delay: i * 0.03, duration: 0.4 }}
+            transition={{ delay: i * 0.015, duration: 0.26 }}
             className="flex-1 bg-gradient-to-t from-brand-orange-deep to-brand-orange-light rounded-t-sm opacity-70"
           />
         ))}
@@ -237,7 +237,7 @@ const previewMockups = {
           key={i}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: i * 0.1 }}
+          transition={{ delay: i * 0.05 }}
           className="aspect-square rounded-lg bg-off-black/10 dark:bg-white/10 flex items-center justify-center"
         >
           <Users className="w-4 h-4 text-off-black dark:text-white" />
@@ -252,7 +252,7 @@ const previewMockups = {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "85%" }}
-            transition={{ duration: 1, delay: 0.2 }}
+            transition={{ duration: 1, delay: 0.1 }}
             className="h-full bg-gradient-to-r from-charcoal to-off-black rounded-full"
           />
         </div>
@@ -263,7 +263,7 @@ const previewMockups = {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: "92%" }}
-            transition={{ duration: 1, delay: 0.4 }}
+            transition={{ duration: 1, delay: 0.2 }}
             className="h-full bg-gradient-to-r from-charcoal to-off-black rounded-full"
           />
         </div>
@@ -278,7 +278,7 @@ const previewMockups = {
           key={item}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.1 }}
+          transition={{ delay: i * 0.05 }}
           className="flex items-center gap-2 text-xs"
         >
           <div className="w-1.5 h-1.5 rounded-full bg-brand-orange" />
@@ -295,7 +295,7 @@ const previewMockups = {
           key={i}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: i * 0.15 }}
+          transition={{ delay: i * 0.075 }}
           className="flex items-center gap-2"
         >
           <div className="w-6 h-6 rounded-lg bg-charcoal/20 dark:bg-white/10 flex items-center justify-center">
@@ -305,7 +305,7 @@ const previewMockups = {
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${i * 30}%` }}
-              transition={{ duration: 0.8, delay: i * 0.2 }}
+              transition={{ duration: 0.52, delay: i * 0.1 }}
               className="h-full bg-gradient-to-r from-charcoal to-off-black rounded-full"
             />
           </div>
@@ -373,7 +373,7 @@ function ServiceNode({
         type: "spring",
         stiffness: 200,
         damping: 20,
-        delay: index * 0.1,
+        delay: index * 0.05,
       }}
       className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10`}
     >
@@ -504,7 +504,7 @@ function ConnectionLines({
             animate={{
               pathLength: 1,
             }}
-            transition={{ duration: 1.5, delay: index * 0.2, ease: "easeInOut" }}
+            transition={{ duration: 1.5, delay: index * 0.1, ease: "easeInOut" }}
           />
 
           {/* Animated dot traveling along the line */}
@@ -518,7 +518,7 @@ function ConnectionLines({
             transition={{
               duration: 3,
               repeat: Infinity,
-              delay: index * 0.5,
+              delay: index * 0.25,
               ease: "easeInOut",
             }}
           >
@@ -551,7 +551,7 @@ function FeaturedPanel({
         initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
+        transition={{ duration: 0.33, ease: "easeInOut" }}
         className="relative"
       >
         {/* Main card */}
@@ -587,7 +587,7 @@ function FeaturedPanel({
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
               className="bg-background rounded-2xl p-6 mb-6 border border-border"
             >
               <PreviewComponent />
@@ -600,7 +600,7 @@ function FeaturedPanel({
                   key={benefit}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1 }}
+                  transition={{ delay: 0.15 + i * 0.1 }}
                   className="flex items-center gap-3"
                 >
                   <div
@@ -729,7 +729,7 @@ export default function Services() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.39 }}
           className="text-center mb-16 lg:mb-20"
         >
           <motion.div
@@ -763,7 +763,7 @@ export default function Services() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.52 }}
             className="relative aspect-square lg:aspect-auto lg:h-[550px]"
           >
             {/* Always visible connection lines */}

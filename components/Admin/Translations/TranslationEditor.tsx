@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -139,7 +140,7 @@ export default function TranslationEditor({
 
   const handleDelete = async () => {
     if (!existing) return;
-    if (!window.confirm("Delete this translation entirely? This can't be undone.")) return;
+    if (!(await confirmDialog({ title: "Delete translation?", text: "This will delete the translation entirely and can't be undone.", confirmText: "Delete", danger: true }))) return;
     setIsDeleting(true);
     setError(null);
     try {

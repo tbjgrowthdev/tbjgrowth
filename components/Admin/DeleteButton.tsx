@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
@@ -20,14 +21,16 @@ export default function DeleteButton({ id, onDelete, entityName = "item" }: Dele
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete this ${entityName}? This action cannot be undone.`)) {
+    if (await confirmDialog({ title: `Delete this ${entityName}?`, text: "This action cannot be undone.", confirmText: "Delete", danger: true })) {
       setIsDeleting(true);
       try {
         let result = await onDelete(id);
         if (result && result.success === false && result.dependencies?.length) {
           const list = result.dependencies.map((d) => `• ${d.description}`).join("\n");
           const count = result.dependencies.length;
-          if (!confirm(`This ${entityName} is still referenced in ${count} place(s):\n\n${list}\n\nDelete anyway?`)) return;
+          if (!(await confirmDialog({ title: "Delete anyway?", text: `This ${entityName} is still referenced in ${count} place(s):
+
+${list}`, confirmText: "Delete anyway", danger: true }))) return;
           result = await onDelete(id, { force: true });
         }
         if (result && result.success === false) {

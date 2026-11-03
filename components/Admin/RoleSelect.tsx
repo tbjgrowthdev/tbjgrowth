@@ -1,4 +1,5 @@
 "use client";
+import { alertDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import type { Role } from "@/lib/generated/prisma/client";
@@ -31,7 +32,7 @@ export default function RoleSelect({ id, role, assignableRoles, onChange }: Role
       const result = await onChange(id, newRole);
       if (!result.success) {
         setValue(previous);
-        alert(result.error || "Failed to update role");
+        await alertDialog(result.error || "Failed to update role");
       }
     } finally {
       setIsSaving(false);

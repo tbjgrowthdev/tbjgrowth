@@ -25,7 +25,7 @@ export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.39 }}
               className="text-center mb-14"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-4">
@@ -46,7 +46,7 @@ export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.05 }}
+                  transition={{ delay: i * 0.025 }}
                 >
                   <button
                     type="button"
@@ -63,7 +63,7 @@ export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
                   <motion.div
                     initial={false}
                     animate={{ height: openIndex === i ? "auto" : 0, opacity: openIndex === i ? 1 : 0 }}
-                    transition={{ duration: 0.25 }}
+                    transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
                     <p className="pb-6 text-muted leading-relaxed whitespace-pre-line">{faq.answer}</p>
@@ -77,7 +77,7 @@ export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.39 }}
             className="text-center"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-tint border border-brand-orange/20 rounded-full mb-6">

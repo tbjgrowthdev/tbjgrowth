@@ -116,7 +116,7 @@ export default function BookACallClient() {
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 tracking-tight"
           >
             Let&apos;s Find a{" "}
@@ -128,7 +128,7 @@ export default function BookACallClient() {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1 }}
             className="text-lg text-muted max-w-xl mx-auto"
           >
             Pick a slot below for a free, no-obligation growth strategy call.
@@ -143,7 +143,7 @@ export default function BookACallClient() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.33 }}
             className="bg-card rounded-3xl border border-border shadow-xl p-6 sm:p-10"
           >
             {isBooked && selectedSlot ? (

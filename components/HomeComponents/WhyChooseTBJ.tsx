@@ -304,7 +304,7 @@ function BenefitCard({
       ref={cardRef}
       initial={{ opacity: 0, y: 30 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.1, duration: 0.5 }}
+      transition={{ delay: index * 0.05, duration: 0.33 }}
       onMouseEnter={onHover}
       className={`group relative cursor-pointer rounded-2xl p-6 transition-all duration-500 border ${isActive
           ? `bg-gradient-to-br ${benefit.bgGlow} ${benefit.borderGlow} shadow-2xl scale-[1.02] z-10`
@@ -396,7 +396,7 @@ function ProcessStep({
       initial={{ opacity: 0, x: -20 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
-      transition={{ delay: index * 0.15, duration: 0.5 }}
+      transition={{ delay: index * 0.075, duration: 0.33 }}
       onClick={onClick}
       className="relative flex items-start gap-4 cursor-pointer group"
     >
@@ -420,7 +420,7 @@ function ProcessStep({
             initial={{ height: 0 }}
             whileInView={{ height: "100%" }}
             viewport={{ once: true }}
-            transition={{ delay: 0.5 + index * 0.2, duration: 0.5 }}
+            transition={{ delay: 0.25 + index * 0.2, duration: 0.33 }}
             className="w-0.5 mt-2 mb-2"
             style={{
               minHeight: "40px",
@@ -469,7 +469,7 @@ function ProcessStep({
               opacity: isActive ? 1 : 0,
               marginTop: isActive ? 16 : 0,
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
             <div className="space-y-2">
@@ -478,7 +478,7 @@ function ProcessStep({
                   key={detail}
                   initial={{ opacity: 0, x: -10 }}
                   animate={isActive ? { opacity: 1, x: 0 } : {}}
-                  transition={{ delay: i * 0.05 }}
+                  transition={{ delay: i * 0.025 }}
                   className="flex items-center gap-2 text-sm text-white/80"
                 >
                   <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -537,7 +537,7 @@ export default function WhyChooseTBJ() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.39 }}
           className="text-center mb-16 lg:mb-20"
         >
           <motion.div
@@ -581,7 +581,7 @@ export default function WhyChooseTBJ() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.6 }}
+          transition={{ delay: 0.15, duration: 0.39 }}
         >
           {/* Process Header */}
           <div className="text-center mb-12 lg:mb-16">
@@ -627,7 +627,7 @@ export default function WhyChooseTBJ() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.5, duration: 0.6 }}
+          transition={{ delay: 0.25, duration: 0.39 }}
           className="mt-16 lg:mt-20 grid grid-cols-2 sm:grid-cols-4 gap-6 text-center"
         >
           {[
@@ -643,7 +643,7 @@ export default function WhyChooseTBJ() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.6 + i * 0.1 }}
+                transition={{ delay: 0.3 + i * 0.1 }}
                 whileHover={{ y: -5 }}
                 className="cursor-default"
               >

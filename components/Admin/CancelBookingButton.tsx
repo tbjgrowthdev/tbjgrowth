@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ export default function CancelBookingButton({ id }: { id: string }) {
   const [isCancelling, setIsCancelling] = useState(false);
 
   const handleClick = async () => {
-    if (!confirm("Cancel this booking? The slot will become available again.")) return;
+    if (!(await confirmDialog({ title: "Cancel this booking?", text: "The slot will become available again.", confirmText: "Cancel booking", danger: true }))) return;
     setIsCancelling(true);
     await withToast(cancelBooking(id), { success: "Booking cancelled", error: "Couldn't cancel booking" });
     router.refresh();

@@ -192,7 +192,7 @@ export default function BusinessJourney() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.39 }}
           className="text-center mb-10 sm:mb-16 lg:mb-20"
         >
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
@@ -211,7 +211,7 @@ export default function BusinessJourney() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.1, duration: 0.33 }}
           className="relative mb-10 sm:mb-16 lg:mb-24"
         >
           {/* Background Line */}
@@ -221,7 +221,7 @@ export default function BusinessJourney() {
           <motion.div
             className="hidden lg:block absolute top-1/2 left-0 h-0.5 bg-gradient-to-r from-brand-orange-deep via-brand-orange to-brand-orange-light -translate-y-1/2 rounded-full"
             style={{ width: `${((activeStage + 1) / stages.length) * 100}%` }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
+            transition={{ duration: 0.52, ease: "easeInOut" }}
           />
 
           {/* Stage Buttons */}
@@ -286,7 +286,7 @@ export default function BusinessJourney() {
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.7 }}
+          transition={{ delay: 0.2, duration: 0.45 }}
           style={{
             y: dashboardY,
             rotateX: dashboardRotateX,
@@ -326,7 +326,7 @@ export default function BusinessJourney() {
                   initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  transition={{ duration: 0.33, ease: "easeInOut" }}
                   style={{
                     x: mousePosition.x,
                     y: mousePosition.y,
@@ -353,7 +353,7 @@ export default function BusinessJourney() {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 0.2, type: "spring" }}
+                      transition={{ delay: 0.1, type: "spring" }}
                       className="w-full lg:w-auto flex-shrink-0 bg-stat rounded-2xl p-5 sm:p-6 text-center border border-border"
                     >
                       <div
@@ -380,7 +380,7 @@ export default function BusinessJourney() {
                           key={item.label}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1 * index, duration: 0.4 }}
+                          transition={{ delay: 0.025 * index, duration: 0.26 }}
                           className="group relative bg-card/80 backdrop-blur-sm rounded-2xl p-4 sm:p-5 border border-border hover:border-accent-border transition-all duration-300 cursor-pointer"
                           whileHover={{ y: -4, scale: 1.02 }}
                         >

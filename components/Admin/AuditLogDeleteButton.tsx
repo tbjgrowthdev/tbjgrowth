@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog, alertDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
@@ -9,12 +10,12 @@ export default function AuditLogDeleteButton({ id }: { id: string }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm("Permanently delete this audit log entry? This cannot be undone.")) return;
+    if (!(await confirmDialog({ title: "Permanently delete this entry?", text: "This audit log entry will be removed. This cannot be undone.", confirmText: "Delete", danger: true }))) return;
     setIsDeleting(true);
     try {
       const result = await withToast(deleteAuditLog(id), { success: "Audit log deleted", error: "Couldn't delete audit log" });
       if (!result.success) {
-        alert(result.error || "Failed to delete entry");
+        await alertDialog(result.error || "Failed to delete entry");
       }
     } finally {
       setIsDeleting(false);

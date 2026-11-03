@@ -55,7 +55,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 tracking-tight"
           >
             Our{" "}
@@ -67,7 +67,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1 }}
             className="text-lg text-muted max-w-2xl mx-auto"
           >
             End-to-end digital services to build your presence, attract your audience, and scale your business with AI-powered efficiency.
@@ -106,7 +106,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.33 }}
                   >
                     {/* Icon */}
                     <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg mb-6`}>
@@ -162,7 +162,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
-                      transition={{ delay: 0.2, duration: 0.5 }}
+                      transition={{ delay: 0.1, duration: 0.33 }}
                       className="space-y-6"
                     >
                       {/* Process */}

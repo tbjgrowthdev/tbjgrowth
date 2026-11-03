@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -123,7 +124,7 @@ export default function PSeoDatasetManager({ templateId, datasets }: { templateI
   };
 
   const handleDeleteDataset = async (datasetId: string) => {
-    if (!confirm("Delete this dataset and every page generated from it? This can't be undone.")) return;
+    if (!(await confirmDialog({ title: "Delete this dataset?", text: "Every page generated from it will be deleted too. This can't be undone.", confirmText: "Delete", danger: true }))) return;
     await withToast(deletePSeoDataset(datasetId), { success: "Dataset deleted", error: "Couldn't delete dataset" });
     router.refresh();
   };

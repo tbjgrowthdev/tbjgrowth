@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog, alertDialog } from "@/lib/admin/dialog";
 
 import { useEffect, useState } from "react";
 import { scheduleContentJob, cancelContentScheduledJob, getContentScheduledJobs } from "@/app/(admin)/actions/scheduling";
@@ -65,12 +66,12 @@ export default function SchedulingPanel({ contentType, contentId }: { contentTyp
   };
 
   const handleCancel = async (id: string) => {
-    if (!confirm("Cancel this scheduled action?")) return;
+    if (!(await confirmDialog({ title: "Cancel this scheduled action?", text: undefined, confirmText: "Cancel action", danger: true }))) return;
     const result = await withToast(cancelContentScheduledJob(id), { success: "Scheduled job cancelled", error: "Couldn't cancel scheduled job" });
     if (result.success) {
       await refresh();
     } else {
-      alert(result.error || "Failed to cancel");
+      await alertDialog(result.error || "Failed to cancel");
     }
   };
 

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -72,7 +73,7 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
   };
 
   const handleRevert = async () => {
-    if (!confirm("Revert to the before value? The experiment will stop tracking.")) return;
+    if (!(await confirmDialog({ title: "Revert to the before value?", text: "The experiment will stop tracking.", confirmText: "Revert", danger: true }))) return;
     setBusy(true);
     try {
       setError(null);
@@ -106,7 +107,7 @@ export default function SeoExperimentDetail({ experiment }: { experiment: Experi
   };
 
   const handleDelete = async () => {
-    if (!confirm("Delete this experiment? This can't be undone.")) return;
+    if (!(await confirmDialog({ title: "Delete this experiment?", text: "This can't be undone.", confirmText: "Delete", danger: true }))) return;
     setBusy(true);
     try {
       const result = await withToast(deleteSeoExperimentAction(experiment.id), { success: "SEO experiment deleted", error: "Couldn't delete SEO experiment" });

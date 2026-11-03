@@ -150,7 +150,7 @@ function ProductDetail({
                     key={i}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: i * 0.025 }}
                     className="flex items-center gap-3 p-3 rounded-xl bg-background border border-border"
                   >
                     <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${product.gradient} flex items-center justify-center flex-shrink-0`}>
@@ -215,7 +215,7 @@ function ProductCard({
       ref={cardRef}
       initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: index * 0.12, duration: 0.5 }}
+      transition={{ delay: index * 0.06, duration: 0.33 }}
       onClick={() => onSelect(product)}
       className="group relative cursor-pointer"
     >
@@ -263,7 +263,7 @@ function ProductCard({
               <motion.div
                 initial={{ width: 0 }}
                 animate={isInView ? { width: `${product.progress}%` } : {}}
-                transition={{ duration: 1, delay: 0.3 + index * 0.1 }}
+                transition={{ duration: 1, delay: 0.15 + index * 0.1 }}
                 className={`h-full bg-gradient-to-r ${product.gradient} rounded-full`}
               />
             </div>
@@ -322,7 +322,7 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.39 }}
             className="text-center mb-16 lg:mb-20"
           >
             <motion.div
@@ -366,7 +366,7 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.5, duration: 0.6 }}
+            transition={{ delay: 0.25, duration: 0.39 }}
             className="mt-14 lg:mt-18 flex flex-wrap items-center justify-center gap-6 lg:gap-10"
           >
             {[
@@ -380,7 +380,7 @@ export default function TBJSystemsClient({ dbSystems }: { dbSystems?: any[] }) {
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.6 + i * 0.1 }}
+                transition={{ delay: 0.3 + i * 0.1 }}
                 className="text-center"
               >
                 <div className="text-2xl lg:text-3xl font-bold text-foreground">

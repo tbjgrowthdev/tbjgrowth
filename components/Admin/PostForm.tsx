@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -131,9 +132,9 @@ export default function PostForm({
         : await withToast(createPost({ ...payload, changeSummary }), { success: "Post created", error: "Couldn't create post" });
 
       if (result.success) {
-        if (slugChanged && confirm(
-          `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
-        )) {
+        if (slugChanged && await confirmDialog({ title: "Create a 301 redirect?", text: `The URL slug changed from "${originalSlug}" to "${formData.slug}".
+
+Create a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`, confirmText: "Create redirect", cancelText: "Skip" })) {
           await withToast(createRedirect({
             source: `/blog/${originalSlug}`,
             destination: `/blog/${formData.slug}`,

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -146,9 +147,9 @@ export default function LocationForm({ initialData = null }: { initialData?: Loc
 
         if (
           slugChanged &&
-          confirm(
-            `The URL slug changed from "${originalSlug}" to "${formData.slug}".\n\nCreate a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`
-          )
+          await confirmDialog({ title: "Create a 301 redirect?", text: `The URL slug changed from "${originalSlug}" to "${formData.slug}".
+
+Create a 301 redirect from the old URL to the new one so existing links and search rankings aren't broken?`, confirmText: "Create redirect", cancelText: "Skip" })
         ) {
           await withToast(createRedirect({ source: `/locations/${originalSlug}`, destination: `/locations/${formData.slug}`, statusCode: 301 }), { success: "Redirect created", error: "Couldn't create redirect" });
         }

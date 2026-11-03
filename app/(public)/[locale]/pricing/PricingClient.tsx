@@ -101,7 +101,7 @@ export default function PricingClient({
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05 }}
                 className={`relative flex flex-col p-8 rounded-3xl border transition-all duration-300 ${
                   plan.isPopular
                     ? "bg-off-black border-brand-orange shadow-2xl shadow-brand-orange/20 scale-105"

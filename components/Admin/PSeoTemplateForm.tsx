@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -86,7 +87,7 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
 
   const handleDelete = async () => {
     if (!initialData?.id) return;
-    if (!confirm("Delete this template, every dataset uploaded to it, and every page it generated? This can't be undone.")) return;
+    if (!(await confirmDialog({ title: "Delete this template?", text: "This also deletes every dataset uploaded to it and every page it generated. This can't be undone.", confirmText: "Delete", danger: true }))) return;
     setIsDeleting(true);
     try {
       const result = await withToast(deletePSeoTemplate(initialData.id), { success: "Template deleted", error: "Couldn't delete template" });

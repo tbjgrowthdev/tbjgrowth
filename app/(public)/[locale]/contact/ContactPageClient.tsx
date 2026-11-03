@@ -168,7 +168,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 tracking-tight"
           >
             Let's{" "}
@@ -180,7 +180,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1 }}
             className="text-lg text-muted max-w-xl mx-auto"
           >
             Ready to grow? Fill out the form and we'll get back to you within 24 hours.
@@ -198,7 +198,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.33 }}
                 className="bg-card rounded-3xl border border-border shadow-xl p-8 lg:p-10"
               >
                 <h2 className="text-2xl font-bold text-foreground mb-2">
@@ -349,7 +349,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                     className="block p-5 rounded-2xl bg-card border border-border hover:border-accent-border hover:shadow-lg transition-all group"
                   >
                     <div className="flex items-start gap-4">
@@ -377,7 +377,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.2 }}
                 className="p-5 rounded-2xl bg-card border border-border"
               >
                 <h4 className="font-semibold text-foreground text-sm mb-4">
@@ -402,7 +402,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.25 }}
                 className="flex items-center gap-3 p-5 rounded-2xl bg-card border border-border"
               >
                 <span className="text-sm text-muted">Follow us:</span>

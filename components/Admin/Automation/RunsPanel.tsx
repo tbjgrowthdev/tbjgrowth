@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,7 +55,7 @@ export default function RunsPanel({ initialRuns }: { initialRuns: Run[] }) {
   };
 
   const handleReject = async (stepId: string) => {
-    if (!confirm("Reject this step? The whole run will stop — later steps will never run.")) return;
+    if (!(await confirmDialog({ title: "Reject this step?", text: "The whole run will stop — later steps will never run.", confirmText: "Reject", danger: true }))) return;
     setBusyStepId(stepId);
     try {
       setError(null);

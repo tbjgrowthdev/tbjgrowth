@@ -1,4 +1,5 @@
 "use client";
+import { alertDialog } from "@/lib/admin/dialog";
 
 import { useEffect, useState } from "react";
 import { getAssignableUsers } from "@/app/(admin)/actions/admins";
@@ -60,7 +61,7 @@ export default function AssignmentPanel({
     setSaving(role);
     try {
       const result = await withToast(assignContentUser(contentType, contentId, role, userId || null), { success: "Assignment updated", error: "Couldn't update assignment" });
-      if (!result.success) alert(result.error || "Failed to assign");
+      if (!result.success) await alertDialog(result.error || "Failed to assign");
     } finally {
       setSaving(null);
     }
@@ -71,7 +72,7 @@ export default function AssignmentPanel({
     setSaving("deadline");
     try {
       const result = await withToast(setContentReviewDeadline(contentType, contentId, value || null), { success: "Review deadline set", error: "Couldn't set review deadline" });
-      if (!result.success) alert(result.error || "Failed to set deadline");
+      if (!result.success) await alertDialog(result.error || "Failed to set deadline");
     } finally {
       setSaving(null);
     }
@@ -79,7 +80,7 @@ export default function AssignmentPanel({
 
   const handleSeoReview = async (approved: boolean) => {
     if (!approved && !seoComment.trim()) {
-      alert("Add a comment describing the SEO issue first.");
+      await alertDialog("Add a comment describing the SEO issue first.", "Comment required", "info");
       return;
     }
     setSaving("seo");

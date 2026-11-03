@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -141,7 +142,7 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
   };
 
   const handleDisconnect = async (provider: IntegrationProvider) => {
-    if (!confirm("Disconnect this integration? Stored credentials will be deleted.")) return;
+    if (!(await confirmDialog({ title: "Disconnect this integration?", text: "Stored credentials will be deleted.", confirmText: "Disconnect", danger: true }))) return;
     setBusyId(provider);
     try {
       setError(null);

@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { X, Save, RefreshCw } from "lucide-react";
@@ -50,9 +51,7 @@ export default function MediaDetailModal({ asset, onClose, onUpdated, onDeleted,
 
   const handleReplace = async () => {
     if (!replaceFile) return;
-    const confirmed = confirm(
-      "Replacing this asset gives it a new URL. Any content that already copied the old URL will keep showing the old image.\n\nContinue?"
-    );
+    const confirmed = await confirmDialog({ title: "Replace this asset?", text: "Replacing this asset gives it a new URL. Any content that already copied the old URL will keep showing the old image.", confirmText: "Replace" });
     if (!confirmed) return;
 
     setReplacing(true);

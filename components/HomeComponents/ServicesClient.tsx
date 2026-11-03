@@ -33,7 +33,7 @@ function ServiceCard({
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
+            transition={{ delay: index * 0.05, duration: 0.33 }}
             onClick={onClick}
             className={`group relative cursor-pointer rounded-2xl p-6 transition-all duration-500 border ${isActive
                     ? `bg-gradient-to-br ${bgGradient} border-transparent shadow-2xl ${shadowColor} scale-[1.02] z-10`
@@ -88,7 +88,7 @@ function ServiceCard({
                         height: isActive ? "auto" : 0,
                         opacity: isActive ? 1 : 0,
                     }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                 >
                     <div className="space-y-2 pt-3 border-t border-border">
@@ -99,7 +99,7 @@ function ServiceCard({
                                     key={i}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={isActive ? { opacity: 1, x: 0 } : {}}
-                                    transition={{ delay: i * 0.05 }}
+                                    transition={{ delay: i * 0.025 }}
                                     className="flex items-center gap-2 text-sm text-muted"
                                 >
                                     <FeatureIcon className="w-4 h-4 text-caption" />
@@ -117,7 +117,7 @@ function ServiceCard({
                         height: isActive ? "auto" : 0,
                         opacity: isActive ? 1 : 0,
                     }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
+                    transition={{ duration: 0.2, delay: 0.05 }}
                     className="overflow-hidden"
                 >
                     <Link
@@ -157,7 +157,7 @@ function PreviewPanel({
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.26 }}
             className="relative bg-card rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/40 border border-border overflow-hidden"
         >
             {/* Preview Background */}
@@ -196,7 +196,7 @@ function PreviewPanel({
                                         key={i}
                                         initial={{ height: 0 }}
                                         animate={{ height: `${height}%` }}
-                                        transition={{ delay: i * 0.05, duration: 0.4 }}
+                                        transition={{ delay: i * 0.025, duration: 0.26 }}
                                         className={`flex-1 rounded-t-md bg-gradient-to-t ${service.gradient} opacity-70`}
                                     />
                                 )
@@ -213,7 +213,7 @@ function PreviewPanel({
                                     key={i}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
+                                    transition={{ delay: i * 0.05 }}
                                     className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border"
                                 >
                                     <div
@@ -280,7 +280,7 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.39 }}
                     className="text-center mb-16 lg:mb-20"
                 >
                     {/* Badge */}
@@ -340,7 +340,7 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
+                    transition={{ delay: 0.2, duration: 0.39 }}
                     className="mt-8 lg:mt-16 flex flex-wrap items-center justify-center gap-6 lg:gap-12 text-center"
                 >
                     {[
@@ -354,7 +354,7 @@ export default function ServicesClient({ dbServices }: { dbServices?: any[] }) {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: 0.5 + i * 0.1 }}
+                            transition={{ delay: 0.25 + i * 0.1 }}
                             whileHover={{ y: -5 }}
                             className="cursor-default"
                         >

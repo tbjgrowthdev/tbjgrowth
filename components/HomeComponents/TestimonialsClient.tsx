@@ -90,7 +90,7 @@ function TestimonialCard({
         opacity: isActive ? 1 : 0.3,
         scale: isActive ? 1 : 0.95,
       }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.33 }}
       className={`relative bg-card rounded-3xl border transition-all duration-500 ${
         isActive
           ? `border-accent-border shadow-2xl shadow-black/5 dark:shadow-black/30`
@@ -114,7 +114,7 @@ function TestimonialCard({
               key={i}
               initial={{ opacity: 0, scale: 0 }}
               animate={isActive ? { opacity: 1, scale: 1 } : {}}
-              transition={{ delay: 0.1 * i, duration: 0.3 }}
+              transition={{ delay: 0.025 * i, duration: 0.2 }}
             >
               <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
             </motion.div>
@@ -136,7 +136,7 @@ function TestimonialCard({
                   key={metric.label}
                   initial={{ opacity: 0, y: 10 }}
                   animate={isActive ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: 0.3 + i * 0.1 }}
+                  transition={{ delay: 0.15 + i * 0.1 }}
                   className="flex items-center gap-3 p-3 rounded-xl bg-stat border border-border"
                 >
                   <div
@@ -272,7 +272,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.39 }}
               className="text-center mb-16 lg:mb-20"
             >
               <motion.div
@@ -361,7 +361,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15 }}
               className="mb-16 lg:mb-20"
             >
               <p className="text-center text-sm text-caption mb-6 uppercase tracking-wider">
@@ -376,7 +376,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.4, duration: 0.6 }}
+              transition={{ delay: 0.2, duration: 0.39 }}
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6"
             >
               {globalMetrics.map((metric, i) => {
@@ -387,7 +387,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.5 + i * 0.1 }}
+                    transition={{ delay: 0.25 + i * 0.1 }}
                     whileHover={{ y: -5 }}
                     className="relative group cursor-default"
                   >
@@ -418,7 +418,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.6, duration: 0.6 }}
+              transition={{ delay: 0.3, duration: 0.39 }}
               className="text-center mt-16 lg:mt-20"
             >
               <div className="inline-flex items-center gap-2 text-muted">
@@ -439,7 +439,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.39 }}
             className="max-w-xl mx-auto text-center bg-background border border-border rounded-3xl p-10 lg:p-14"
           >
             <motion.div

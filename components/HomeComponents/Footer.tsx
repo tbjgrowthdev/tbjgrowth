@@ -133,7 +133,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.05 }}
               className="text-sm text-muted leading-relaxed mb-6 max-w-sm"
             >
               We help UK businesses grow with design that converts, marketing
@@ -146,7 +146,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
               className="space-y-3 mb-6"
             >
               <a
@@ -180,7 +180,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15 }}
               className="flex items-center gap-2"
             >
               {socialLinks.map((social) => {
@@ -208,7 +208,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2 + sectionIndex * 0.1 }}
+              transition={{ delay: 0.1 + sectionIndex * 0.1 }}
               className="lg:col-span-1"
             >
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
@@ -235,7 +235,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.25 }}
             className="lg:col-span-1"
           >
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">

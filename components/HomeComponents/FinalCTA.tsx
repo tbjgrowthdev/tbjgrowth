@@ -451,7 +451,7 @@ export default function FinalCTA() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.39 }}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full mb-8"
                 >
                     <Sparkles className="w-4 h-4 text-brand-orange-light" />
@@ -465,7 +465,7 @@ export default function FinalCTA() {
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.2, duration: 0.7 }}
+                    transition={{ delay: 0.1, duration: 0.45 }}
                     className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-tight"
                 >
                     Ready to{" "}
@@ -480,7 +480,7 @@ export default function FinalCTA() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
+                    transition={{ delay: 0.2, duration: 0.39 }}
                     className="text-lg sm:text-xl text-white/60 mb-12 max-w-xl mx-auto"
                 >
                     Book a free strategy call and discover how we can help your business grow.
@@ -491,7 +491,7 @@ export default function FinalCTA() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: 0.6, duration: 0.5 }}
+                    transition={{ delay: 0.3, duration: 0.33 }}
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
                 >
                     {/* Primary CTA - Book a Conversation */}
@@ -528,7 +528,7 @@ export default function FinalCTA() {
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 1.5, duration: 0.5 }}
+                transition={{ delay: 1.5, duration: 0.33 }}
                 className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
             >
                 <motion.div

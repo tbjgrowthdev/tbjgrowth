@@ -152,7 +152,7 @@ export default function AboutPageClient() {
               <motion.h1
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+                transition={{ delay: 0.05 }}
                 className="text-4xl sm:text-5xl lg:text-5xl font-bold text-foreground mb-6 tracking-tight leading-tight"
               >
                 A Growth Team Built in Dhaka,{" "}
@@ -164,7 +164,7 @@ export default function AboutPageClient() {
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.1 }}
                 className="text-lg text-muted leading-relaxed mb-6"
               >
                 TBJ Growth Tech was founded by Shojib to give UK and US small businesses access to the same website, advertising, and automation systems that larger companies pay agency-of-record rates for — built by a Dhaka-based team at a fraction of the cost, without cutting corners on quality.
@@ -174,7 +174,7 @@ export default function AboutPageClient() {
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.15 }}
                 className="text-lg text-muted leading-relaxed mb-8"
               >
                 From startups to established enterprises, we've helped 50+ businesses achieve measurable growth through our Build → Attract → Convert → Automate → Scale framework.
@@ -184,7 +184,7 @@ export default function AboutPageClient() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.2 }}
                 className="grid grid-cols-2 sm:grid-cols-4 gap-4"
               >
                 {stats.map((stat) => {
@@ -204,7 +204,7 @@ export default function AboutPageClient() {
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15 }}
               className="relative"
             >
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
@@ -259,7 +259,7 @@ export default function AboutPageClient() {
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.05 }}
                   className="group p-6 rounded-2xl bg-card border border-border hover:border-accent-border hover:shadow-xl transition-all"
                 >
                   <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${value.gradient} text-white shadow-lg mb-4 group-hover:scale-110 transition-transform`}>
@@ -299,7 +299,7 @@ export default function AboutPageClient() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.05 }}
                 className="group text-center p-6 rounded-2xl bg-card border border-border hover:border-accent-border hover:shadow-xl transition-all"
               >
               
@@ -346,7 +346,7 @@ export default function AboutPageClient() {
                     initial={{ opacity: 0, x: isEven ? -20 : 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                     className={`relative flex items-start gap-6 lg:gap-0 ${
                       isEven ? "lg:flex-row" : "lg:flex-row-reverse"
                     }`}

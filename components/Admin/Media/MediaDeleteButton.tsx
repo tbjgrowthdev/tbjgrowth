@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog, alertDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
@@ -9,9 +10,7 @@ export default function MediaDeleteButton({ id, onDeleted }: { id: string; onDel
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    const confirmed = confirm(
-      "Deleting this asset doesn't check whether its URL is still used in any post, case study, or page. If it's referenced elsewhere, that image will break.\n\nDelete anyway?"
-    );
+    const confirmed = await confirmDialog({ title: "Delete this asset?", text: "Deleting this asset doesn't check whether its URL is still used in any post, case study, or page. If it's referenced elsewhere, that image will break.", confirmText: "Delete anyway", danger: true });
     if (!confirmed) return;
 
     setIsDeleting(true);
@@ -20,7 +19,7 @@ export default function MediaDeleteButton({ id, onDeleted }: { id: string; onDel
       if (result.success) {
         onDeleted();
       } else {
-        alert(result.error || "Failed to delete asset");
+        await alertDialog(result.error || "Failed to delete asset");
       }
     } finally {
       setIsDeleting(false);

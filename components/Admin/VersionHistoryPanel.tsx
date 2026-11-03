@@ -1,4 +1,5 @@
 "use client";
+import { confirmDialog, alertDialog } from "@/lib/admin/dialog";
 
 import { useState } from "react";
 import { getContentVersionHistory, compareContentVersions, restoreContentVersion } from "@/app/(admin)/actions/versioning";
@@ -50,14 +51,14 @@ export default function VersionHistoryPanel({ contentType, contentId }: { conten
   };
 
   const handleRestore = async (versionNumber: number) => {
-    if (!confirm(`Restore version ${versionNumber}? This won't delete any history — it creates a new version with that content.`)) return;
+    if (!(await confirmDialog({ title: "Restore this version?", text: `Version ${versionNumber} will be restored. This won't delete any history — it creates a new version with that content.`, confirmText: "Restore", danger: false }))) return;
     setRestoring(versionNumber);
     try {
       const result = await withToast(restoreContentVersion(contentType, contentId, versionNumber), { success: "Version restored", error: "Couldn't restore version" });
       if (result.success) {
         window.location.reload();
       } else {
-        alert(result.error || "Failed to restore");
+        await alertDialog(result.error || "Failed to restore");
         setRestoring(null);
       }
     } catch {
