@@ -1,10 +1,13 @@
 import prisma from "@/lib/prisma";
-import BlogListClient from "./BlogListClient";
+import BlogListClient, { type BlogCardPost, type BlogCategory } from "./BlogListClient";
+import NewsletterBand from "@/components/Blog/NewsletterBand";
 import { getPageMetadata, publiclyVisible } from "@/lib/seo-meta";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema } from "@/lib/schema";
 import { resolveRouteLocale } from "@/lib/i18n";
 import { localizeList } from "@/lib/translation";
+import { estimateReadingTime } from "@/lib/utils";
+import { getBlogStrings } from "@/lib/blog-strings";
 
 export const revalidate = 3600;
 
@@ -28,38 +31,47 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
     include: {
       author: true,
       categories: true,
-      tags: true,
     },
-    orderBy: { createdAt: "desc" },
   });
-  const posts = await localizeList("POST", allPosts, locale.code);
+  const localized = await localizeList("POST", allPosts, locale.code);
 
-  const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
-  });
+  // Lean, serialisable cards: the full post body stays on the server (only its
+  // word count is used, for the read time).
+  const posts: BlogCardPost[] = localized
+    .map((p) => ({ post: p, date: p.publishedAt ?? p.createdAt }))
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .map(({ post: p, date }) => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt,
+      image: p.featuredImage,
+      imageAlt: p.featuredImageAlt,
+      categories: p.categories.map((c) => ({ name: c.name, slug: c.slug })),
+      authorName: p.author?.name ?? null,
+      authorImage: p.author?.image ?? null,
+      date: date.toISOString(),
+      readMinutes: estimateReadingTime(p.content),
+    }));
 
-  const tags = await prisma.tag.findMany({
-    orderBy: { name: "asc" },
-  });
+  // Filter pills come from the categories of the posts actually shown.
+  const categoryMap = new Map<string, BlogCategory>();
+  for (const post of posts) for (const c of post.categories) categoryMap.set(c.slug, c);
+  const categories = [...categoryMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+
+  const strings = getBlogStrings(locale);
 
   return (
-    <main className="min-h-screen bg-background pt-24 pb-20">
+    <div className="bg-background">
       <JsonLd schema={breadcrumbSchema([{ name: "Home", path: "/" }, { name: "Blog", path: "/blog" }])} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Latest{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">
-              Insights & Strategies
-            </span>
-          </h1>
-          <p className="text-lg text-muted">
-            Discover actionable, data-driven SEO techniques designed to boost search rankings, drive high-intent organic traffic, and lower customer acquisition costs.
-          </p>
-        </div>
-
-        <BlogListClient dbPosts={posts} dbCategories={categories} dbTags={tags} localePrefix={locale.prefix} />
-      </div>
-    </main>
+      <BlogListClient
+        posts={posts}
+        categories={categories}
+        localePrefix={locale.prefix}
+        localeCode={locale.code}
+        strings={strings}
+      />
+      <NewsletterBand strings={strings} />
+    </div>
   );
 }

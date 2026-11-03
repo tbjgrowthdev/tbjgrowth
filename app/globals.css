@@ -35,6 +35,11 @@
   --color-stat: var(--stat-bg);
   --color-tint: var(--tint-bg);
 
+  /* Blog listing: featured-card shadow/border are tokens so they are easy to tune */
+  --shadow-featured: var(--featured-shadow);
+  --shadow-card-hover: var(--card-hover-shadow);
+  --color-featured-border: var(--featured-border);
+
   /* Typography */
   --font-heading: var(--font-syne);
   --font-body: var(--font-inter);
@@ -55,6 +60,9 @@
     --caption-fg: #8A7C74;
     --stat-bg: #FFF2E9;
     --tint-bg: #FFF2E9;
+    --featured-shadow: 0 12px 32px rgb(27 21 18 / 0.12);
+    --card-hover-shadow: 0 14px 32px rgb(27 21 18 / 0.1);
+    --featured-border: var(--border-c);
   }
 
   .dark {
@@ -69,6 +77,9 @@
     --caption-fg: #6E605A;
     --stat-bg: #2A130A;
     --tint-bg: #2A130A;
+    --featured-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+    --card-hover-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
+    --featured-border: var(--accent-border-c);
   }
 
   * {
@@ -136,4 +147,23 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .toast-progress { animation: none; }
+}
+
+/* Blog listing: decorative hero grid and placeholder cover pattern.
+   Pure CSS, no layout impact (used on aria-hidden layers). */
+.blog-grid-pattern {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.cover-grid-pattern {
+  --cover-line: color-mix(in srgb, var(--color-brand-700) 12%, transparent);
+  background-image:
+    linear-gradient(to right, var(--cover-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--cover-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.dark .cover-grid-pattern {
+  --cover-line: color-mix(in srgb, var(--color-brand-300) 10%, transparent);
 }

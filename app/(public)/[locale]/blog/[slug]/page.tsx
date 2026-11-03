@@ -8,6 +8,7 @@ import { isValidImageSrc, parseSocialLinks, estimateReadingTime } from "@/lib/ut
 import { cloudinaryUrl } from "@/lib/cloudinary-url";
 import { publiclyVisible, resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import ShareButton from "@/components/Blog/ShareButton";
+import PostCover from "@/components/Blog/PostCover";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema } from "@/lib/schema";
 import { buildAutoSchema } from "@/lib/schema-engine";
@@ -329,20 +330,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 href={withLocalePrefix(locale.prefix, `/blog/${related.slug}`)}
                 className="group flex flex-col bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:shadow-brand-orange/10 transition-all duration-300"
               >
-                <div className="relative h-44 w-full overflow-hidden bg-background">
-                  {isValidImageSrc(related.featuredImage) ? (
-                    <Image
-                      src={cloudinaryUrl(related.featuredImage)}
-                      alt={related.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-brand-orange-deep/20 to-brand-orange/20 flex items-center justify-center">
-                      <span className="text-caption text-xs">No Image</span>
-                    </div>
-                  )}
-                </div>
+                <PostCover
+                  id={related.id}
+                  src={related.featuredImage}
+                  alt={related.featuredImageAlt || related.title}
+                  sizes="(min-width: 1024px) 352px, (min-width: 640px) 50vw, 100vw"
+                  className="h-44 w-full"
+                  imageClassName="transition-transform duration-500 group-hover:scale-105"
+                />
                 <div className="p-5 flex-1 flex flex-col">
                   <h3 className="font-bold text-foreground mb-2 line-clamp-2 group-hover:text-brand-orange-deep dark:group-hover:text-brand-orange-light transition-colors">
                     {related.title}

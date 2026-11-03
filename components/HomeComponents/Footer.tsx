@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  Send,
   Mail,
   Phone,
   MapPin,
@@ -12,7 +10,6 @@ import {
   Twitter,
   Instagram,
   Facebook,
-  Sparkles,
   Heart,
   Shield,
   Zap,
@@ -22,6 +19,7 @@ import {
 import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 import Link from "next/link";
 import Image from "next/image";
+import NewsletterForm from "@/components/NewsletterForm";
 import { withLocalePrefix, type LocaleConfig } from "@/lib/i18n";
 
 // Footer data
@@ -75,8 +73,6 @@ type SiteSettings = {
 } | null;
 
 export default function Footer({ settings, locale }: { settings?: SiteSettings; locale: LocaleConfig }) {
-  const [email, setEmail] = useState("");
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const localizedHref = (href: string) => (href.startsWith("#") ? href : withLocalePrefix(locale.prefix, href));
 
   const contactEmail = settings?.email || "hello@tbjgrowth.co.uk";
@@ -93,15 +89,6 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
     { icon: FaBehance, href: settings?.behanceUrl, label: "Behance" },
     { icon: FaDribbble, href: settings?.dribbbleUrl, label: "Dribbble" },
   ].filter((social): social is typeof social & { href: string } => Boolean(social.href));
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setIsSubscribed(true);
-      setEmail("");
-      setTimeout(() => setIsSubscribed(false), 3000);
-    }
-  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -259,46 +246,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
               your inbox.
             </p>
 
-            {/* Subscription Form */}
-            <form onSubmit={handleSubscribe} className="relative">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-                className="w-full px-4 py-3 pr-12 text-sm bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent text-foreground placeholder-muted transition-all"
-              />
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white rounded-lg hover:shadow-lg hover:shadow-brand-orange/25 transition-shadow"
-              >
-                {isSubscribed ? (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring" }}
-                  >
-                    <Sparkles className="w-4 h-4" />
-                  </motion.div>
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </motion.button>
-            </form>
-
-            {/* Success message */}
-            {isSubscribed && (
-              <motion.p
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xs text-green-600 dark:text-green-400 mt-2 font-medium"
-              >
-                Thanks for subscribing! 🎉
-              </motion.p>
-            )}
+            <NewsletterForm variant="compact" />
           </motion.div>
         </div>
       </div>

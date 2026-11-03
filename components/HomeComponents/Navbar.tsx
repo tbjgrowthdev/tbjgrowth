@@ -55,7 +55,14 @@ const navItems = [
   },
 ];
 
-export default function Navbar({ locale }: { locale: LocaleConfig }) {
+/**
+ * Pages whose navbar always shows its dark appearance (they open on a dark
+ * hero), whatever theme the visitor picked. Matched against the locale-less
+ * path, exact match only, so /blog/some-post keeps the normal navbar.
+ */
+const DARK_TONE_PATHS = ["/blog"];
+
+export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: "auto" | "dark" }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -67,6 +74,16 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
   const localizedHref = (href: string) => (href.startsWith("#") ? href : withLocalePrefix(locale.prefix, href));
   // "Get Started": scrolls to the contact section on the home page, links to /contact everywhere else.
   const ctaHref = barePath === "/" ? "#contact" : localizedHref("/contact");
+
+  // Every dark style here comes from the `dark:` variant and the .dark CSS
+  // variables, so wrapping the navbar in a `.dark` scope reuses them as they
+  // are (logo swap, scrolled bar, mobile menu, dropdowns).
+  const forceDark = tone ? tone === "dark" : DARK_TONE_PATHS.includes(barePath);
+  // Over the dark hero (not scrolled) the bar is transparent and white-on-dark.
+  // Once scrolled it follows the visitor's real theme (light bar in light mode,
+  // dark bar and light logo in dark mode).
+  const onHero = forceDark && !isScrolled;
+  const barScope = onHero ? "dark" : undefined;
 
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -125,6 +142,7 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
 
   return (
     <>
+      <div className={barScope} style={{ display: "contents" }}>
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -175,7 +193,9 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
                   transition={{ delay: 0.1 * index, duration: 0.3 }}
                   className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 group ${activeSection === item.href
                     ? "text-brand-orange-deep dark:text-brand-orange-light"
-                    : "text-muted hover:text-foreground"
+                    : onHero
+                      ? "text-white/90 hover:text-white"
+                      : "text-muted hover:text-foreground"
                     }`}
                 >
                   {item.label}
@@ -199,6 +219,8 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
                   whileTap={{ scale: 0.9 }}
                   className={`relative flex items-center gap-1 p-2 rounded-xl transition-all duration-300 ${isScrolled
                     ? "bg-card text-muted hover:text-foreground"
+                    : onHero
+                    ? "text-white hover:bg-white/10"
                     : "text-muted hover:text-foreground hover:bg-card/60"
                     }`}
                   aria-label="Change language or region"
@@ -241,6 +263,8 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
                 whileTap={{ scale: 0.9 }}
                 className={`relative p-2 rounded-xl transition-all duration-300 ${isScrolled
                     ? "bg-card text-muted hover:text-foreground"
+                    : onHero
+                    ? "text-white hover:bg-white/10"
                     : "text-muted hover:text-foreground hover:bg-card/60"
                   }`}
                 aria-label="Toggle dark mode"
@@ -298,7 +322,9 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
               whileTap={{ scale: 0.9 }}
               className={`lg:hidden relative p-2 rounded-xl transition-all duration-300 ${isScrolled
                 ? "bg-card text-muted"
-                : "text-muted hover:bg-card/60"
+                : onHero
+                  ? "text-white hover:bg-white/10"
+                  : "text-muted hover:bg-card/60"
                 }`}
               aria-label="Toggle menu"
             >
@@ -307,8 +333,10 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
           </div>
         </div>
       </motion.nav>
+      </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay: keeps the dark look on forced-dark pages */}
+      <div className={forceDark ? "dark" : undefined} style={{ display: "contents" }}>
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -440,6 +468,7 @@ export default function Navbar({ locale }: { locale: LocaleConfig }) {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </>
   );
 }
