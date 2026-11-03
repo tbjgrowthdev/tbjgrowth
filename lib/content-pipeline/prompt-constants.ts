@@ -30,6 +30,7 @@ export const CATEGORY_LABEL: Record<PromptCategory, string> = {
 
 const DRAFT_RULES_DEFAULT = `Formatting rules (strict):
 - Output semantic HTML body content only: <h2>, <h3>, <p>, <ul>/<ol>/<li>, <strong>, <em>, <blockquote> as needed. No <h1> (the page title is rendered separately), no <html>/<body>/<head> wrapper.
+- Use HTML tags only. Never use Markdown syntax anywhere (no #, ##, **, - or 1. list markers).
 - Do NOT include any <a> tags or links — internal links are added in a later pipeline stage.
 - Do NOT include any images.
 - Write complete, substantive paragraphs (this is the real published draft, not a stub) — aim for 900-1500 words total.

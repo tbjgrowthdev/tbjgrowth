@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { logAudit } from "@/lib/audit-log";
 import { searchContent } from "@/lib/content-search";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { markdownishToHtml } from "@/lib/markdown-html";
 import { fetchSearchVolume, fetchSerpOverview } from "@/lib/seo-services";
 import { callAiForJson } from "./ai";
 import { completeJob, createImageJob, createTextJob, failJob, startOrResumeJob } from "./jobs";
@@ -321,7 +322,8 @@ export async function runDraftStage(runId: string): Promise<StageResult> {
     try {
       const prompt = await buildDraftPrompt(brief, searchIntent, research, outline);
       const { data: draftData, usage } = await callAiForJson<{ contentHtml: string }>(prompt.system, prompt.user, 8192);
-      const { contentHtml } = draftData;
+      // The model sometimes returns Markdown despite the prompt; fix it before it is saved.
+      const contentHtml = markdownishToHtml(draftData.contentHtml);
 
       const basePayload = {
         title: outline.title,

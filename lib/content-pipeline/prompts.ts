@@ -116,6 +116,8 @@ ${formatRetrievedSources(research.retrievedSources)}
 
 ${rulesBlock}
 
+Format reminder: "contentHtml" must be HTML tags only (<h2>, <p>, <ul>...). Never use Markdown syntax such as ## headings or **bold**.
+
 Reply with JSON exactly matching:
 { "contentHtml": string }`,
   };

@@ -1,3 +1,4 @@
+import { markdownishToHtml } from "@/lib/markdown-html";
 import { prisma } from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { revalidatePath } from "next/cache";
@@ -152,7 +153,7 @@ export async function generateRefreshDraft(id: string): Promise<StageResult<null
         data: {
           status: "DRAFTED",
           draftTitle: draft.title,
-          draftContent: draft.contentHtml,
+          draftContent: markdownishToHtml(draft.contentHtml),
           draftExcerpt: draft.excerpt,
           draftMetaTitle: draft.metaTitle,
           draftMetaDescription: draft.metaDescription,

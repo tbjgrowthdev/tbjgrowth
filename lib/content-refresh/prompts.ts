@@ -38,6 +38,7 @@ ${params.contentHtml}
 ${instruction}
 
 Formatting rules (strict, same as a fresh draft):
+- HTML tags only, never Markdown syntax (no #, ##, ** or - list markers).
 - Semantic HTML body content only: <h2>, <h3>, <p>, <ul>/<ol>/<li>, <strong>, <em>, <blockquote> as needed. No <h1>, no <html>/<body>/<head> wrapper, no <a> tags (internal linking is a separate, later step), no images.
 - Never invent statistics, sources, or results that weren't already in the content or the approved sources above.
 

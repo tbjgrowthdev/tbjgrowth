@@ -146,3 +146,104 @@ export function formatCount(strings: Plural, count: number, localeCode: string) 
   const template = strings[rule] ?? strings.other;
   return template.replace("{n}", new Intl.NumberFormat(localeCode).format(count));
 }
+
+// ---- Single post page ----
+// All of the post page's copy lives here, including the sidebar call-to-action,
+// so it can be edited in one place.
+export type PostStrings = {
+  backToBlog: string;
+  readTime: string; // {n}
+  copyLink: string;
+  linkCopied: string;
+  shareLinkedIn: string;
+  shareX: string;
+  share: string;
+  onThisPage: string;
+  contentsLabel: string;
+  writtenBy: string;
+  authorRole: string;
+  authorBio: string;
+  ctaTitle: string;
+  ctaBody: string;
+  ctaButton: string;
+  tags: string;
+  keepReading: string;
+  viewAll: string;
+  typeBlog: string;
+  readingProgress: string;
+};
+
+const postEn: PostStrings = {
+  backToBlog: "Back to Blog",
+  readTime: "{n} min read",
+  copyLink: "Copy link",
+  linkCopied: "Link copied",
+  shareLinkedIn: "Share on LinkedIn",
+  shareX: "Share on X",
+  share: "Share",
+  onThisPage: "On this page",
+  contentsLabel: "Table of contents",
+  writtenBy: "Written by",
+  authorRole: "Growth Expert",
+  authorBio: "Expert in B2B SaaS growth, technical SEO, and scaling recurring revenue.",
+  ctaTitle: "Want results like this for your SaaS?",
+  ctaBody: "Book a free growth strategy call and see where your quickest wins are.",
+  ctaButton: "Book a free call",
+  tags: "Tags",
+  keepReading: "Keep reading",
+  viewAll: "View all posts",
+  typeBlog: "Blog",
+  readingProgress: "Reading progress",
+};
+
+const postBn: PostStrings = {
+  ...postEn,
+  backToBlog: "ব্লগে ফিরে যান",
+  readTime: "{n} মিনিট পড়া",
+  copyLink: "লিংক কপি করুন",
+  linkCopied: "লিংক কপি হয়েছে",
+  shareLinkedIn: "লিংকডইনে শেয়ার করুন",
+  shareX: "এক্সে শেয়ার করুন",
+  share: "শেয়ার",
+  onThisPage: "এই পাতায়",
+  contentsLabel: "সূচিপত্র",
+  writtenBy: "লিখেছেন",
+  authorRole: "গ্রোথ বিশেষজ্ঞ",
+  authorBio: "B2B SaaS গ্রোথ, টেকনিক্যাল এসইও এবং রিকারিং রেভিনিউ বাড়ানোর বিশেষজ্ঞ।",
+  ctaTitle: "আপনার SaaS-এর জন্য এমন ফলাফল চান?",
+  ctaBody: "একটি বিনামূল্যের গ্রোথ স্ট্র্যাটেজি কল বুক করুন এবং দেখুন কোথায় দ্রুত সুফল পাওয়া যাবে।",
+  ctaButton: "বিনামূল্যে কল বুক করুন",
+  tags: "ট্যাগ",
+  keepReading: "আরও পড়ুন",
+  viewAll: "সব পোস্ট দেখুন",
+  typeBlog: "ব্লগ",
+  readingProgress: "পড়ার অগ্রগতি",
+};
+
+const postAr: PostStrings = {
+  ...postEn,
+  backToBlog: "العودة إلى المدونة",
+  readTime: "{n} دقيقة قراءة",
+  copyLink: "نسخ الرابط",
+  linkCopied: "تم نسخ الرابط",
+  shareLinkedIn: "المشاركة على لينكدإن",
+  shareX: "المشاركة على X",
+  share: "مشاركة",
+  onThisPage: "في هذه الصفحة",
+  contentsLabel: "جدول المحتويات",
+  writtenBy: "بقلم",
+  authorRole: "خبير نمو",
+  authorBio: "خبير في نمو شركات SaaS للأعمال، وتحسين محركات البحث التقني، وزيادة الإيرادات المتكررة.",
+  ctaTitle: "هل تريد نتائج مثل هذه لشركتك؟",
+  ctaBody: "احجز مكالمة استراتيجية مجانية للنمو واكتشف أين تكمن أسرع المكاسب.",
+  ctaButton: "احجز مكالمة مجانية",
+  tags: "الوسوم",
+  keepReading: "تابع القراءة",
+  viewAll: "عرض كل المقالات",
+  typeBlog: "المدونة",
+  readingProgress: "تقدم القراءة",
+};
+
+export function getPostStrings(locale: LocaleConfig): PostStrings {
+  return locale.language === "bn" ? postBn : locale.language === "ar" ? postAr : postEn;
+}
