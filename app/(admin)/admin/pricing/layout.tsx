@@ -1,14 +1,29 @@
 import type { ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { getAdminPricing } from "@/app/(admin)/actions/pricing";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { hasPermission } from "@/lib/permissions";
 import PricingTabs from "@/components/Admin/Pricing/PricingTabs";
 
 export default async function PricingAdminLayout({ children }: { children: ReactNode }) {
   const data = await getAdminPricing();
   if (!data) {
+    // getAdminPricing returns null both when the user lacks permission AND when
+    // the pricing tables can't be read (e.g. the migration hasn't been applied
+    // to this database). Tell the two apart so the message is accurate.
+    const session = await getServerSession(authOptions);
+    if (!hasPermission(session?.user?.role, "PRICING_MANAGEMENT")) {
+      return (
+        <div className="bg-card border border-border rounded-xl p-8 text-center text-muted">
+          You don&apos;t have permission to manage pricing.
+        </div>
+      );
+    }
     return (
-      <div className="bg-card border border-border rounded-xl p-8 text-center text-muted">
-        You don&apos;t have permission to manage pricing.
+      <div role="alert" className="bg-card border border-border rounded-xl p-8 text-center text-muted">
+        Couldn&apos;t load pricing data. The pricing database tables may be missing: apply the pricing migration
+        (<code>20261105000000_pricing_page_rebuild</code>) to this database, then reload.
       </div>
     );
   }
