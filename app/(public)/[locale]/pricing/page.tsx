@@ -1,11 +1,11 @@
-import { getPricingPlans } from "@/app/(admin)/actions/pricing";
-import { getSiteSettings } from "@/app/(admin)/actions/settings";
+import { getPublicPricing } from "@/app/(admin)/actions/pricing";
 import { getPageMetadata } from "@/lib/seo-meta";
 import { resolveRouteLocale } from "@/lib/i18n";
 import PricingClient from "./PricingClient";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbSchema, productSchema } from "@/lib/schema";
 
+// Admin saves call revalidatePath("/pricing"); this is the safety net.
 export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -19,12 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default async function PricingPage() {
-  const [plans, settings] = await Promise.all([getPricingPlans(), getSiteSettings()]);
-
-  const parsedPlans = plans.map((plan) => ({
-    ...plan,
-    features: JSON.parse(plan.features) as string[],
-  }));
+  const data = await getPublicPricing();
 
   return (
     <>
@@ -34,14 +29,20 @@ export default async function PricingPage() {
             { name: "Home", path: "/" },
             { name: "Pricing", path: "/pricing" },
           ]),
-          ...parsedPlans.map((plan) => productSchema(plan)),
+          // One Offer per visible currency; nothing for packages without prices.
+          ...data.packages
+            .filter((p) => p.prices.length > 0)
+            .map((p) =>
+              productSchema({
+                name: p.name,
+                tagline: p.tagline,
+                description: p.description,
+                offers: p.prices.map((pr) => ({ price: pr.monthlyValue, currency: pr.code })),
+              }),
+            ),
         ]}
       />
-      <PricingClient
-        plans={parsedPlans}
-        usdPerGbp={settings?.usdPerGbp ?? 1.27}
-        bdtPerGbp={settings?.bdtPerGbp ?? 148.0}
-      />
+      <PricingClient data={data} />
     </>
   );
 }

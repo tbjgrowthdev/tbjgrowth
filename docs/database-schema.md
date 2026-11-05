@@ -42,7 +42,7 @@ Source of truth: `prisma/schema.prisma` (2066 lines, ~75 models/enums as of this
 | Model | Purpose |
 |---|---|
 | `FormSubmission` | Contact-form leads. |
-| `PricingPlan`, `Testimonial`, `Faq`, `TrustedPartner`, `TBJSystem`, `AgencyService` (+ `ServiceFaq`), `SiteSetting` | Public-site content/config models, outside the approval-workflow content types. |
+| `Testimonial`, `Faq`, `TrustedPartner`, `TBJSystem`, `AgencyService` (+ `ServiceFaq`), `SiteSetting` | Public-site content/config models, outside the approval-workflow content types. |
 
 ## AI Content Pipeline
 
@@ -107,3 +107,7 @@ See `docs/monitoring.md`.
 - `ContentTranslation @@unique([contentType, contentId, locale])` and `@@unique([contentType, locale, slug])` — Postgres treats multiple `NULL`s as distinct, so untranslated rows never collide on the second constraint.
 - `PerformanceFeedback @@unique([contentType, contentId])`, `OrphanPage.contentId @unique`, `ContentHealthScore @@unique([contentType, contentId])` — all "one live row per content item," always overwritten/upserted on rescan rather than accumulating history.
 - `ContentCannibalization @@unique([contentIdA, contentIdB])` with canonical sort order enforced in application code, not the DB.
+
+## Pricing page
+
+`PricingCurrency`, `PricingPackage`, `PricingPrice` (one row per package per currency; money stored as `Decimal`), `PricingFeature`, `PricingComparisonRow`/`PricingComparisonCell`, `PricingPolicy`/`PricingPolicyText` (default text + per-currency overrides) and `PricingSetting` (key + currency, `""` = default) hold everything on `/pricing`. Managed in Admin > Pricing (permission `PRICING_MANAGEMENT`), loaded by Excel/CSV import (`lib/pricing/import/`). The currency catalog (BDT/GBP/USD, symbols, grouping) lives in code: `lib/pricing/currencies.ts`. The old GBP-only `PricingPlan` table was dropped.

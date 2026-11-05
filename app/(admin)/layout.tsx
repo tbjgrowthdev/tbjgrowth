@@ -34,6 +34,7 @@ export default async function AdminLayout({
   const canManageSettings = hasPermission(role, "SETTINGS_MANAGEMENT");
   const canManageIntegrations = hasPermission(role, "INTEGRATION_MANAGEMENT");
   const canManageMedia = hasPermission(role, "MEDIA_MANAGEMENT");
+  const canManagePricing = hasPermission(role, "PRICING_MANAGEMENT");
   const canExport = hasPermission(role, "EXPORT");
   const canTranslate = hasPermission(role, "EDIT");
   const canCreateContent = hasPermission(role, "CREATE");
@@ -84,10 +85,12 @@ export default async function AdminLayout({
             <LayoutDashboard size={20} />
             Services
           </Link>
-          <Link href="/admin/pricing" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
+          {canManagePricing && (
+            <Link href="/admin/pricing" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <Tag size={20} />
             Pricing
           </Link>
+          )}
           <Link href="/admin/testimonials" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
             <Star size={20} />
             Testimonials

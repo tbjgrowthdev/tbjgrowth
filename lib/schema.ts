@@ -219,21 +219,21 @@ export function reviewsSchema(
 export function productSchema(plan: {
   name: string;
   tagline?: string | null;
-  priceGbp: number;
-  billingTerm: string;
+  description?: string | null;
+  /** One Offer per visible currency. */
+  offers: { price: number; currency: string }[];
 }) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: plan.name,
-    description: plan.tagline || undefined,
-    offers: {
+    description: plan.description || plan.tagline || undefined,
+    offers: plan.offers.map((o) => ({
       "@type": "Offer",
-      price: plan.priceGbp,
-      priceCurrency: "GBP",
-      priceValidUntil: undefined,
+      price: o.price,
+      priceCurrency: o.currency,
       availability: "https://schema.org/InStock",
       url: `${baseUrl}/pricing`,
-    },
+    })),
   };
 }

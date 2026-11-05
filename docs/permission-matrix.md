@@ -8,7 +8,7 @@ every pair; check the table below instead. (In practice it does hold here —
 `SUPER_ADMIN` ⊇ `ADMIN` ⊇ `EDITOR`-minus-SEO-tools, etc. — but that's because
 it was built that way, not because the code enforces it structurally.)
 
-## The 13 permissions × 5 roles
+## The 14 permissions × 5 roles
 
 | Permission | SUPER_ADMIN | ADMIN | EDITOR | SEO_MANAGER | CONTRIBUTOR |
 |---|---|---|---|---|---|
@@ -24,6 +24,7 @@ it was built that way, not because the code enforces it structurally.)
 | `USER_MANAGEMENT` | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `SETTINGS_MANAGEMENT` | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `INTEGRATION_MANAGEMENT` | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `PRICING_MANAGEMENT` | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `EXPORT` | ✅ | ✅ | ❌ | ✅ | ❌ |
 
 Checked with `hasPermission(role, permission)`, called by every

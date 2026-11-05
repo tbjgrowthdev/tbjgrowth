@@ -1854,17 +1854,126 @@ model LoginAttempt {
   @@index([email, createdAt])
 }
 
-model PricingPlan {
-  id          String   @id @default(cuid())
-  name        String
-  tagline     String?
-  priceGbp    Float
-  billingTerm String   @default("month") // month | year | one-time
-  features    String   @db.Text // JSON array of strings
-  isPopular   Boolean  @default(false)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// ------------------------------------------------------
+// Pricing page (/pricing) - all content is admin-managed (Admin > Pricing).
+// Money is stored as numbers, never formatted strings. "" (empty string) is
+// used instead of NULL for "default / no currency" in unique keys, because
+// Postgres treats NULLs as distinct in unique indexes.
+// ------------------------------------------------------
+
+// Per-currency admin settings. The currency catalog itself (symbol, number
+// format) lives in code (lib/pricing/currencies.ts); a row here only exists
+// once the admin has changed something. No row => built-in defaults.
+model PricingCurrency {
+  code      String   @id // BDT | GBP | USD
+  label     String   @default("")
+  isEnabled Boolean  @default(true)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model PricingPackage {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  number        String   @default("")
+  name          String
+  tagline       String   @default("")
+  description   String   @default("") @db.Text
+  isMostPopular Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  stageBuild    Boolean  @default(false)
+  stageAttract  Boolean  @default(false)
+  stageConvert  Boolean  @default(false)
+  stageAutomate Boolean  @default(false)
+  stageScale    Boolean  @default(false)
+  notIncluded   String   @default("") @db.Text
+  moveUpTitle   String   @default("")
+  moveUpText    String   @default("") @db.Text // may contain {adSpend}
+  ctaLabel      String   @default("")
+  ctaLink       String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  prices   PricingPrice[]
+  features PricingFeature[]
+  cells    PricingComparisonCell[]
+
+  @@index([sortOrder])
+}
+
+model PricingPrice {
+  id         String         @id @default(cuid())
+  packageId  String
+  package    PricingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  currency   String // BDT | GBP | USD
+  monthly    Decimal        @db.Decimal(14, 2)
+  setupFee   Decimal?       @db.Decimal(14, 2)
+  adSpendCap Decimal?       @db.Decimal(14, 2)
+  isActive   Boolean        @default(true)
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([packageId, currency])
+  @@index([currency])
+}
+
+model PricingFeature {
+  id        String         @id @default(cuid())
+  packageId String
+  package   PricingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  label     String
+  text      String         @default("") @db.Text // may contain {adSpend}
+  sortOrder Int            @default(0)
+
+  @@unique([packageId, label])
+  @@index([packageId, sortOrder])
+}
+
+model PricingComparisonRow {
+  id        String                  @id @default(cuid())
+  label     String                  @unique
+  sortOrder Int                     @default(0)
+  cells     PricingComparisonCell[]
+}
+
+model PricingComparisonCell {
+  id        String               @id @default(cuid())
+  rowId     String
+  row       PricingComparisonRow @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  packageId String
+  package   PricingPackage       @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  text      String               @default("") @db.Text
+
+  @@unique([rowId, packageId])
+}
+
+model PricingPolicy {
+  id        String               @id @default(cuid())
+  key       String               @unique
+  title     String
+  sortOrder Int                  @default(0)
+  text      String               @default("") @db.Text // default wording
+  overrides PricingPolicyText[]
+}
+
+model PricingPolicyText {
+  id       String        @id @default(cuid())
+  policyId String
+  policy   PricingPolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  currency String // BDT | GBP | USD
+  text     String        @db.Text
+
+  @@unique([policyId, currency])
+}
+
+// Global texts. currency "" = default; only "footnote" is used per currency.
+model PricingSetting {
+  id       String @id @default(cuid())
+  key      String
+  currency String @default("")
+  value    String @default("") @db.Text
+
+  @@unique([key, currency])
 }
 
 // ------------------------------------------------------
