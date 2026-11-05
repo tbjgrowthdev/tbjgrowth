@@ -114,15 +114,31 @@ export async function uploadPSeoDataset(
       warnings.push(`The template references {{${unresolved.join("}}, {{")}}} which this CSV has no column for — those placeholders will render literally.`);
     }
 
+    // The Neon HTTP adapter can't run transactions, so a nested `rows: { create }`
+    // (or createMany) fails — see docs/known-limitations.md. Create the dataset,
+    // then its rows as independent single creates in bounded-concurrency chunks.
     const dataset = await prisma.pSeoDataset.create({
-      data: {
-        templateId,
-        name,
-        columns: JSON.stringify(columns),
-        rowCount: rows.length,
-        rows: { create: rows.map((data, i) => ({ data: JSON.stringify(data), rowIndex: i })) },
-      },
+      data: { templateId, name, columns: JSON.stringify(columns), rowCount: rows.length },
     });
+
+    try {
+      const CHUNK_SIZE = 25;
+      for (let start = 0; start < rows.length; start += CHUNK_SIZE) {
+        await Promise.all(
+          rows.slice(start, start + CHUNK_SIZE).map((data, offset) =>
+            prisma.pSeoDatasetRow.create({
+              data: { datasetId: dataset.id, data: JSON.stringify(data), rowIndex: start + offset },
+            })
+          )
+        );
+      }
+    } catch (rowError) {
+      // Not atomic: don't leave a dataset with a partial row set. Cascade removes any rows already written.
+      await prisma.pSeoDataset.deleteMany({ where: { id: dataset.id } }).catch((cleanupError) => {
+        console.error(`Failed to clean up partial pSEO dataset ${dataset.id}:`, cleanupError);
+      });
+      throw rowError;
+    }
 
     revalidatePath("/admin/programmatic-seo");
     await logAudit({
