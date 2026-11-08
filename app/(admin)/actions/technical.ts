@@ -89,6 +89,20 @@ export async function checkTlsCertificate(): Promise<{ valid: boolean; expiresAt
     return { valid: false, expiresAt: null, daysRemaining: null, error: "Running locally — no public TLS certificate to check" };
   }
 
+  // Cloudflare Workers can't open a raw TCP/TLS socket to a Cloudflare-proxied
+  // hostname (including this site's own domain) — tls.connect() fails with
+  // "proxy request failed, cannot connect to the specified address". The
+  // certificate visitors see is Cloudflare's edge certificate, which Cloudflare
+  // issues and renews automatically, so there's nothing for this check to read.
+  if (typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers") {
+    return {
+      valid: false,
+      expiresAt: null,
+      daysRemaining: null,
+      error: "SSL is managed by Cloudflare and renews automatically — expiry can't be read from inside the Worker. View it in the Cloudflare dashboard under SSL/TLS → Edge Certificates.",
+    };
+  }
+
   return new Promise((resolve) => {
     const socket = tls.connect(443, hostname, { servername: hostname, timeout: 5000 }, () => {
       const cert = socket.getPeerCertificate();

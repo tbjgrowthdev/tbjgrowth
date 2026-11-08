@@ -2,6 +2,10 @@ type RedirectEntry = { destination: string | null; statusCode: number };
 
 let cache: { map: Map<string, RedirectEntry>; expiresAt: number } | null = null;
 const TTL_MS = 60_000;
+// After a failed lookup, serve the previous map (or an empty one) for this
+// long before trying again — otherwise every request retries the failing
+// fetch and waits on it, which makes every page slow while it's failing.
+const FAILURE_TTL_MS = 60_000;
 
 // middleware.ts runs on the Edge runtime (Cloudflare's OpenNext adapter
 // doesn't support Node.js middleware), so it can't use the Prisma/pg
@@ -23,7 +27,9 @@ export async function getRedirectMap(requestUrl: string): Promise<Map<string, Re
     return map;
   } catch (error) {
     console.error("Failed to load redirects:", error);
-    return cache?.map ?? new Map();
+    const fallback = cache?.map ?? new Map<string, RedirectEntry>();
+    cache = { map: fallback, expiresAt: Date.now() + FAILURE_TTL_MS };
+    return fallback;
   }
 }
 

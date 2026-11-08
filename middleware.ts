@@ -28,9 +28,15 @@ export default withAuth(
     //    before i18n existed still fires identically under every locale —
     //    the same prefix the request arrived with is re-applied to the
     //    destination.
+    const isAdminPath = pathname.startsWith("/admin");
+    const isAuthPage = pathname.startsWith("/login");
+
     const { prefix: requestLocalePrefix, rest: unprefixedPathname } = stripLocalePrefix(pathname);
-    const redirectMap = await getRedirectMap(req.url);
-    const match = redirectMap.get(unprefixedPathname);
+    // Admin and login pages never need DB-driven redirects, so they skip the
+    // redirect lookup entirely — otherwise every admin navigation and every
+    // sidebar prefetch waited on that lookup before the page could start.
+    const redirectMap = isAdminPath || isAuthPage ? null : await getRedirectMap(req.url);
+    const match = redirectMap?.get(unprefixedPathname);
     if (match) {
       if (match.statusCode === 410) {
         // Gone — no Location header, just tells crawlers to deindex it now.
@@ -41,9 +47,6 @@ export default withAuth(
     }
 
     // 2. The auth gate below only concerns /admin and /login — every other path passes through.
-    const isAdminPath = pathname.startsWith("/admin");
-    const isAuthPage = pathname.startsWith("/login");
-
     if (!isAdminPath && !isAuthPage) {
       // 2a. Locale resolution for the public site. Exempt paths (standalone
       // landing pages, metadata routes) and anything already under a known
