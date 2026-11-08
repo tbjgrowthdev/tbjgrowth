@@ -41,7 +41,11 @@ export default async function AdminLayout({
 
   return (
     <AdminSidebarProvider>
-    <div className="h-screen bg-background flex overflow-hidden">
+    {/* `relative` makes this the containing block for anything position:absolute inside the admin (sr-only inputs,
+        dropdown panels, ...). Without it such elements resolve against the page itself, escape this overflow-hidden clip
+        and stretch the document, which shows up as an extra scrollbar and the whole layout scrolling up with a blank
+        strip below. `h-dvh` tracks the visible viewport on mobile, where 100vh is taller than the screen. */}
+    <div className="relative h-dvh bg-background flex overflow-hidden">
       {/* Sidebar — pinned to the viewport; only its own nav list scrolls if it's
           taller than the screen, independently of the main content below. */}
       <SidebarFrame>
@@ -321,7 +325,8 @@ export default async function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
+        {/* `relative`: absolute descendants are positioned (and clipped/scrolled) inside this region, not against the page. */}
+        <div className="relative flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
           {children}
         </div>
       </main>

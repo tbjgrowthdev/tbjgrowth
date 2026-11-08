@@ -347,7 +347,9 @@ export default function ImageInput(props: SingleProps | GalleryProps) {
             type="file"
             accept="image/*"
             multiple={gallery}
-            className="sr-only"
+            // `hidden`, not `sr-only`: an absolutely positioned input escapes the admin layout's overflow clip and stretches the page.
+            // A display:none file input can still be opened with ref.click().
+            className="hidden"
             tabIndex={-1}
             aria-hidden="true"
             onChange={(e) => {
