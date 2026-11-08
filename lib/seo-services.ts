@@ -60,11 +60,28 @@ export const fetchKeywordRankings = async (keyword: string, country: string = "G
     });
 
     if (!res.ok) {
-      console.error(`DataForSEO request failed: ${res.status}`);
+      // DataForSEO's body carries a status_message naming the real cause
+      // (e.g. "Access denied. Your IP is not whitelisted"). Truncated; the
+      // Authorization header is never logged.
+      const body = (await res.text().catch(() => "")).slice(0, 500);
+      console.error(`DataForSEO request failed: ${res.status} ${body}`);
       return null;
     }
 
     const data = await res.json();
+
+    // DataForSEO often answers HTTP 200 and reports failure only in the body
+    // (status_code != 20000, e.g. 40200/40210 payment, 40207 IP not
+    // whitelisted). Treat that as a failed check instead of recording it as
+    // "keyword not ranking".
+    const taskStatus = data?.tasks?.[0]?.status_code;
+    if (data?.status_code !== 20000 || (taskStatus !== undefined && taskStatus !== 20000)) {
+      console.error(
+        `DataForSEO returned an error in a 200 response: status_code=${data?.status_code} task=${taskStatus} ${data?.tasks?.[0]?.status_message ?? data?.status_message ?? ""}`
+      );
+      return null;
+    }
+
     const items = data?.tasks?.[0]?.result?.[0]?.items || [];
 
     const match = items.find(
