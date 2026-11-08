@@ -57,6 +57,10 @@ comment next to the code it explains.
     transaction limitation (the big one), schema-drift risk, and a running
     list of smaller issues found but not yet fixed.
 
+17. [Landing-Page Blocks](landing-page-blocks.md) — composing pages from blocks
+    (hero, CTA, cards, testimonials, FAQ, pricing, trust badges, lead form),
+    reusable blocks with central updates, and how their output stays sanitized.
+
 ## Related, pre-existing docs (not superseded, cross-linked instead)
 
 - `docs/runbooks/ai-content-pipeline.md` — operational detail for the AI

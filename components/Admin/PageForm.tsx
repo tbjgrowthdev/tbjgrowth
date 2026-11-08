@@ -9,6 +9,8 @@ import dynamic from "next/dynamic";
 import { slugify } from "@/lib/utils";
 import { AlertCircle, CalendarClock } from "lucide-react";
 import SeoPanel from "./SeoPanel";
+import BlocksEditor, { readBlocks, type EditableBlock } from "./Blocks/BlocksEditor";
+import { blocksToText } from "@/lib/blocks/text";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import WorkflowPanel from "./WorkflowPanel";
 import AssignmentPanel from "./AssignmentPanel";
@@ -54,6 +56,11 @@ export default function PageForm({ initialData }: { initialData?: any }) {
     maxImagePreview: initialData?.maxImagePreview || "large",
     maxVideoPreview: initialData?.maxVideoPreview ?? -1,
   });
+  // "blocks" = landing-page layout (Page.blocks); "classic" = the single rich-text Content field. `content` is kept
+  // either way. Saving in classic mode clears the block layout (the page then renders `content` as before).
+  const initialBlocks = readBlocks(initialData?.blocks);
+  const [layout, setLayout] = useState<"classic" | "blocks">(initialBlocks.length > 0 ? "blocks" : "classic");
+  const [blocks, setBlocks] = useState<EditableBlock[]>(initialBlocks);
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
   const [changeSummary, setChangeSummary] = useState("");
   const [scheduleUpdate, setScheduleUpdate] = useState(false);
@@ -69,7 +76,7 @@ export default function PageForm({ initialData }: { initialData?: any }) {
     try {
       const isExisting = Boolean(initialData?.id);
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
-      const payload = { ...formData, secondaryKeywords: JSON.stringify(formData.secondaryKeywords) };
+      const payload = { ...formData, secondaryKeywords: JSON.stringify(formData.secondaryKeywords), blocks: layout === "blocks" ? blocks : [] };
 
       if (isExisting && scheduleUpdate) {
         if (!scheduleUpdateDate || !scheduleUpdateTime) {
@@ -198,11 +205,44 @@ Create a 301 redirect from the old URL to the new one so existing links and sear
 
       {/* Editor */}
       <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Content</h2>
-        <RichTextEditor
-          content={formData.content} 
-          onChange={(content) => setFormData({ ...formData, content })} 
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="text-xl font-semibold text-foreground">Content</h2>
+          <div role="radiogroup" aria-label="Page layout" className="inline-flex rounded-lg border border-border overflow-hidden text-sm">
+            {(["classic", "blocks"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={layout === mode}
+                onClick={() => {
+                  // First switch to blocks on a page that has classic content: carry that content over as a rich-text block.
+                  if (mode === "blocks" && blocks.length === 0 && formData.content.trim()) {
+                    setBlocks([{ id: `b_${Date.now().toString(36)}`, type: "richText", data: { html: formData.content } }]);
+                  }
+                  setLayout(mode);
+                }}
+                className={`px-4 py-1.5 ${layout === mode ? "bg-brand-orange-deep text-white" : "bg-card text-muted hover:bg-tint"}`}
+              >
+                {mode === "classic" ? "Classic text" : "Landing page blocks"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {layout === "blocks" ? (
+          <>
+            <p className="text-sm text-caption">
+              Build the page from blocks: hero, buttons, cards, testimonials, FAQ, pricing, trust badges and a lead form. Shared blocks
+              update every page that uses them. Switching back to “Classic text” and saving removes this layout from the page (it stays in
+              version history, and the classic text is kept as it was).
+            </p>
+            <BlocksEditor value={blocks} onChange={setBlocks} />
+          </>
+        ) : (
+          <RichTextEditor
+            content={formData.content}
+            onChange={(content) => setFormData({ ...formData, content })}
+          />
+        )}
       </div>
 
       <SeoPanel
@@ -210,7 +250,7 @@ Create a 301 redirect from the old URL to the new one so existing links and sear
         onChange={(field, value) => setFormData({ ...formData, [field]: value })}
         secondaryKeywords={formData.secondaryKeywords}
         onSecondaryKeywordsChange={(secondaryKeywords) => setFormData({ ...formData, secondaryKeywords })}
-        content={formData.content}
+        content={layout === "blocks" ? blocksToText(blocks) : formData.content}
         slugPreviewPath={formData.slug}
         contentLabel="page"
       />

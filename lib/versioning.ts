@@ -4,6 +4,7 @@ import { logAudit } from "@/lib/audit-log";
 import { revalidatePath } from "next/cache";
 import type { ContentType } from "@/lib/generated/prisma/client";
 import { syncTaxonomy } from "@/lib/content-relations";
+import { normalizeBlocksInput } from "@/lib/blocks/schema";
 
 // Only the actual editable content — never status, publishedAt, or the
 // approval-assignment fields (reviewerId/seoReviewerId/approverId/
@@ -19,7 +20,7 @@ const SNAPSHOT_FIELDS: Record<ContentType, string[]> = {
     "schemaJson", "isIndexable",
   ],
   PAGE: [
-    "title", "slug", "content",
+    "title", "slug", "content", "blocks",
     "metaTitle", "metaDescription", "focusKeyword", "canonicalUrl", "twitterCard",
     "ogImage", "ogTitle", "ogDescription", "twitterTitle", "twitterDescription", "twitterImage",
     "schemaJson", "isIndexable",
@@ -151,6 +152,12 @@ export async function restoreVersion(contentType: ContentType, contentId: string
     const { categoryIds, tagIds, ...scalarFields } = snapshot;
 
     const updateData: AnyRecord = { ...scalarFields };
+    if (contentType === "PAGE") {
+      // A snapshot taken before blocks existed has no "blocks" key: restoring it means the classic layout, so clear
+      // the current layout instead of leaving it on top of the restored content. Stored blocks are re-validated.
+      const restored = normalizeBlocksInput(snapshot.blocks ?? null);
+      updateData.blocks = restored.ok ? restored.value.json : null;
+    }
     const delegate = model(contentType);
     const updated = await delegate.update({ where: { id: contentId }, data: updateData });
     // Separate from the update: a nested { set } needs a transaction the production adapter rejects.

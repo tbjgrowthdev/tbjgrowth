@@ -8,6 +8,7 @@ import { parseCsv } from "@/lib/programmatic-seo/csv";
 import { extractPlaceholders } from "@/lib/programmatic-seo/render";
 import { generatePagesForDataset } from "@/lib/programmatic-seo/generate";
 import type { GuardrailFinding } from "@/lib/programmatic-seo/types";
+import { normalizeBlocksInput } from "@/lib/blocks/schema";
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
@@ -16,6 +17,14 @@ function errorMessage(error: unknown, fallback: string): string {
 }
 
 // ---- Templates ----
+
+// The template's landing-page blocks (CTA, lead form, ...) arrive as a list from the editor; validate and
+// sanitize them here and store the normalized JSON. Left untouched when the caller did not send them.
+function withNormalizedBlocks(data: Record<string, unknown>): { ok: true; data: Record<string, unknown> } | { ok: false; error: string } {
+  if (!("blocks" in data)) return { ok: true, data };
+  const result = normalizeBlocksInput(data.blocks);
+  return result.ok ? { ok: true, data: { ...data, blocks: result.value.json } } : { ok: false, error: result.error };
+}
 
 export async function getPSeoTemplates() {
   try {
@@ -46,7 +55,9 @@ export async function getPSeoTemplate(id: string) {
 export async function createPSeoTemplate(data: Record<string, unknown>): Promise<ActionResult<{ id: string }>> {
   try {
     await requirePermission("CREATE");
-    const template = await prisma.pSeoTemplate.create({ data: data as Parameters<typeof prisma.pSeoTemplate.create>[0]["data"] });
+    const normalized = withNormalizedBlocks(data);
+    if (!normalized.ok) return { success: false, error: normalized.error };
+    const template = await prisma.pSeoTemplate.create({ data: normalized.data as Parameters<typeof prisma.pSeoTemplate.create>[0]["data"] });
     revalidatePath("/admin/programmatic-seo");
     await logAudit({ action: "create", category: "Content", entityType: "PSeoTemplate", entityId: template.id, entityLabel: template.name });
     return { success: true, data: { id: template.id } };
@@ -60,7 +71,9 @@ export async function createPSeoTemplate(data: Record<string, unknown>): Promise
 export async function updatePSeoTemplate(id: string, data: Record<string, unknown>): Promise<ActionResult<{ id: string }>> {
   try {
     await requirePermission("EDIT");
-    const template = await prisma.pSeoTemplate.update({ where: { id }, data: data as Parameters<typeof prisma.pSeoTemplate.update>[0]["data"] });
+    const normalized = withNormalizedBlocks(data);
+    if (!normalized.ok) return { success: false, error: normalized.error };
+    const template = await prisma.pSeoTemplate.update({ where: { id }, data: normalized.data as Parameters<typeof prisma.pSeoTemplate.update>[0]["data"] });
     revalidatePath("/admin/programmatic-seo");
     revalidatePath("/pSEO/[slug]", "page");
     await logAudit({ action: "update", category: "Content", entityType: "PSeoTemplate", entityId: template.id, entityLabel: template.name });

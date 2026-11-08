@@ -9,6 +9,8 @@ import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates } from "@/lib/translation";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { loadRenderedBlocks } from "@/lib/blocks/load";
+import BlockRenderer from "@/components/Blocks/BlockRenderer";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -81,13 +83,18 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
+  // Landing-page layout. A page with no (valid) blocks keeps the classic rich-text template below, untouched.
+  const blocks = await loadRenderedBlocks(page.blocks);
+
   const breadcrumb = breadcrumbSchema([
     { name: "Home", path: "/" },
     { name: page.title, path: withLocalePrefix(locale.prefix, `/${page.slug}`) },
   ]);
 
   return (
-    <main className="min-h-screen bg-background pt-24 pb-20">
+    // A leading hero draws its own background up to the top edge and pads itself below the navbar,
+    // so the wrapper adds no top padding (it would show as a white gap above the hero).
+    <main className={`min-h-screen bg-background ${blocks.length === 0 ? "pt-24 pb-20" : blocks[0].block.type === "hero" ? "pt-0 pb-0" : "pt-24 pb-0"}`}>
       {page.schemaJson ? (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: page.schemaJson }} />
       ) : (
@@ -97,6 +104,9 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
         <JsonLd schema={buildAutoSchema({ contentType: "PAGE", id: page.id, title: page.title, slug: page.slug })} />
       )}
       <JsonLd schema={breadcrumb} />
+      {blocks.length > 0 ? (
+        <BlockRenderer blocks={blocks} pageTitle={page.title} source={`Landing page: /${page.slug}`} />
+      ) : (
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-10 text-center">
           {page.title}
@@ -105,6 +115,7 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
           <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(page.content) }} />
         </div>
       </article>
+      )}
     </main>
   );
 }

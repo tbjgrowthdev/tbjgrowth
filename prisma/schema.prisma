@@ -119,6 +119,12 @@ model Page {
   slug    String  @unique
   content String? @db.Text
 
+  // Landing-page layout: JSON PageBlock[] (see lib/blocks/schema.ts). Null =
+  // a classic rich-text page that renders `content` exactly as before; when
+  // set, the public template renders these blocks instead. `content` is never
+  // cleared, so switching a page back to the classic layout loses nothing.
+  blocks String? @db.Text
+
   // Relations
   authorId String?
   author   User?   @relation(fields: [authorId], references: [id])
@@ -1084,6 +1090,8 @@ model PSeoTemplate {
 
   isIndexable Boolean @default(true) // template-level master switch — off takes every one of this template's pages out of the index regardless of per-page guardrail status
 
+  blocks String? @db.Text // JSON PageBlock[] rendered after the body on every generated page (CTA, lead form, ...) — resolved per request, so editing it needs no regeneration
+
   datasets PSeoDataset[]
   pages    PSeoPage[]
 
@@ -1213,6 +1221,25 @@ model SeoExperiment {
 
   @@index([contentType, contentId])
   @@index([status])
+}
+
+// A reusable landing-page block (CTA, FAQ, pricing, lead form, ...). Pages and
+// pSEO templates reference it by id inside their `blocks` JSON
+// ({ type: "reusable", blockId }) and it is resolved at render time, so editing
+// one row updates every page that uses it. There is deliberately no join table:
+// usage is found by searching `blocks` for the id (ids are cuids), which keeps
+// every write a single statement — the Neon HTTP adapter has no transactions.
+model ContentBlock {
+  id          String   @id @default(cuid())
+  name        String   @unique // admin label, e.g. "Book a call CTA"
+  type        String // a concrete BlockType from lib/blocks/schema.ts (never "reusable")
+  data        String   @db.Text // JSON — the block's fields, validated by lib/blocks/schema.ts
+  createdById String? // plain user-id pointer, same lightweight pattern as Page.reviewerId
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type])
 }
 
 model Testimonial {

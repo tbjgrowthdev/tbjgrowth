@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { normalizeBlocksInput } from "@/lib/blocks/schema";
 import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // SEO fields here are read back out by lib/seo-change-log to build the SEO
@@ -42,7 +43,19 @@ function pageSnapshot(page: any) {
     seoReviewerId: page.seoReviewerId,
     approverId: page.approverId,
     publishedAt: page.publishedAt,
+    blocks: page.blocks,
   };
+}
+
+// `blocks` is only written when the caller sent it, so older callers (and the
+// classic editor) can never wipe a page's layout by omission. An empty list
+// becomes null = classic rich-text page. Validation and HTML sanitizing live in
+// lib/blocks/schema.ts.
+function blocksUpdate(input: unknown): { ok: true; data: { blocks?: string | null } } | { ok: false; error: string } {
+  if (input === undefined) return { ok: true, data: {} };
+  const result = normalizeBlocksInput(input);
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true, data: { blocks: result.value.json } };
 }
 
 export async function getPages() {
@@ -77,6 +90,9 @@ export async function createPage(data: any) {
       return { success: false, error: "Slug cannot be empty" };
     }
 
+    const blocks = blocksUpdate(data.blocks);
+    if (!blocks.ok) return { success: false, error: blocks.error };
+
     // Always starts as a draft — status only moves via the workflow
     // transitions (transitionPage), which check PUBLISH/SCHEDULE/APPROVE.
     const page = await prisma.page.create({
@@ -84,6 +100,7 @@ export async function createPage(data: any) {
         title: data.title,
         slug,
         content: sanitizeRichText(data.content),
+        ...blocks.data,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         focusKeyword: data.focusKeyword,
@@ -151,12 +168,16 @@ export async function updatePage(id: string, data: any) {
       return { success: false, error: staleError, stale: true };
     }
 
+    const blocks = blocksUpdate(data.blocks);
+    if (!blocks.ok) return { success: false, error: blocks.error };
+
     const page = await prisma.page.update({
       where: { id },
       data: {
         title: data.title,
         slug,
         content: sanitizeRichText(data.content),
+        ...blocks.data,
         metaTitle: data.metaTitle,
         metaDescription: data.metaDescription,
         focusKeyword: data.focusKeyword,

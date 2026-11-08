@@ -3,6 +3,8 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { syncTaxonomy } from "@/lib/content-relations";
+import { normalizeBlocksInput } from "@/lib/blocks/schema";
+import { sanitizeRichText } from "@/lib/sanitize";
 import { sendScheduledJobFailureNotification } from "@/lib/email";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
@@ -254,6 +256,16 @@ async function executeJob(job: Prisma.ScheduledJobGetPayload<object>) {
   const { categoryIds, tagIds, ...scalarFields } = snapshot;
 
   const updateData: AnyRecord = { ...scalarFields };
+  if (job.contentType === "PAGE") {
+    // The payload was staged from the editor form, so it never went through updatePage: validate and sanitize the
+    // layout (and the rich text) here, at the moment it goes live.
+    if ("blocks" in updateData) {
+      const blocks = normalizeBlocksInput(updateData.blocks);
+      if (!blocks.ok) throw new Error(`Scheduled update has invalid blocks: ${blocks.error}`);
+      updateData.blocks = blocks.value.json;
+    }
+    if (typeof updateData.content === "string") updateData.content = sanitizeRichText(updateData.content);
+  }
   const updated = await delegate.update({ where: { id: job.contentId }, data: updateData });
   // Separate from the update: a nested { set } needs a transaction the production adapter rejects.
   if (job.contentType === "POST" || job.contentType === "CASE_STUDY") {

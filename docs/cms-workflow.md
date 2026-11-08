@@ -67,6 +67,10 @@ In order, inside `transitionContent`:
 
 Steps 3 and 4 are two sequential `await`s, not one `$transaction` — see "Implementation note" below.
 
+## Landing-page blocks are page content
+
+A Page's block layout (`Page.blocks`) moves through this same workflow, versioning and scheduled-update machinery as the rest of the page. The exception is a *reusable* block, which is shared and live the moment it is saved — see `docs/landing-page-blocks.md` for why editing one needs `PUBLISH`.
+
 ## ApprovalHistory
 
 `ApprovalHistory` is the audit trail for everything in this document, not just status transitions. A row is written for:

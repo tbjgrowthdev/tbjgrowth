@@ -38,6 +38,9 @@ not an error.
 Not every permission maps 1:1 to one feature — a few notable groupings, from
 the real `requirePermission(...)` call sites:
 
+- **`PUBLISH`** also gates *editing and deleting* a reusable landing-page block
+  (`app/(admin)/actions/blocks.ts`): an edit is live on every page using it with
+  no per-page review. Creating a block needs only `CREATE`.
 - **`USER_MANAGEMENT`** gates more than user CRUD: it also gates
   `app/(admin)/actions/forms.ts`'s lead inbox (`getLeads`/`markLeadAsRead`),
   `audit.ts`'s audit log, and `security.ts`'s cross-account login history

@@ -6,6 +6,8 @@ import { resolveSocialMeta, buildRobotsMeta } from "@/lib/seo-meta";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { loadRenderedBlocks } from "@/lib/blocks/load";
+import BlockRenderer from "@/components/Blocks/BlockRenderer";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -56,6 +58,10 @@ export default async function PSeoPageDetail({ params }: { params: Promise<{ slu
   const page = await resolvePage(slug);
   if (!page) notFound();
 
+  // Template-level CTA / lead form, resolved per request so editing it (or a reusable block it references)
+  // reaches every generated page without regenerating them.
+  const blocks = await loadRenderedBlocks(page.template.blocks);
+
   return (
     <main className="relative bg-background transition-colors duration-500 pt-32 pb-16 lg:pt-40 lg:pb-20">
       <JsonLd
@@ -68,6 +74,11 @@ export default async function PSeoPageDetail({ params }: { params: Promise<{ slu
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8">{page.h1}</h1>
         <div className="prose prose-lg dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeRichText(page.bodyHtml) }} />
       </div>
+      {blocks.length > 0 && (
+        <div className="mt-16">
+          <BlockRenderer blocks={blocks} source={`pSEO page: /${page.slug}`} />
+        </div>
+      )}
     </main>
   );
 }

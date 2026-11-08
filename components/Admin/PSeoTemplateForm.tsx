@@ -7,6 +7,7 @@ import { createPSeoTemplate, updatePSeoTemplate, deletePSeoTemplate } from "@/ap
 import { Save, AlertCircle, Plus, Trash2 } from "lucide-react";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import BlocksEditor, { readBlocks, type EditableBlock } from "./Blocks/BlocksEditor";
 
 type InitialData = Partial<{
   id: string;
@@ -20,6 +21,7 @@ type InitialData = Partial<{
   minWordCount: number;
   duplicateSimilarityThreshold: number;
   isIndexable: boolean;
+  blocks: string | null;
 }>;
 
 function parseColumnList(raw: string | null | undefined): string[] {
@@ -49,6 +51,7 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
     duplicateSimilarityThreshold: initialData?.duplicateSimilarityThreshold ?? 0.5,
     isIndexable: initialData?.isIndexable ?? true,
   });
+  const [blocks, setBlocks] = useState<EditableBlock[]>(readBlocks(initialData?.blocks));
   const [requiredColumns, setRequiredColumns] = useState<string[]>(
     initialData?.requiredColumns ? parseColumnList(initialData.requiredColumns) : [""]
   );
@@ -69,6 +72,7 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
         minWordCount: Number(formData.minWordCount),
         duplicateSimilarityThreshold: Number(formData.duplicateSimilarityThreshold),
         requiredColumns: JSON.stringify(requiredColumns.map((c) => c.trim()).filter(Boolean)),
+        blocks,
       };
 
       const result = initialData?.id ? await withToast(updatePSeoTemplate(initialData.id, dataToSave), { success: "Template updated", error: "Couldn't update template" }) : await withToast(createPSeoTemplate(dataToSave), { success: "Template created", error: "Couldn't create template" });
@@ -158,6 +162,18 @@ export default function PSeoTemplateForm({ initialData = null }: { initialData?:
             />
           </div>
         </div>
+      </div>
+
+      <div className="bg-card p-6 rounded-xl shadow-sm border border-border space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Call to action &amp; lead form</h2>
+          <p className="text-sm text-caption mt-1">
+            Blocks shown below the body on every page generated from this template — typically a call to action and a lead form. They are
+            shown live, so editing them (or a shared block they use) updates all generated pages without regenerating. The{" "}
+            <code>{"{{column}}"}</code> placeholders only work in the fields above, not here.
+          </p>
+        </div>
+        <BlocksEditor value={blocks} onChange={setBlocks} />
       </div>
 
       <div className="bg-card p-6 rounded-xl shadow-sm border border-border">

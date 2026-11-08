@@ -35,30 +35,34 @@ function getPublicPath(kind: ContentKind, slug: string): string {
   }
 }
 
-// Href matches inside another content item's rich-text body. Reported as
-// "Internal Links" — this CMS's editor has no distinct CTA block type (a
-// CTA is just a styled anchor tag), so a CTA pointing at this content is
-// indistinguishable from a plain link at the data level and surfaces here
-// too, rather than under a separate category we can't actually detect.
+// Href matches inside another content item's rich-text body, and inside
+// landing-page blocks (hero/CTA buttons, card links — stored as JSON text on
+// Page.blocks, PSeoTemplate.blocks and ContentBlock.data, so the same substring
+// search finds them). Reported as "Internal Links": a block button is still
+// just a link to this URL.
 async function findInternalLinks(path: string, excludeKind: ContentKind, excludeId: string): Promise<DependencyFinding[]> {
   const findings: DependencyFinding[] = [];
 
   const postWhere: Record<string, unknown> = { content: { contains: path } };
   if (excludeKind === "POST") postWhere.id = { not: excludeId };
-  const pageWhere: Record<string, unknown> = { content: { contains: path } };
+  const pageWhere: Record<string, unknown> = { OR: [{ content: { contains: path } }, { blocks: { contains: path } }] };
   if (excludeKind === "PAGE") pageWhere.id = { not: excludeId };
   const caseWhere: Record<string, unknown> = { content: { contains: path } };
   if (excludeKind === "CASE_STUDY") caseWhere.id = { not: excludeId };
   const serviceWhere: Record<string, unknown> = { content: { contains: path } };
   if (excludeKind === "SERVICE") serviceWhere.id = { not: excludeId };
 
-  const [posts, pages, cases, services] = await Promise.all([
+  const [posts, pages, cases, services, templates, reusable] = await Promise.all([
     prisma.post.findMany({ where: postWhere, select: { title: true, slug: true } }),
     prisma.page.findMany({ where: pageWhere, select: { title: true, slug: true } }),
     prisma.caseStudy.findMany({ where: caseWhere, select: { title: true, slug: true } }),
     prisma.agencyService.findMany({ where: serviceWhere, select: { title: true, slug: true } }),
+    prisma.pSeoTemplate.findMany({ where: { blocks: { contains: path } }, select: { name: true } }),
+    prisma.contentBlock.findMany({ where: { data: { contains: path } }, select: { name: true } }),
   ]);
 
+  for (const t of templates) findings.push({ category: "Internal Links", description: `Linked from the blocks of programmatic SEO template "${t.name}"` });
+  for (const b of reusable) findings.push({ category: "Internal Links", description: `Linked from reusable block "${b.name}"` });
   for (const p of posts) findings.push({ category: "Internal Links", description: `Linked from blog post "${p.title}"` });
   for (const p of pages) findings.push({ category: "Internal Links", description: `Linked from page "${p.title}"` });
   for (const c of cases) findings.push({ category: "Internal Links", description: `Linked from case study "${c.title}"` });
