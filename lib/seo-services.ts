@@ -290,9 +290,15 @@ export type GA4LandingPageRow = { date: string; landingPage: string; sessions: n
  */
 export async function fetchGA4LandingPageRows(startDate: string, endDate: string): Promise<GA4LandingPageRow[] | null> {
   const integration = await getGoogleIntegration();
-  if (!integration?.ga4PropertyId) return null;
+  if (!integration?.ga4PropertyId) {
+    console.error("GA4 landing page import skipped: no Google integration or ga4PropertyId not set in Settings");
+    return null;
+  }
   const accessToken = await getValidAccessToken();
-  if (!accessToken) return null;
+  if (!accessToken) {
+    console.error("GA4 landing page import skipped: no valid Google access token (not connected, or token refresh failed)");
+    return null;
+  }
 
   try {
     const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${integration.ga4PropertyId}:runReport`, {
@@ -309,7 +315,8 @@ export async function fetchGA4LandingPageRows(startDate: string, endDate: string
       }),
     });
     if (!res.ok) {
-      console.error(`GA4 landing page import request failed: ${res.status}`);
+      const body = (await res.text().catch(() => "")).slice(0, 500);
+      console.error(`GA4 landing page import request failed: ${res.status} (propertyId=${integration.ga4PropertyId}) ${body}`);
       return null;
     }
     const data = await res.json();
@@ -486,9 +493,15 @@ export type SearchConsoleRow = {
  */
 export async function fetchSearchConsoleRows(startDate: string, endDate: string): Promise<SearchConsoleRow[] | null> {
   const integration = await getGoogleIntegration();
-  if (!integration?.gscSiteUrl) return null;
+  if (!integration?.gscSiteUrl) {
+    console.error("GSC import skipped: no Google integration or gscSiteUrl not set in Settings");
+    return null;
+  }
   const accessToken = await getValidAccessToken();
-  if (!accessToken) return null;
+  if (!accessToken) {
+    console.error("GSC import skipped: no valid Google access token (not connected, or token refresh failed)");
+    return null;
+  }
 
   try {
     const res = await fetch(
@@ -500,7 +513,10 @@ export async function fetchSearchConsoleRows(startDate: string, endDate: string)
       }
     );
     if (!res.ok) {
-      console.error(`GSC import request failed: ${res.status}`);
+      // Google's error body names the real cause (insufficientPermissions,
+      // SERVICE_DISABLED, "User does not have sufficient permission for site", ...).
+      const body = (await res.text().catch(() => "")).slice(0, 500);
+      console.error(`GSC import request failed: ${res.status} (siteUrl=${integration.gscSiteUrl}) ${body}`);
       return null;
     }
     const data = await res.json();
