@@ -174,13 +174,23 @@ image) and renders the blocks after it; the header's `<h1>` is the only h1.
 ### Case study layout
 
 The renderer takes `layout="caseStudy"` (only the case study page passes it);
-Pages and pSEO keep the original look. In this layout every block follows one
-width system that lines up with the header: `FRAME` (the header's content
-width) for the table, metric, takeaway, quote and CTA; `WIDE` (`max-w-6xl`) for
-cards, facts, galleries and badges; reading text is narrower (`READ`) and
-left-aligned. Section headings are left-aligned (centered only for the
-"statement" blocks: metric, takeaway, CTA), and vertical spacing is one scale.
+Pages and pSEO keep the original look. In this layout every block sits in one
+container, exactly the header's content width, so the title, excerpt, meta
+strip, featured image and all blocks share the same left and right edges;
+nothing is wider or narrower. Section headings are left-aligned (centered only
+for the "statement" blocks: metric, takeaway, CTA), and vertical spacing is one
+scale.
 
+- Block insides adapt to the container: facts and stat cards fit one row on
+  desktop and wrap on mobile; cards and galleries keep their column setting;
+  prose fills the width. The container width is looked up in one place
+  (`CASE_WIDTHS` in `BlockRenderer.tsx`), so a per-section Width option can be
+  added later without touching the blocks.
+- `metricHero` is a contained rounded card in the frame (no full-width band):
+  eyebrow and the large value on the left; on the right an inset card with the
+  label, the `from → to` line (both or neither) and the caption. It stacks on
+  mobile. Empty eyebrow / caption / from-to just leave their part out; the data
+  shape is unchanged.
 - `richText.eyebrow` (optional, plain text, 120 chars): a small label above the
   content. Put the main heading (Heading 2) at the start of the content, e.g.
   eyebrow "The business challenge", heading "Loved by regulars, unseen by

@@ -36,14 +36,16 @@ function Img({ src, alt, className }: { src: string; alt: string; className?: st
   return <img src={src} alt={alt} className={className} loading="lazy" />;
 }
 
-// Layouts. "default" (pages, pSEO templates) is the original look and must not change. "caseStudy" is one width system
-// that lines up with the case study header: FRAME is the header's content width, WIDE is for blocks that benefit from
-// more room (cards, facts, galleries), and reading text is narrower still. Headings are left-aligned with the frame;
-// only "statement" blocks (metric, takeaway, call to action) are centered. Vertical rhythm is tighter and uniform.
+// Layouts. "default" (pages, pSEO templates) is the original look and must not change. "caseStudy" puts every block in
+// ONE container that is exactly the case study header's content width (title, excerpt, meta strip, featured image), so
+// all left and right edges match; blocks adapt their insides (columns, rows) to it. Headings are left-aligned with the
+// frame; only "statement" blocks (metric, takeaway, call to action) are centered. Vertical rhythm is uniform.
 export type BlockLayout = "default" | "caseStudy";
 const FRAME = "max-w-[52rem]"; // = max-w-4xl minus the article's 2 × 2rem padding, so edges match the header
-const WIDE = "max-w-6xl";
-const READ = "max-w-[44rem]";
+// Case study container widths by name. Today every section uses "frame"; a future per-section Width setting
+// (e.g. "wide") only needs another entry here and a lookup in caseWidth().
+const CASE_WIDTHS = { frame: FRAME } as const;
+const caseWidth = (): string => CASE_WIDTHS.frame;
 
 function SectionHeading({ id, heading, intro, left }: { id: string; heading: string; intro?: string; left?: boolean }) {
   if (!heading && !intro) return null;
@@ -72,8 +74,9 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
   // A short intro paragraph that leads straight into the next block sits close to it (leadsNext / afterLead).
   const sec = cs ? (leadsNext ? "pt-5 md:pt-7 pb-2" : afterLead ? "pt-2 pb-5 md:pb-7" : "py-5 md:py-7") : "py-12";
   const tint = cs ? "py-10 md:py-12" : "py-12";
-  const frame = (legacy: string) => (cs ? `${FRAME} mx-auto` : legacy);
-  const wide = (legacy: string) => (cs ? `${WIDE} mx-auto` : legacy);
+  // Same container for every case study block; `legacy` is what the block used before layouts (Pages, pSEO).
+  const frame = (legacy: string) => (cs ? `${caseWidth()} mx-auto` : legacy);
+  const wide = frame;
 
   switch (block.type) {
     case "hero": {
@@ -111,7 +114,7 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
           </section>
         );
       }
-      const width = cs ? READ : "max-w-3xl mx-auto";
+      const width = cs ? "max-w-none" : "max-w-3xl mx-auto"; // case study: fill the frame, like every other block
       const eyebrow = block.data.eyebrow;
       return (
         <section className={`px-4 sm:px-6 lg:px-8 ${sec}`}>
@@ -150,14 +153,18 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
         <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={d.heading ? hid : undefined}>
           <div className={wide("max-w-6xl mx-auto")}>
             <SectionHeading id={hid} heading={d.heading} intro={below ? undefined : d.intro} left={cs} />
-            <ul className={`grid gap-6 ${GRID_COLS[d.columns] ?? GRID_COLS[3]}`}>
+            {/* Case study stat cards: one row on desktop (up to 4), wrapping on mobile; other cards keep their column setting. */}
+            <ul
+              className={`grid gap-4 md:gap-6 ${cs && d.variant === "stats" ? "grid-cols-1 sm:grid-cols-2 md:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]" : GRID_COLS[d.columns] ?? GRID_COLS[3]}`}
+              style={cs && d.variant === "stats" ? ({ "--cols": Math.min(d.items.length, 4) } as React.CSSProperties) : undefined}
+            >
               {d.items.map((item, i) => (
                 <li key={i} className="rounded-2xl border border-border bg-card p-6 flex flex-col">
                   {d.variant === "steps" && (
                     <span aria-hidden className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-orange-deep text-sm font-bold text-white">{i + 1}</span>
                   )}
                   {d.variant === "stats" ? (
-                    <p className="text-4xl md:text-5xl font-bold text-brand-orange-deep dark:text-brand-orange-light">{item.title}</p>
+                    <p className={`${cs ? "text-4xl" : "text-4xl md:text-5xl"} font-bold text-brand-orange-deep dark:text-brand-orange-light`}>{item.title}</p>
                   ) : (
                     <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
                   )}
@@ -285,19 +292,25 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
     case "metricHero": {
       const d = block.data;
       return (
-        <section className={`px-4 sm:px-6 lg:px-8 ${tint} bg-tint`} aria-labelledby={hid}>
-          <div className={`${frame("max-w-4xl mx-auto")} text-center`}>
-            {d.eyebrow && <p className="text-sm font-semibold uppercase tracking-wider text-brand-orange-deep dark:text-brand-orange-light mb-3">{d.eyebrow}</p>}
-            <p className="text-6xl md:text-8xl font-bold leading-none text-brand-orange-deep dark:text-brand-orange-light">{d.value}</p>
-            <p id={hid} className="mt-4 text-xl md:text-2xl font-semibold text-foreground">{d.label}</p>
-            {d.from && d.to && (
-              <p className="mt-3 text-lg text-muted">
-                <span>{d.from}</span>
-                <span aria-label="to" className="mx-3 text-brand-orange">&rarr;</span>
-                <span className="font-semibold text-foreground">{d.to}</span>
-              </p>
-            )}
-            {d.caption && <p className="mt-4 text-muted max-w-2xl mx-auto">{d.caption}</p>}
+        // A contained card inside the content frame (no full-bleed band): the headline value on the left, an inset
+        // card with the label, from → to and caption on the right. Stacks on mobile. Empty parts simply don't render.
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={hid}>
+          <div className={`${frame("max-w-4xl mx-auto")} grid gap-5 md:grid-cols-2 md:items-center rounded-2xl bg-tint p-5 md:p-7`}>
+            <div>
+              {d.eyebrow && <p className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-brand-orange-deep dark:text-brand-orange-light">{d.eyebrow}</p>}
+              <p className="font-heading text-5xl md:text-6xl font-bold leading-none tracking-tight text-brand-orange-deep dark:text-brand-orange-light">{d.value}</p>
+            </div>
+            <div className="rounded-xl bg-background p-4 md:p-5">
+              <p id={hid} className="text-[15px] md:text-base font-semibold text-foreground">{d.label}</p>
+              {d.from && d.to && (
+                <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-sm text-muted">
+                  <span>{d.from}</span>
+                  <span aria-label="to" className="text-brand-orange-deep dark:text-brand-orange-light">&rarr;</span>
+                  <span className="font-heading text-xl md:text-2xl font-bold text-foreground">{d.to}</span>
+                </p>
+              )}
+              {d.caption && <p className="mt-2 text-sm text-muted">{d.caption}</p>}
+            </div>
           </div>
         </section>
       );
@@ -308,7 +321,10 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
       if (items.length === 0) return null;
       return (
         <section className={`px-4 sm:px-6 lg:px-8 ${cs ? sec : "py-8"}`}>
-          <dl className={`${wide("max-w-6xl mx-auto")} grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-px overflow-hidden rounded-2xl border border-border bg-border`}>
+          <dl
+            className={`${wide("max-w-6xl mx-auto")} grid gap-px overflow-hidden rounded-2xl border border-border bg-border ${cs ? "grid-cols-2 md:[grid-template-columns:repeat(var(--cols-md),minmax(0,1fr))] lg:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]"}`}
+            style={cs ? ({ "--cols": Math.min(items.length, 6), "--cols-md": Math.min(items.length, 3) } as React.CSSProperties) : undefined}
+          >
             {items.map((item, i) => (
               <div key={i} className="bg-card p-5">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-caption">{item.label}</dt>
