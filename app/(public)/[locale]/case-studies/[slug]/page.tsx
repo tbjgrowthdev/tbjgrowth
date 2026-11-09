@@ -15,6 +15,10 @@ import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlternates } from "@/lib/translation";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { loadRenderedBlocks } from "@/lib/blocks/load";
+import { parseStoredBlocks } from "@/lib/blocks/schema";
+import { blocksToExcerpt } from "@/lib/blocks/text";
+import BlockRenderer from "@/components/Blocks/BlockRenderer";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
@@ -55,7 +59,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const social = resolveSocialMeta({
     baseTitle: `${study.title} | TBJ Growth`,
-    baseDescription: study.excerpt,
+    // No excerpt on a block-layout case study: fall back to the first prose block (render-time only, never stored).
+    baseDescription: study.excerpt || blocksToExcerpt(parseStoredBlocks(study.blocks)) || undefined,
     metaTitle: study.metaTitle,
     metaDescription: study.metaDescription,
     ogTitle: study.ogTitle,
@@ -93,6 +98,9 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
   if (!study || !isVisible) {
     notFound();
   }
+
+  // Block layout. A case study with no (valid) blocks keeps the classic template below, untouched.
+  const blocks = await loadRenderedBlocks(study.blocks);
 
   const breadcrumb = breadcrumbSchema([
     { name: "Home", path: "/" },
@@ -191,9 +199,11 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           </div>
         )}
 
-        <div className="max-w-3xl mx-auto lg:mx-0 prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
-          <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(study.content) }} />
-        </div>
+        {blocks.length === 0 && (
+          <div className="max-w-3xl mx-auto lg:mx-0 prose prose-lg dark:prose-invert prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light hover:prose-a:text-brand-orange prose-pre:overflow-x-auto prose-img:rounded-2xl">
+            <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(study.content) }} />
+          </div>
+        )}
 
         {study.imageGallery && study.imageGallery.length > 0 && (
           <div className="mt-16">
@@ -211,6 +221,8 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           </div>
         )}
       </article>
+
+      {blocks.length > 0 && <BlockRenderer blocks={blocks} source={`Case study: /case-studies/${study.slug}`} />}
     </main>
   );
 }

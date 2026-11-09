@@ -14,12 +14,15 @@ import dynamic from "next/dynamic";
 import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
 import { listTimezones } from "@/lib/scheduling";
 import { slugify } from "@/lib/utils";
-import { AlertCircle, X, CalendarClock } from "lucide-react";
+import { AlertCircle, X, CalendarClock, FileJson } from "lucide-react";
 import SeoPanel from "./SeoPanel";
 import { parseSecondaryKeywords } from "@/lib/seo-fields";
 import { buildAutoSchema } from "@/lib/schema-engine";
 import ImageInput from "./Media/ImageInput";
 import { withToast } from "@/lib/admin/toast";
+import BlocksEditor, { readBlocks, type EditableBlock } from "./Blocks/BlocksEditor";
+import ImportBlocksDialog, { type ImportApplied, type SlugConflict } from "./Blocks/ImportBlocksDialog";
+import { blocksToText } from "@/lib/blocks/text";
 
 const TIMEZONES = listTimezones();
 const BROWSER_TIMEZONE = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
@@ -67,6 +70,17 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
     isFeatured: initialData?.isFeatured ?? false,
   });
 
+  // "blocks" = block layout (CaseStudy.blocks); "classic" = the single rich-text Content field. `content` is kept either
+  // way. Saving in classic mode clears the block layout (the case study then renders `content` as before).
+  const initialBlocks = readBlocks(initialData?.blocks);
+  const [layout, setLayout] = useState<"classic" | "blocks">(initialBlocks.length > 0 ? "blocks" : "classic");
+  const [blocks, setBlocks] = useState<EditableBlock[]>(initialBlocks);
+  // "Import JSON" can fill the whole form. importVersion remounts the editors that only read their initial value
+  // (TipTap, the schema builder) so imported text shows up; slugConflict is the "already exists" notice.
+  const [importing, setImporting] = useState(false);
+  const [importVersion, setImportVersion] = useState(0);
+  const [slugConflict, setSlugConflict] = useState<SlugConflict | null>(null);
+  const [importNote, setImportNote] = useState<string | null>(null);
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
   const [changeSummary, setChangeSummary] = useState("");
   const [scheduleUpdate, setScheduleUpdate] = useState(false);
@@ -77,6 +91,23 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
     setFormData((prev) => ({ ...prev, imageGallery: prev.imageGallery.filter((u: string) => u !== url) }));
   };
 
+  const applyImport = (applied: ImportApplied) => {
+    const parts: string[] = [];
+    if (applied.fields && Object.keys(applied.fields).length) {
+      // Status is never part of an import; only form fields reach formData.
+      setFormData((prev) => ({ ...prev, ...applied.fields }));
+      parts.push(`${Object.keys(applied.fields).length} field${Object.keys(applied.fields).length === 1 ? "" : "s"}`);
+    }
+    if (applied.blocks) {
+      setBlocks(applied.blocks);
+      setLayout("blocks");
+      parts.push(`${applied.blocks.length} block${applied.blocks.length === 1 ? "" : "s"}`);
+    }
+    setSlugConflict(applied.slugConflict ?? null);
+    setImportVersion((v) => v + 1);
+    setImportNote(`Imported ${parts.join(" and ")} into the form. Nothing is saved yet — review, then save.`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -85,7 +116,7 @@ export default function CaseStudyForm({ initialData }: { initialData?: any }) {
     try {
       const isExisting = Boolean(initialData?.id);
       const slugChanged = isExisting && originalSlug && formData.slug !== originalSlug;
-      const payload = { ...formData, secondaryKeywords: JSON.stringify(formData.secondaryKeywords) };
+      const payload = { ...formData, secondaryKeywords: JSON.stringify(formData.secondaryKeywords), blocks: layout === "blocks" ? blocks : [] };
 
       if (isExisting && scheduleUpdate) {
         if (!scheduleUpdateDate || !scheduleUpdateTime) {
@@ -152,6 +183,13 @@ Create a 301 redirect from the old URL to the new one so existing links and sear
         </div>
       )}
 
+      {importNote && (
+        <div role="status" className="bg-tint text-foreground p-4 rounded-lg flex items-center justify-between gap-3 text-sm">
+          <span>{importNote}</span>
+          <button type="button" onClick={() => setImportNote(null)} aria-label="Dismiss" className="text-caption hover:text-foreground"><X size={16} /></button>
+        </div>
+      )}
+
       {/* Basic Info */}
       <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
         <h2 className="text-xl font-semibold text-foreground mb-4">Basic Information</h2>
@@ -174,10 +212,15 @@ Create a 301 redirect from the old URL to the new one so existing links and sear
               type="text"
               required
               value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+              onChange={(e) => { setSlugConflict(null); setFormData({ ...formData, slug: e.target.value }); }}
               onBlur={(e) => setFormData((prev) => ({ ...prev, slug: slugify(e.target.value) }))}
               className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-brand-orange"
             />
+            {slugConflict && (
+              <p role="alert" className="text-sm text-red-600">
+                A case study with this slug already exists (“{slugConflict.title}”). Saving will fail until you change it.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -350,19 +393,57 @@ Create a 301 redirect from the old URL to the new one so existing links and sear
 
       {/* Editor */}
       <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Content</h2>
-        <RichTextEditor
-          content={formData.content}
-          onChange={(content) => setFormData({ ...formData, content })}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 className="text-xl font-semibold text-foreground">Content</h2>
+          <button type="button" onClick={() => setImporting(true)} className="flex items-center gap-1 px-3 py-1.5 border border-border rounded-lg text-sm hover:bg-tint">
+            <FileJson size={14} /> Import JSON
+          </button>
+          <div role="radiogroup" aria-label="Case study layout" className="inline-flex rounded-lg border border-border overflow-hidden text-sm">
+            {(["classic", "blocks"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={layout === mode}
+                onClick={() => {
+                  // First switch to blocks on a case study that has classic content: carry that content over as a rich-text block.
+                  if (mode === "blocks" && blocks.length === 0 && formData.content.trim()) {
+                    setBlocks([{ id: `b_${Date.now().toString(36)}`, type: "richText", data: { html: formData.content } }]);
+                  }
+                  setLayout(mode);
+                }}
+                className={`px-4 py-1.5 ${layout === mode ? "bg-brand-orange-deep text-white" : "bg-card text-muted hover:bg-tint"}`}
+              >
+                {mode === "classic" ? "Classic text" : "Blocks"}
+              </button>
+            ))}
+          </div>
+        </div>
+        {layout === "blocks" ? (
+          <>
+            <p className="text-sm text-caption">
+              Build the case study from blocks: headline metric, facts, tables, proof images, quote, takeaway and more — or use Import JSON.
+              The title, client, results summary and excerpt above are still shown at the top. Switching back to &ldquo;Classic text&rdquo; and
+              saving removes this layout (it stays in version history, and the classic text is kept as it was).
+            </p>
+            <BlocksEditor value={blocks} onChange={setBlocks} showImport={false} />
+          </>
+        ) : (
+          <RichTextEditor
+            key={importVersion}
+            content={formData.content}
+            onChange={(content) => setFormData({ ...formData, content })}
+          />
+        )}
       </div>
 
       <SeoPanel
+        key={importVersion}
         data={formData}
         onChange={(field, value) => setFormData({ ...formData, [field]: value })}
         secondaryKeywords={formData.secondaryKeywords}
         onSecondaryKeywordsChange={(secondaryKeywords) => setFormData({ ...formData, secondaryKeywords })}
-        content={formData.content}
+        content={layout === "blocks" ? blocksToText(blocks) : formData.content}
         slugPreviewPath={`case-studies/${formData.slug}`}
         contentLabel="case study"
         autoSchema={buildAutoSchema({
@@ -459,6 +540,17 @@ Create a 301 redirect from the old URL to the new one so existing links and sear
             : "Create Case Study"}
         </button>
       </div>
+
+      {importing && (
+        <ImportBlocksDialog
+          target="caseStudy"
+          existing={blocks}
+          currentFields={formData}
+          currentId={initialData?.id}
+          onImport={applyImport}
+          onClose={() => setImporting(false)}
+        />
+      )}
     </form>
   );
 }

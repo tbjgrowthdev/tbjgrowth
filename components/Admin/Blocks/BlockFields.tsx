@@ -122,6 +122,56 @@ export default function BlockFields({
             );
           }
 
+          case "table": {
+            // Columns live in `columnsKey`, rows (arrays of cell strings, one per column) in `field.key`.
+            const cols: string[] = Array.isArray(value[field.columnsKey]) ? value[field.columnsKey] : [];
+            const rows: string[][] = Array.isArray(current) ? current : [];
+            const cell = (row: string[], c: number) => (typeof row[c] === "string" ? row[c] : "");
+            const setCols = (next: string[]) => onChange({ ...value, [field.columnsKey]: next, [field.key]: rows.map((r) => next.map((_, c) => cell(r, c))) });
+            const setCell = (r: number, c: number, v: string) => set(field.key, rows.map((row, i) => (i === r ? cols.map((_, k) => (k === c ? v : cell(row, k))) : row)));
+            const small = "w-full min-w-28 px-2 py-1.5 border border-border rounded bg-background text-foreground text-sm";
+            const link = "flex items-center gap-1 text-sm text-brand-orange-deep dark:text-brand-orange-light hover:underline disabled:opacity-40";
+            return (
+              <fieldset key={field.key} className="space-y-2">
+                <legend className={labelClass}>{field.label}</legend>
+                <div className="overflow-x-auto">
+                  <table className="text-sm">
+                    <thead>
+                      <tr>
+                        {cols.map((h, c) => (
+                          <th key={c} className="p-1 align-bottom">
+                            <input aria-label={`Column ${c + 1} header`} value={h} placeholder={`Column ${c + 1}`} onChange={(e) => setCols(cols.map((x, k) => (k === c ? e.target.value : x)))} className={`${small} font-semibold`} />
+                          </th>
+                        ))}
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, r) => (
+                        <tr key={r}>
+                          {cols.map((_, c) => (
+                            <td key={c} className="p-1">
+                              <input aria-label={`Row ${r + 1}, ${cols[c] || `column ${c + 1}`}`} value={cell(row, c)} onChange={(e) => setCell(r, c, e.target.value)} className={small} />
+                            </td>
+                          ))}
+                          <td className="p-1">
+                            <button type="button" onClick={() => set(field.key, rows.filter((_, i) => i !== r))} aria-label={`Remove row ${r + 1}`} className="text-caption hover:text-red-600"><Trash2 size={16} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <button type="button" disabled={rows.length >= field.maxRows} onClick={() => set(field.key, [...rows, cols.map(() => "")])} className={link}><Plus size={14} /> Add row</button>
+                  <button type="button" disabled={cols.length >= field.maxColumns} onClick={() => setCols([...cols, ""])} className={link}><Plus size={14} /> Add column</button>
+                  <button type="button" disabled={cols.length <= 1} onClick={() => setCols(cols.slice(0, -1))} className="text-sm text-caption hover:text-red-600 disabled:opacity-40">Remove last column</button>
+                </div>
+                {field.help && <p className="text-xs text-caption">{field.help}</p>}
+              </fieldset>
+            );
+          }
+
           case "list": {
             const items: FieldValues[] = Array.isArray(current) ? current : [];
             const blank = () => Object.fromEntries(field.fields.map((f) => [f.key, f.kind === "toggle" ? false : f.kind === "list" || f.kind === "picker" ? [] : ""]));

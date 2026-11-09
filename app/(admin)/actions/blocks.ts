@@ -6,7 +6,9 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { countAllBlockUsage, findBlockUsage, type BlockUsage } from "@/lib/blocks/usage";
 import type { DependencyFinding } from "@/lib/dependency-check";
-import { isBlockType, parseBlockData, type BlockType } from "@/lib/blocks/schema";
+import { isBlockType, normalizeBlocksInput, parseBlockData, type BlockType } from "@/lib/blocks/schema";
+import { validateImportDocument } from "@/lib/case-study-import";
+import { slugify } from "@/lib/utils";
 
 type Result<T> = ({ success: true } & T) | { success: false; error: string };
 
@@ -24,6 +26,7 @@ function revalidateUsage(usage: BlockUsage) {
   for (const page of usage.pages) revalidatePath(`/${page.slug}`);
   // Locale-prefixed copies and every generated pSEO page: cheaper than enumerating them.
   revalidatePath("/[locale]/[slug]", "page");
+  for (const c of usage.caseStudies) revalidatePath(`/case-studies/${c.slug}`);
   if (usage.templates.length) revalidatePath("/[locale]/pSEO/[slug]", "page");
 }
 
@@ -130,9 +133,9 @@ export async function updateContentBlock(id: string, input: { name: string; data
       entityId: id,
       entityLabel: block.name,
       before: { name: before.name, data: before.data },
-      after: { name: block.name, data: block.data, usedOnPages: usage.pages.length, usedInTemplates: usage.templates.length },
+      after: { name: block.name, data: block.data, usedOnPages: usage.pages.length, usedInTemplates: usage.templates.length, usedInCaseStudies: usage.caseStudies.length },
     });
-    return { success: true, id, usedIn: usage.pages.length + usage.templates.length };
+    return { success: true, id, usedIn: usage.pages.length + usage.templates.length + usage.caseStudies.length };
   } catch (error) {
     if (error instanceof AuthError) return { success: false, error: error.message };
     if (isUniqueViolation(error)) return { success: false, error: "A reusable block with this name already exists" };
@@ -150,11 +153,12 @@ export async function deleteContentBlock(id: string, options?: { force?: boolean
     const before = await prisma.contentBlock.findUnique({ where: { id } });
     if (!before) return { success: false, error: "Block not found" };
     const usage = await findBlockUsage(id);
-    const used = usage.pages.length + usage.templates.length;
+    const used = usage.pages.length + usage.templates.length + usage.caseStudies.length;
     if (used > 0 && !options?.force) {
       // Same shape the shared DeleteButton already knows how to list and confirm (see lib/dependency-check.ts).
       const dependencies: DependencyFinding[] = [
         ...usage.pages.map((p) => ({ category: "Related Content" as const, description: `Used on page "${p.title}"` })),
+        ...usage.caseStudies.map((c) => ({ category: "Related Content" as const, description: `Used in case study "${c.title}"` })),
         ...usage.templates.map((t) => ({ category: "Related Content" as const, description: `Used in programmatic SEO template "${t.name}"` })),
       ];
       return { success: false, error: `This block is used in ${used} place${used === 1 ? "" : "s"}. Review them and confirm "Delete anyway" to delete it.`, dependencies };
@@ -174,5 +178,60 @@ export async function deleteContentBlock(id: string, options?: { force?: boolean
     if (error instanceof AuthError) return { success: false, error: error.message };
     console.error(`Failed to delete content block ${id}:`, error);
     return { success: false, error: "Failed to delete block" };
+  }
+}
+
+/**
+ * Validates an "Import JSON" payload with the same rules as save (normalizeBlocksInput) and returns the cleaned
+ * blocks. Writes nothing: the editor holds the result until the user saves the form, and the save validates again.
+ * Lives on the server because the validator pulls in the HTML sanitizer, which the admin browser bundle avoids.
+ */
+export async function validateBlocksImport(input: unknown): Promise<{ success: true; blocks: { id: string; type: string; data?: unknown; blockId?: string }[] } | { success: false; error: string }> {
+  try {
+    await requireSession();
+    if (!Array.isArray(input) || input.length === 0) return { success: false, error: "Expected a non-empty list of blocks" };
+    const result = normalizeBlocksInput(input);
+    if (!result.ok) return { success: false, error: result.error };
+    return { success: true, blocks: result.value.blocks };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false, error: error.message };
+    console.error("Failed to validate blocks import:", error);
+    return { success: false, error: "Couldn't validate the import" };
+  }
+}
+
+export type ImportValidationResult =
+  | {
+      success: true;
+      blocks: { id: string; type: string; data?: unknown; blockId?: string }[] | null;
+      fields: Record<string, unknown>;
+      warnings: string[];
+      slugConflict: { id: string; title: string; slug: string } | null;
+    }
+  | { success: false; error: string };
+
+/**
+ * Validates a whole "Import JSON" document: a bare block list, or an object with case study form fields plus
+ * `blocks`. Writes nothing and never accepts a status — the editor only FILLS THE FORM, and the save action
+ * validates everything again. For `target: "caseStudy"` it also reports whether the imported slug is already taken
+ * (by another case study than `currentId`), so the admin hears about it before saving rather than from a failed save.
+ */
+export async function validateImport(input: unknown, options: { target: "blocks" | "caseStudy"; currentId?: string }): Promise<ImportValidationResult> {
+  try {
+    await requireSession();
+    const target = options?.target === "caseStudy" ? "caseStudy" : "blocks";
+    const result = validateImportDocument(input, target);
+    if (!result.ok) return { success: false, error: result.error };
+    let slugConflict: { id: string; title: string; slug: string } | null = null;
+    const slug = typeof result.fields.slug === "string" ? slugify(result.fields.slug) : "";
+    if (target === "caseStudy" && slug) {
+      const existing = await prisma.caseStudy.findUnique({ where: { slug }, select: { id: true, title: true, slug: true } });
+      if (existing && existing.id !== options.currentId) slugConflict = existing;
+    }
+    return { success: true, blocks: result.blocks, fields: result.fields, warnings: result.warnings, slugConflict };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false, error: error.message };
+    console.error("Failed to validate import:", error);
+    return { success: false, error: "Couldn't validate the import" };
   }
 }

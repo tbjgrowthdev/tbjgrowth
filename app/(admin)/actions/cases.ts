@@ -10,6 +10,7 @@ import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { blocksUpdate } from "@/lib/blocks/save";
 import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // SEO fields here are read back out by lib/seo-change-log to build the SEO
@@ -43,6 +44,7 @@ function caseStudySnapshot(cs: any) {
     seoReviewerId: cs.seoReviewerId,
     approverId: cs.approverId,
     publishedAt: cs.publishedAt,
+    blocks: cs.blocks,
   };
 }
 
@@ -96,6 +98,9 @@ export async function createCaseStudy(data: any) {
       return { success: false, error: "Slug cannot be empty" };
     }
 
+    const blocks = blocksUpdate(data.blocks);
+    if (!blocks.ok) return { success: false, error: blocks.error };
+
     // Always starts as a draft — status only moves via transitionCaseStudy,
     // which checks PUBLISH/SCHEDULE/APPROVE.
     const caseStudy = await prisma.caseStudy.create({
@@ -107,6 +112,7 @@ export async function createCaseStudy(data: any) {
         serviceType: data.serviceType,
         results: data.results,
         content: sanitizeRichText(data.content),
+        ...blocks.data,
         excerpt: data.excerpt,
         websiteUrl: data.websiteUrl || null,
         featuredImage: data.featuredImage,
@@ -184,6 +190,9 @@ export async function updateCaseStudy(id: string, data: any) {
       return { success: false, error: staleError, stale: true };
     }
 
+    const blocks = blocksUpdate(data.blocks);
+    if (!blocks.ok) return { success: false, error: blocks.error };
+
     const caseStudy = await prisma.caseStudy.update({
       where: { id },
       data: {
@@ -194,6 +203,7 @@ export async function updateCaseStudy(id: string, data: any) {
         serviceType: data.serviceType,
         results: data.results,
         content: sanitizeRichText(data.content),
+        ...blocks.data,
         excerpt: data.excerpt,
         websiteUrl: data.websiteUrl || null,
         featuredImage: data.featuredImage,

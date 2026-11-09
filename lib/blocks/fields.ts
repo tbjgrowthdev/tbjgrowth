@@ -13,6 +13,7 @@ export type FieldDef =
   | { key: string; label: string; kind: "toggle"; help?: string }
   | { key: string; label: string; kind: "select"; options: { value: string; label: string }[] }
   | { key: string; label: string; kind: "picker"; source: "testimonials" | "faqs" | "packages"; help?: string; showWhen?: { key: string; equals: string } }
+  | { key: string; label: string; kind: "table"; columnsKey: string; maxColumns: number; maxRows: number; help?: string }
   | { key: string; label: string; kind: "list"; itemLabel: string; fields: FieldDef[]; showWhen?: { key: string; equals: string } };
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
@@ -25,6 +26,12 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   pricing: "Pricing",
   trustBadges: "Trust badges",
   leadForm: "Lead form",
+  metricHero: "Headline metric",
+  factsStrip: "Facts strip",
+  dataTable: "Data table",
+  proofGallery: "Proof gallery",
+  pullQuote: "Pull quote",
+  takeaway: "Key takeaway",
 };
 
 export const BLOCK_HELP: Record<BlockType, string> = {
@@ -37,6 +44,12 @@ export const BLOCK_HELP: Record<BlockType, string> = {
   pricing: "Pricing packages from Admin → Pricing.",
   trustBadges: "A row of logos or short trust statements (certifications, guarantees, awards).",
   leadForm: "A contact form that saves to Leads and emails the notification address.",
+  metricHero: "The big headline number of a case study, with an optional before → after.",
+  factsStrip: "Up to 6 label/value facts (Client, Sector, Timeframe, Services…). 4–6 looks best.",
+  dataTable: "A plain-text table for results or before/after. Up to 6 columns and 20 rows.",
+  proofGallery: "Screenshots or diagrams. Items without a usable image are hidden; if none are usable the whole block is hidden.",
+  pullQuote: "A client testimonial. Hidden while the quote is empty — add it once the client approves the wording.",
+  takeaway: "A large highlighted key takeaway.",
 };
 
 const cta = (prefix: string, title: string): FieldDef[] => [
@@ -66,6 +79,7 @@ export const BLOCK_FIELDS: Record<BlockType, FieldDef[]> = {
     { key: "heading", label: "Heading", kind: "text" },
     { key: "intro", label: "Intro text", kind: "textarea", rows: 2 },
     { key: "columns", label: "Columns", kind: "select", options: [{ value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }] },
+    { key: "variant", label: "Style", kind: "select", options: [{ value: "default", label: "Standard cards" }, { value: "stats", label: "Stat cards (title shown as a large figure)" }, { value: "steps", label: "Numbered steps" }] },
     {
       key: "items",
       label: "Cards",
@@ -126,5 +140,57 @@ export const BLOCK_FIELDS: Record<BlockType, FieldDef[]> = {
     { key: "showPhone", label: "Ask for a phone number", kind: "toggle" },
     { key: "showCompany", label: "Ask for a company name", kind: "toggle" },
     { key: "showMessage", label: "Show a message box", kind: "toggle" },
+  ],
+  metricHero: [
+    { key: "eyebrow", label: "Eyebrow (small text above)", kind: "text" },
+    { key: "label", label: "Label", kind: "text", placeholder: "Monthly social reach" },
+    { key: "value", label: "Headline value", kind: "text", placeholder: "+423%" },
+    { key: "from", label: "From (optional)", kind: "text", placeholder: "18,400" },
+    { key: "to", label: "To (optional)", kind: "text", placeholder: "96,300" },
+    { key: "caption", label: "Caption", kind: "textarea", rows: 2 },
+  ],
+  factsStrip: [
+    {
+      key: "items",
+      label: "Facts",
+      kind: "list",
+      itemLabel: "Fact",
+      fields: [
+        { key: "label", label: "Label", kind: "text", placeholder: "Client" },
+        { key: "value", label: "Value", kind: "text" },
+      ],
+    },
+  ],
+  dataTable: [
+    { key: "heading", label: "Heading", kind: "text" },
+    { key: "intro", label: "Intro text", kind: "textarea", rows: 2 },
+    { key: "columns", label: "Table", kind: "table", columnsKey: "columns", maxColumns: 6, maxRows: 20, help: "Plain text only. The first column is the row label." },
+    { key: "footnote", label: "Footnote", kind: "text" },
+    { key: "highlightLastColumn", label: "Emphasize the last column (e.g. “Change”)", kind: "toggle" },
+  ],
+  proofGallery: [
+    { key: "heading", label: "Heading", kind: "text" },
+    { key: "columns", label: "Columns", kind: "select", options: [{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }] },
+    {
+      key: "items",
+      label: "Images",
+      kind: "list",
+      itemLabel: "Image",
+      fields: [
+        { key: "imageUrl", label: "Image", kind: "image" },
+        { key: "imageAlt", label: "Alt text", kind: "text" },
+        { key: "caption", label: "Caption", kind: "text" },
+        { key: "badge", label: "Badge (optional)", kind: "text", placeholder: "Illustrative" },
+      ],
+    },
+  ],
+  pullQuote: [
+    { key: "quote", label: "Quote", kind: "textarea", rows: 3, help: "Leave empty until the client approves the wording — nothing is shown while it is empty." },
+    { key: "name", label: "Name", kind: "text" },
+    { key: "role", label: "Role / company", kind: "text" },
+  ],
+  takeaway: [
+    { key: "label", label: "Label", kind: "text", help: "Clear it to show no label." },
+    { key: "text", label: "Text", kind: "textarea", rows: 3 },
   ],
 };

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { sanitizeRichText } from "@/lib/sanitize";
-import { BLOCK_TYPES, isBlockType, defaultBlockData, type BlockType } from "./types";
+import { BLOCK_TYPES, MAX_BLOCKS_PER_PAGE, isBlockType, defaultBlockData, type BlockType } from "./types";
 
-export { BLOCK_TYPES, isBlockType, defaultBlockData, type BlockType };
+export { BLOCK_TYPES, MAX_BLOCKS_PER_PAGE, isBlockType, defaultBlockData, type BlockType };
 
 // Landing-page blocks. A page (or pSEO template) stores its layout as a JSON
 // array of blocks in a single text column. Everything that is stored OR
@@ -20,8 +20,13 @@ export { BLOCK_TYPES, isBlockType, defaultBlockData, type BlockType };
 // client components for the editor's field definitions.
 
 
-export const MAX_BLOCKS_PER_PAGE = 60;
+/** Cap on the serialized block list, so one save can't store megabytes (richText alone allows 100k per block). */
+export const MAX_BLOCKS_JSON_BYTES = 512 * 1024;
 const MAX_ITEMS = 24;
+export const MAX_TABLE_COLUMNS = 6;
+export const MAX_TABLE_ROWS = 20;
+export const MAX_FACTS = 6;
+export const MAX_PROOF_ITEMS = 12;
 
 // ---------------------------------------------------------------- url safety
 
@@ -111,6 +116,8 @@ export const cardsSchema = z.object({
   heading: text(200),
   intro: longText(600),
   columns: z.coerce.number().int().min(2).max(4).default(3),
+  // "stats" shows the title as a large figure (5.2×); "steps" numbers the cards. Absent = "default" (old data unchanged).
+  variant: z.enum(["default", "stats", "steps"]).default("default"),
   items: z
     .array(z.object({ title: z.string().trim().min(1, "Card title is required").max(120), text: longText(600), href: optionalHref, linkLabel: text(60) }))
     .max(MAX_ITEMS)
@@ -158,6 +165,66 @@ export const leadFormSchema = z.object({
   showMessage: z.boolean().default(true),
 });
 
+// ------------------------------------------------------- case-study blocks
+// Text only: every field below renders as a React text child, none accepts HTML.
+
+export const metricHeroSchema = z
+  .object({
+    eyebrow: text(120),
+    label: z.string().trim().min(1, "Label is required").max(120),
+    value: z.string().trim().min(1, "Value is required").max(40),
+    from: text(40),
+    to: text(40),
+    caption: longText(300),
+  })
+  .superRefine((d, ctx) => {
+    if (Boolean(d.from) !== Boolean(d.to)) ctx.addIssue({ code: "custom", path: [d.from ? "to" : "from"], message: "Fill in both From and To, or neither" });
+  });
+
+export const factsStripSchema = z.object({
+  items: z
+    .array(z.object({ label: z.string().trim().min(1, "Label is required").max(60), value: z.string().trim().min(1, "Value is required").max(160) }))
+    .max(MAX_FACTS)
+    .default([]),
+});
+
+export const dataTableSchema = z
+  .object({
+    heading: text(200),
+    intro: longText(600),
+    columns: z.array(z.string().trim().min(1, "Column header is required").max(60)).min(1, "At least one column is required").max(MAX_TABLE_COLUMNS),
+    rows: z.array(z.array(z.string().trim().max(200))).max(MAX_TABLE_ROWS).default([]),
+    footnote: longText(300),
+    highlightLastColumn: z.boolean().default(false),
+  })
+  .superRefine((d, ctx) => {
+    d.rows.forEach((row, i) => {
+      if (row.length !== d.columns.length) ctx.addIssue({ code: "custom", path: ["rows", i], message: `Row ${i + 1} has ${row.length} cells but there are ${d.columns.length} columns` });
+    });
+  });
+
+export const proofGallerySchema = z.object({
+  heading: text(200),
+  columns: z.coerce.number().int().min(1).max(3).default(2),
+  // imageUrl may be empty while screenshots are being prepared; such items are skipped at render time.
+  items: z
+    .array(z.object({ imageUrl: optionalImage, imageAlt: text(200), caption: text(300), badge: text(40) }))
+    .max(MAX_PROOF_ITEMS)
+    .default([]),
+});
+
+export const pullQuoteSchema = z.object({
+  // Empty quote is valid: the block simply doesn't render until the wording is approved.
+  quote: z.string().trim().max(600).default(""),
+  name: text(120),
+  role: text(160),
+});
+
+export const takeawaySchema = z.object({
+  label: text(60).default("Key takeaway"),
+  text: z.string().trim().min(1, "Text is required").max(500),
+});
+
 export const BLOCK_DATA_SCHEMAS = {
   hero: heroSchema,
   richText: richTextSchema,
@@ -168,6 +235,12 @@ export const BLOCK_DATA_SCHEMAS = {
   pricing: pricingSchema,
   trustBadges: trustBadgesSchema,
   leadForm: leadFormSchema,
+  metricHero: metricHeroSchema,
+  factsStrip: factsStripSchema,
+  dataTable: dataTableSchema,
+  proofGallery: proofGallerySchema,
+  pullQuote: pullQuoteSchema,
+  takeaway: takeawaySchema,
 } as const satisfies Record<BlockType, z.ZodType>;
 
 export type BlockData<T extends BlockType> = z.output<(typeof BLOCK_DATA_SCHEMAS)[T]>;
@@ -236,7 +309,11 @@ export function normalizeBlocksInput(input: unknown): ParseResult<{ blocks: Page
     seen.add(result.value.id);
     blocks.push(result.value);
   }
-  return { ok: true, value: { blocks, json: blocks.length ? JSON.stringify(blocks) : null } };
+  const json = blocks.length ? JSON.stringify(blocks) : null;
+  if (json && new TextEncoder().encode(json).length > MAX_BLOCKS_JSON_BYTES) {
+    return { ok: false, error: `The block content is too large (limit ${MAX_BLOCKS_JSON_BYTES / 1024} KB)` };
+  }
+  return { ok: true, value: { blocks, json } };
 }
 
 /**

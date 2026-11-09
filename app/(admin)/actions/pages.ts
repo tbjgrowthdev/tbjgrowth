@@ -10,7 +10,7 @@ import { logAudit } from "@/lib/audit-log";
 import { recordVersion } from "@/lib/versioning";
 import { checkStale } from "@/lib/stale-check";
 import { sanitizeRichText } from "@/lib/sanitize";
-import { normalizeBlocksInput } from "@/lib/blocks/schema";
+import { blocksUpdate } from "@/lib/blocks/save";
 import { checkDeleteDependencies, deleteAuditLabel, type DeleteOptions } from "@/lib/dependency-check";
 
 // SEO fields here are read back out by lib/seo-change-log to build the SEO
@@ -45,17 +45,6 @@ function pageSnapshot(page: any) {
     publishedAt: page.publishedAt,
     blocks: page.blocks,
   };
-}
-
-// `blocks` is only written when the caller sent it, so older callers (and the
-// classic editor) can never wipe a page's layout by omission. An empty list
-// becomes null = classic rich-text page. Validation and HTML sanitizing live in
-// lib/blocks/schema.ts.
-function blocksUpdate(input: unknown): { ok: true; data: { blocks?: string | null } } | { ok: false; error: string } {
-  if (input === undefined) return { ok: true, data: {} };
-  const result = normalizeBlocksInput(input);
-  if (!result.ok) return { ok: false, error: result.error };
-  return { ok: true, data: { blocks: result.value.json } };
 }
 
 export async function getPages() {

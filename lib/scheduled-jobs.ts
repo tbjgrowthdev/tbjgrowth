@@ -256,7 +256,7 @@ async function executeJob(job: Prisma.ScheduledJobGetPayload<object>) {
   const { categoryIds, tagIds, ...scalarFields } = snapshot;
 
   const updateData: AnyRecord = { ...scalarFields };
-  if (job.contentType === "PAGE") {
+  if (job.contentType === "PAGE" || job.contentType === "CASE_STUDY") {
     // The payload was staged from the editor form, so it never went through updatePage: validate and sanitize the
     // layout (and the rich text) here, at the moment it goes live.
     if ("blocks" in updateData) {

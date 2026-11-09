@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Link2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, FileJson, Link2, Plus, Save, Trash2 } from "lucide-react";
 import { createContentBlock, getBlockEditorOptions } from "@/app/(admin)/actions/blocks";
 import { BLOCK_FIELDS, BLOCK_HELP, BLOCK_LABELS } from "@/lib/blocks/fields";
 import { BLOCK_TYPES, defaultBlockData, isBlockType, type BlockType } from "@/lib/blocks/types";
 import { withToast } from "@/lib/admin/toast";
 import BlockFields, { type FieldValues, type PickerOptions } from "./BlockFields";
+import ImportBlocksDialog from "./ImportBlocksDialog";
 
 type ReusableOption = { id: string; name: string; type: string };
 
@@ -32,9 +33,10 @@ const btn = "px-3 py-1.5 border border-border rounded-lg text-sm hover:bg-tint d
 
 /**
  * Composes a page (or pSEO template) from blocks: add, reorder, remove, edit in place, drop in a reusable block, or
- * turn a block into a reusable one. Pure controlled component — the parent form owns the list and saves it.
+ * turn a block into a reusable one, or import a block list from JSON. Pure controlled component — the parent form owns
+ * the list and saves it. (The case study form passes showImport={false}: it has its own, form-wide Import JSON.)
  */
-export default function BlocksEditor({ value, onChange, disabled }: { value: EditableBlock[]; onChange: (next: EditableBlock[]) => void; disabled?: boolean }) {
+export default function BlocksEditor({ value, onChange, disabled, showImport = true }: { value: EditableBlock[]; onChange: (next: EditableBlock[]) => void; disabled?: boolean; showImport?: boolean }) {
   const [options, setOptions] = useState<PickerOptions>({ testimonials: [], faqs: [], packages: [] });
   const [reusable, setReusable] = useState<ReusableOption[]>([]);
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -42,6 +44,7 @@ export default function BlocksEditor({ value, onChange, disabled }: { value: Edi
   const [addReusable, setAddReusable] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [reusableName, setReusableName] = useState("");
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +183,12 @@ export default function BlocksEditor({ value, onChange, disabled }: { value: Edi
           <Plus size={14} /> Add
         </button>
 
+        {showImport && (
+          <button type="button" onClick={() => setImporting(true)} disabled={disabled} className="flex items-center gap-1 px-3 py-2 border border-border rounded-lg text-sm hover:bg-tint disabled:opacity-40">
+            <FileJson size={14} /> Import JSON
+          </button>
+        )}
+
         <div className="ml-auto flex items-end gap-2">
           <div>
             <label htmlFor="add-reusable" className="block text-xs font-medium text-muted mb-1">Or use a reusable block</label>
@@ -193,6 +202,8 @@ export default function BlocksEditor({ value, onChange, disabled }: { value: Edi
           </button>
         </div>
       </div>
+
+      {importing && <ImportBlocksDialog target="blocks" existing={value} onImport={(applied) => applied.blocks && onChange(applied.blocks)} onClose={() => setImporting(false)} />}
     </div>
   );
 }

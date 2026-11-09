@@ -4,6 +4,7 @@ import { faqPageSchema } from "@/lib/schema";
 import { isDisplayableImageUrl } from "@/lib/image-hosts";
 import { isSafeHref } from "@/lib/blocks/schema";
 import { sanitizeRichText } from "@/lib/sanitize";
+import { hasQuote, tableIsRenderable, visibleProofItems } from "@/lib/blocks/visible";
 import type { RenderedBlock } from "@/lib/blocks/load";
 import LeadFormBlock from "./LeadFormBlock";
 
@@ -110,7 +111,14 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
             <ul className={`grid gap-6 ${GRID_COLS[d.columns] ?? GRID_COLS[3]}`}>
               {d.items.map((item, i) => (
                 <li key={i} className="rounded-2xl border border-border bg-card p-6 flex flex-col">
-                  <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
+                  {d.variant === "steps" && (
+                    <span aria-hidden className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-orange-deep text-sm font-bold text-white">{i + 1}</span>
+                  )}
+                  {d.variant === "stats" ? (
+                    <p className="text-4xl md:text-5xl font-bold text-brand-orange-deep dark:text-brand-orange-light">{item.title}</p>
+                  ) : (
+                    <h3 className="text-xl font-semibold text-foreground">{item.title}</h3>
+                  )}
                   {item.text && <p className="mt-2 text-muted flex-1">{item.text}</p>}
                   {item.href && (
                     <BlockLink href={item.href} className="mt-4 font-semibold text-brand-orange-deep dark:text-brand-orange-light hover:underline">
@@ -226,6 +234,142 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+      );
+    }
+
+    case "metricHero": {
+      const d = block.data;
+      return (
+        <section className="px-4 sm:px-6 lg:px-8 py-12 bg-tint" aria-labelledby={hid}>
+          <div className="max-w-4xl mx-auto text-center">
+            {d.eyebrow && <p className="text-sm font-semibold uppercase tracking-wider text-brand-orange-deep dark:text-brand-orange-light mb-3">{d.eyebrow}</p>}
+            <p className="text-6xl md:text-8xl font-bold leading-none text-brand-orange-deep dark:text-brand-orange-light">{d.value}</p>
+            <p id={hid} className="mt-4 text-xl md:text-2xl font-semibold text-foreground">{d.label}</p>
+            {d.from && d.to && (
+              <p className="mt-3 text-lg text-muted">
+                <span>{d.from}</span>
+                <span aria-label="to" className="mx-3 text-brand-orange">&rarr;</span>
+                <span className="font-semibold text-foreground">{d.to}</span>
+              </p>
+            )}
+            {d.caption && <p className="mt-4 text-muted max-w-2xl mx-auto">{d.caption}</p>}
+          </div>
+        </section>
+      );
+    }
+
+    case "factsStrip": {
+      const items = block.data.items;
+      if (items.length === 0) return null;
+      return (
+        <section className="px-4 sm:px-6 lg:px-8 py-8">
+          <dl className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-px overflow-hidden rounded-2xl border border-border bg-border">
+            {items.map((item, i) => (
+              <div key={i} className="bg-card p-5">
+                <dt className="text-xs font-semibold uppercase tracking-wider text-caption">{item.label}</dt>
+                <dd className="mt-1 font-semibold text-foreground">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      );
+    }
+
+    case "dataTable": {
+      const d = block.data;
+      if (!tableIsRenderable(d.columns, d.rows)) return null;
+      const last = d.columns.length - 1;
+      const emphasis = (c: number) => (d.highlightLastColumn && c === last && last > 0 ? "bg-tint font-bold text-brand-orange-deep dark:text-brand-orange-light" : "");
+      return (
+        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={d.heading ? hid : undefined}>
+          <div className="max-w-4xl mx-auto">
+            <SectionHeading id={hid} heading={d.heading} intro={d.intro} />
+            <div className="overflow-x-auto rounded-2xl border border-border bg-card" tabIndex={0} role="region" aria-label={d.heading || "Data table"}>
+              <table className="w-full min-w-[32rem] text-left text-sm md:text-base">
+                <thead>
+                  <tr className="border-b border-border">
+                    {d.columns.map((c, i) => (
+                      <th key={i} scope="col" className={`px-4 py-3 font-semibold text-foreground ${emphasis(i)}`}>{c}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {d.rows.map((row, r) => (
+                    <tr key={r}>
+                      {d.columns.map((_, c) =>
+                        c === 0 ? (
+                          <th key={c} scope="row" className="px-4 py-3 font-medium text-foreground">{row[c]}</th>
+                        ) : (
+                          <td key={c} className={`px-4 py-3 text-muted ${emphasis(c)}`}>{row[c]}</td>
+                        ),
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {d.footnote && <p className="mt-3 text-sm text-caption">{d.footnote}</p>}
+          </div>
+        </section>
+      );
+    }
+
+    case "proofGallery": {
+      const d = block.data;
+      // Items without a displayable image are skipped; with none left the whole block (heading too) is hidden.
+      const items = visibleProofItems(d.items);
+      if (items.length === 0) return null;
+      const cols = d.columns === 1 ? "" : d.columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2";
+      return (
+        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={d.heading ? hid : undefined}>
+          <div className={`mx-auto ${d.columns === 1 ? "max-w-3xl" : "max-w-6xl"}`}>
+            <SectionHeading id={hid} heading={d.heading} />
+            <ul className={`grid gap-6 ${cols}`}>
+              {items.map((item, i) => (
+                <li key={i}>
+                  <figure className="rounded-2xl border border-border bg-card overflow-hidden">
+                    <div className="relative">
+                      <Img src={item.imageUrl} alt={item.imageAlt || item.caption} className="w-full" />
+                      {item.badge && <span className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">{item.badge}</span>}
+                    </div>
+                    {item.caption && <figcaption className="p-4 text-sm text-muted">{item.caption}</figcaption>}
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      );
+    }
+
+    case "pullQuote": {
+      const d = block.data;
+      if (!hasQuote(d.quote)) return null;
+      return (
+        <section className="px-4 sm:px-6 lg:px-8 py-12">
+          <figure className="max-w-3xl mx-auto rounded-2xl border-l-4 border-brand-orange bg-card p-6 md:p-10">
+            <blockquote className="text-xl md:text-2xl font-medium leading-relaxed text-foreground">&ldquo;{d.quote}&rdquo;</blockquote>
+            {(d.name || d.role) && (
+              <figcaption className="mt-5 text-sm text-muted">
+                {d.name && <span className="font-semibold text-foreground">{d.name}</span>}
+                {d.name && d.role && " — "}
+                {d.role}
+              </figcaption>
+            )}
+          </figure>
+        </section>
+      );
+    }
+
+    case "takeaway": {
+      const d = block.data;
+      return (
+        <section className="px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto rounded-3xl bg-brand-orange-deep p-8 md:p-12 text-white">
+            {d.label && <p className="text-sm font-semibold uppercase tracking-wider text-white/80">{d.label}</p>}
+            <p className="mt-3 text-2xl md:text-4xl font-bold leading-snug">{d.text}</p>
           </div>
         </section>
       );

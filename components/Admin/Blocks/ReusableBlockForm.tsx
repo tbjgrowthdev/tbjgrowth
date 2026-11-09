@@ -11,7 +11,7 @@ import { withToast } from "@/lib/admin/toast";
 import BlockFields, { type FieldValues, type PickerOptions } from "./BlockFields";
 
 type Initial = { id: string; name: string; type: string; data: string };
-type Usage = { pages: { id: string; title: string; slug: string }[]; templates: { id: string; name: string }[] };
+type Usage = { pages: { id: string; title: string; slug: string }[]; templates: { id: string; name: string }[]; caseStudies: { id: string; title: string; slug: string }[] };
 
 function readData(raw: string): FieldValues {
   try {
@@ -29,7 +29,7 @@ export default function ReusableBlockForm({ initial, usage, options }: { initial
   const [data, setData] = useState<FieldValues>(initial ? readData(initial.data) : defaultBlockData("cta"));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const used = (usage?.pages.length ?? 0) + (usage?.templates.length ?? 0);
+  const used = (usage?.pages.length ?? 0) + (usage?.templates.length ?? 0) + (usage?.caseStudies.length ?? 0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +63,7 @@ export default function ReusableBlockForm({ initial, usage, options }: { initial
           <p className="font-semibold">Used in {used} place{used === 1 ? "" : "s"} — saving changes goes live there immediately.</p>
           <ul className="mt-2 list-disc pl-5 space-y-0.5">
             {usage?.pages.map((p) => <li key={p.id}>Page: <Link className="underline" href={`/admin/pages/${p.id}`}>{p.title}</Link></li>)}
+            {usage?.caseStudies.map((c) => <li key={c.id}>Case study: <Link className="underline" href={`/admin/cases/${c.id}`}>{c.title}</Link></li>)}
             {usage?.templates.map((t) => <li key={t.id}>pSEO template: <Link className="underline" href={`/admin/programmatic-seo/${t.id}`}>{t.name}</Link></li>)}
           </ul>
         </div>

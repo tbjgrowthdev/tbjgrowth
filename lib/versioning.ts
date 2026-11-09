@@ -27,7 +27,7 @@ const SNAPSHOT_FIELDS: Record<ContentType, string[]> = {
   ],
   CASE_STUDY: [
     "title", "slug", "clientName", "industry", "serviceType", "results", "content", "excerpt",
-    "websiteUrl", "featuredImage", "featuredImageAlt", "imageGallery", "isFeatured",
+    "websiteUrl", "featuredImage", "featuredImageAlt", "imageGallery", "isFeatured", "blocks",
     "metaTitle", "metaDescription", "focusKeyword", "canonicalUrl", "twitterCard",
     "ogImage", "ogTitle", "ogDescription", "twitterTitle", "twitterDescription", "twitterImage",
     "schemaJson", "isIndexable",
@@ -152,7 +152,7 @@ export async function restoreVersion(contentType: ContentType, contentId: string
     const { categoryIds, tagIds, ...scalarFields } = snapshot;
 
     const updateData: AnyRecord = { ...scalarFields };
-    if (contentType === "PAGE") {
+    if (contentType === "PAGE" || contentType === "CASE_STUDY") {
       // A snapshot taken before blocks existed has no "blocks" key: restoring it means the classic layout, so clear
       // the current layout instead of leaving it on top of the restored content. Stored blocks are re-validated.
       const restored = normalizeBlocksInput(snapshot.blocks ?? null);

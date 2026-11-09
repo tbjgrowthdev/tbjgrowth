@@ -64,6 +64,26 @@ Defined once in `lib/blocks/schema.ts` (zod). The editor form is generated from
 | `trustBadges` | labels with optional logos | inline |
 | `leadForm` | name/email (+ optional phone, company, message) | saves a `FormSubmission` |
 
+### Case-study blocks (also usable on pages)
+
+| Type | Fields | Renders nothing when |
+|---|---|---|
+| `metricHero` | `eyebrow`, `label`*, `value`*, `from`, `to`, `caption` (`from`/`to` together or neither) | (label and value are required) |
+| `factsStrip` | `items[{label*, value*}]`, max 6 (4–6 looks best) | no items |
+| `dataTable` | `heading`, `intro`, `columns[]` (1–6, headers*), `rows[][]` (max 20, plain text, each row as long as `columns`), `footnote`, `highlightLastColumn` | no rows |
+| `proofGallery` | `heading`, `columns` (1–3), `items[{imageUrl, imageAlt, caption, badge}]` max 12 | no item has a displayable image |
+| `pullQuote` | `quote`, `name`, `role` | `quote` is empty |
+| `takeaway` | `label` (default "Key takeaway"; empty hides it), `text`* | (text is required) |
+
+`*` = required. Everything is plain text rendered as React children; none of
+these accepts HTML. `proofGallery` items without an image (or with one that
+fails `isDisplayableImageUrl`) are skipped, so unfinished screenshots never
+show a placeholder. The "what renders" rules live in `lib/blocks/visible.ts`.
+
+`cards` also has an optional `variant`: `default`, `stats` (the title is shown
+as a large figure, e.g. "5.2×") or `steps` (numbered). Old data has no variant
+and renders as before.
+
 The lead form calls the existing public `submitContactForm` action — same
 validation, same per-email throttle (3 per 10 minutes), same Leads inbox and
 notification email. `source` is recorded as `Landing page: /<slug>` or
@@ -141,6 +161,137 @@ a reference to the new shared row).
 - Audit log: create/update/delete are recorded with before/after data. There is
   no per-block version history (only the audit log).
 
+## Case studies
+
+`CaseStudy.blocks` (migration `20261109000000_add_case_study_blocks`, one
+nullable `TEXT` column, metadata-only) works like `Page.blocks`: `NULL` = the
+classic case study that renders `content`. **Run the migration before deploying
+the code that reads the column.** The form has a Classic / Blocks switch (classic
+content is carried over as a `richText` block on first switch). The public page
+keeps its header (title, client, results, excerpt, website button, featured
+image) and renders the blocks after it; the header's `<h1>` is the only h1.
+
+With no excerpt, the meta description falls back to the first prose block
+(`blocksToExcerpt`, render time only, never stored). Versioning, scheduled
+updates and restore treat `blocks` as they do for pages. Reusable-block usage
+counts and the delete check include case studies.
+
+## Import JSON
+
+Pages, pSEO templates and case studies can load a JSON file into the form. It
+only **fills the form**: nothing is saved until you save, and the save action
+validates everything again. Paste the JSON or choose a `.json` file (read with
+`FileReader` in the browser, 256 KB max; the file is not uploaded). The text is
+validated by the `validateImport` server action, which writes nothing, then the
+dialog shows either the **first error** (field, or block number/type/field) and
+loads nothing, or a **preview** with the field count, the block summary and any
+warnings.
+
+Where the button is: in the block editor on Pages and pSEO templates (blocks
+only), and on the **Content** card of the case study form (the whole form, in
+either layout).
+
+### Accepted shapes
+
+1. A bare list of blocks (works everywhere): `[ { "type": "...", "data": {...} }, ... ]`
+2. `{ "blocks": [...] }` (works everywhere).
+3. A **case study document**: the form's own field names at the top level, plus
+   `blocks`. On Pages and pSEO templates only `blocks` is used; every other key
+   is reported as "only applies to case studies and was ignored".
+
+Every key is optional; an absent key is never touched (an import never clears a
+field). Block `id`s are not needed and are always replaced with fresh ones.
+
+| Key | Type | Rule |
+|---|---|---|
+| `title`, `clientName`, `industry`, `serviceType` | text | ≤ 200 chars |
+| `slug` | text | normalized like the form does (`"My Slug"` → `my-slug`, with a warning); a slug that already belongs to another case study is flagged before you save |
+| `results` | text | ≤ 500 (the "Results Summary") |
+| `excerpt` | text | ≤ 1000 |
+| `websiteUrl` | text | full `http(s)://` URL |
+| `featuredImage` | text | `/path` or `http(s)` image URL |
+| `featuredImageAlt` | text | ≤ 300 |
+| `imageGallery` | list of text | image URLs as above, ≤ 20, de-duplicated |
+| `isFeatured` | true/false | "Show on Home Page" |
+| `content` | text (HTML) | the classic rich-text content; sanitized. Kept even in block mode |
+| `metaTitle`, `focusKeyword` | text | ≤ 200 / ≤ 120 |
+| `metaDescription` | text | ≤ 500 |
+| `secondaryKeywords` | list of text | ≤ 20, each ≤ 120, trimmed, de-duplicated |
+| `canonicalUrl` | text | full `http(s)://` URL |
+| `isIndexable`, `allowFollow` | true/false | robots options |
+| `maxSnippet`, `maxVideoPreview` | whole number | `-1` (unlimited) up to 10 000 / 86 400 |
+| `maxImagePreview` | text | `none`, `standard` or `large` |
+| `ogTitle`, `ogDescription`, `ogImage` | text | Open Graph; `ogImage` is an image URL |
+| `twitterCard` | text | `summary` or `summary_large_image` |
+| `twitterTitle`, `twitterDescription`, `twitterImage` | text | `twitterImage` is an image URL |
+| `schemaJson` | object, list, or JSON text | must be real JSON, ≤ 20 000 chars, and must not contain `</script` or `<!--`; stored as formatted text |
+| `blocks` | list | validated block by block; ≤ 60 blocks |
+
+**Never imported:** `status` (new case studies stay Draft and move through the
+workflow), plus `id`, `authorId`, `publishedAt`, `createdAt`, `updatedAt` and
+the reviewer fields. They produce a warning.
+
+**Warnings, not silence:** an unknown or misspelled key (`"clientname"`,
+`"metaDesc"`) is reported with a "did you mean `clientName`?" hint; a normalized
+slug; an image URL on a host the site won't display; an empty `blocks` list.
+Warnings never block the import.
+
+**Existing content:** if the form already has values for some imported fields
+the dialog lists them and asks **Overwrite them** or **Only fill empty fields**
+(Cancel closes the dialog without changing anything). "Filled" means a
+non-empty text or list, or a toggle/number that is not at its default. Blocks
+have their own **Append** / **Replace** choice. Importing blocks switches the
+case study to the Blocks layout; the Content editor and SEO panel are refreshed
+so imported text is visible.
+
+### Example
+
+```json
+{
+  "title": "How Acme grew social reach 4x in six months",
+  "slug": "acme-social-reach",
+  "clientName": "Acme Retail",
+  "industry": "Retail",
+  "serviceType": "Social media marketing",
+  "results": "+423% monthly social reach",
+  "websiteUrl": "https://acme.example",
+  "excerpt": "A consistent content system took Acme from 18,400 to 96,300 monthly reach.",
+  "featuredImage": "https://res.cloudinary.com/your-cloud/image/upload/acme-hero.jpg",
+  "featuredImageAlt": "Acme social analytics dashboard",
+  "imageGallery": [],
+  "isFeatured": false,
+  "metaTitle": "Acme case study: +423% social reach | TBJ Growth",
+  "metaDescription": "How TBJ Growth grew Acme's monthly social reach by 423% in six months.",
+  "focusKeyword": "social media case study",
+  "secondaryKeywords": ["social media growth", "retail marketing"],
+  "canonicalUrl": "",
+  "isIndexable": true,
+  "allowFollow": true,
+  "maxSnippet": -1,
+  "maxImagePreview": "large",
+  "maxVideoPreview": -1,
+  "ogTitle": "", "ogDescription": "", "ogImage": "",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "", "twitterDescription": "", "twitterImage": "",
+  "schemaJson": "",
+  "blocks": [
+    { "type": "metricHero", "data": { "eyebrow": "Social media", "label": "Monthly social reach", "value": "+423%", "from": "18,400", "to": "96,300" } },
+    { "type": "factsStrip", "data": { "items": [ { "label": "Client", "value": "Acme Retail" }, { "label": "Timeframe", "value": "6 months" } ] } },
+    { "type": "dataTable", "data": { "heading": "Results", "columns": ["Metric", "Before", "After", "Change"], "rows": [["Monthly reach", "18,400", "96,300", "+423%"]], "highlightLastColumn": true } },
+    { "type": "proofGallery", "data": { "heading": "Proof", "columns": 2, "items": [ { "imageUrl": "", "imageAlt": "", "caption": "Coming soon", "badge": "Illustrative" } ] } },
+    { "type": "pullQuote", "data": { "quote": "", "name": "", "role": "" } },
+    { "type": "takeaway", "data": { "text": "Consistency, not virality, compounded the reach." } },
+    { "type": "cta", "data": { "heading": "Want results like this?", "buttonLabel": "Book a call", "buttonHref": "/contact" } }
+  ]
+}
+```
+
+The empty `proofGallery` item and the empty `pullQuote` are valid and render
+nothing on the public page until they are filled in.
+
+The serialized block list is capped at 512 KB (`MAX_BLOCKS_JSON_BYTES`) in
+addition to the 60-block and per-field limits.
+
 ## Known limitations
 
 - **Translations:** `Page` translations overlay `title`/`content`/SEO fields.
@@ -155,6 +306,10 @@ a reference to the new shared row).
 - Pricing blocks show monthly price(s) and features per package, not the full
   comparison table or currency switcher of `/pricing`.
 - No Phase 26 newsletter/related-content blocks.
+- **Case studies in block mode:** content-health, SEO audit, cannibalization,
+  refresh-detect and the quality gate read `CaseStudy.content`, which is the
+  stale classic text for a block case study. Links inside case-study blocks are
+  not part of the delete dependency check. Blocks are not translated.
 
 ## Adding a block type
 

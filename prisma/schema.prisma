@@ -832,6 +832,12 @@ model CaseStudy {
   serviceType      String
   results          String?  @db.Text
   content          String   @db.Text
+
+  // Block layout: JSON PageBlock[] (see lib/blocks/schema.ts). Null = a classic
+  // case study that renders `content` exactly as before. `content` is never
+  // cleared, so switching back to the classic layout loses nothing.
+  blocks           String?  @db.Text
+
   excerpt          String?  @db.Text
   websiteUrl       String?
   featuredImage    String?
