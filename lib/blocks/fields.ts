@@ -67,7 +67,10 @@ export const BLOCK_FIELDS: Record<BlockType, FieldDef[]> = {
     { key: "imageUrl", label: "Image", kind: "image" },
     { key: "imageAlt", label: "Image alt text", kind: "text" },
   ],
-  richText: [{ key: "html", label: "Content", kind: "richtext" }],
+  richText: [
+    { key: "eyebrow", label: "Label (small text above the content)", kind: "text", placeholder: "The business challenge" },
+    { key: "html", label: "Content (with a label, start with the main heading, Heading 2)", kind: "richtext" },
+  ],
   cta: [
     { key: "heading", label: "Heading", kind: "text" },
     { key: "text", label: "Supporting text", kind: "textarea", rows: 3 },
@@ -80,6 +83,7 @@ export const BLOCK_FIELDS: Record<BlockType, FieldDef[]> = {
     { key: "intro", label: "Intro text", kind: "textarea", rows: 2 },
     { key: "columns", label: "Columns", kind: "select", options: [{ value: "2", label: "2" }, { value: "3", label: "3" }, { value: "4", label: "4" }] },
     { key: "variant", label: "Style", kind: "select", options: [{ value: "default", label: "Standard cards" }, { value: "stats", label: "Stat cards (title shown as a large figure)" }, { value: "steps", label: "Numbered steps" }] },
+    { key: "introPlacement", label: "Intro text position", kind: "select", options: [{ value: "auto", label: "Automatic (below stat cards, above others)" }, { value: "above", label: "Above the cards" }, { value: "below", label: "Below the cards (as a note)" }] },
     {
       key: "items",
       label: "Cards",
@@ -170,6 +174,7 @@ export const BLOCK_FIELDS: Record<BlockType, FieldDef[]> = {
   ],
   proofGallery: [
     { key: "heading", label: "Heading", kind: "text" },
+    { key: "intro", label: "Intro text (shown right above the images)", kind: "textarea", rows: 2 },
     { key: "columns", label: "Columns", kind: "select", options: [{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }] },
     {
       key: "items",

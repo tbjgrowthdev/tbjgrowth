@@ -1,6 +1,6 @@
 // Plain text of a block list, for the editor's SEO panel (word count, keyword checks) — block pages store their
 // copy in `blocks`, not `content`. Skips structural/URL fields. Accepts the editor's loosely typed blocks.
-const SKIP_KEYS = /(Href|Url|Id|Ids|Slugs|source|columns|submitLabel|successMessage|badge|variant)$/;
+const SKIP_KEYS = /(Href|Url|Id|Ids|Slugs|source|columns|submitLabel|successMessage|badge|variant|introPlacement)$/;
 
 type Loose = { type?: string; data?: unknown };
 type Obj = Record<string, unknown>;

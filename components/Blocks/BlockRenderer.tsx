@@ -4,7 +4,7 @@ import { faqPageSchema } from "@/lib/schema";
 import { isDisplayableImageUrl } from "@/lib/image-hosts";
 import { isSafeHref } from "@/lib/blocks/schema";
 import { sanitizeRichText } from "@/lib/sanitize";
-import { hasQuote, tableIsRenderable, visibleProofItems } from "@/lib/blocks/visible";
+import { hasQuote, introIsBelow, isFootnoteHtml, tableIsRenderable, visibleProofItems } from "@/lib/blocks/visible";
 import type { RenderedBlock } from "@/lib/blocks/load";
 import LeadFormBlock from "./LeadFormBlock";
 
@@ -36,8 +36,25 @@ function Img({ src, alt, className }: { src: string; alt: string; className?: st
   return <img src={src} alt={alt} className={className} loading="lazy" />;
 }
 
-function SectionHeading({ id, heading, intro }: { id: string; heading: string; intro?: string }) {
+// Layouts. "default" (pages, pSEO templates) is the original look and must not change. "caseStudy" is one width system
+// that lines up with the case study header: FRAME is the header's content width, WIDE is for blocks that benefit from
+// more room (cards, facts, galleries), and reading text is narrower still. Headings are left-aligned with the frame;
+// only "statement" blocks (metric, takeaway, call to action) are centered. Vertical rhythm is tighter and uniform.
+export type BlockLayout = "default" | "caseStudy";
+const FRAME = "max-w-[52rem]"; // = max-w-4xl minus the article's 2 × 2rem padding, so edges match the header
+const WIDE = "max-w-6xl";
+const READ = "max-w-[44rem]";
+
+function SectionHeading({ id, heading, intro, left }: { id: string; heading: string; intro?: string; left?: boolean }) {
   if (!heading && !intro) return null;
+  if (left) {
+    return (
+      <div className="max-w-3xl mb-5 md:mb-6">
+        {heading && <h2 id={id} className="text-2xl md:text-3xl font-bold leading-tight text-foreground">{heading}</h2>}
+        {intro && <p className={`${heading ? "mt-2" : ""} text-lg text-muted`}>{intro}</p>}
+      </div>
+    );
+  }
   return (
     <div className="max-w-3xl mx-auto text-center mb-10">
       {heading && <h2 id={id} className="text-2xl md:text-4xl font-bold text-foreground">{heading}</h2>}
@@ -48,9 +65,15 @@ function SectionHeading({ id, heading, intro }: { id: string; heading: string; i
 
 const GRID_COLS: Record<number, string> = { 2: "md:grid-cols-2", 3: "md:grid-cols-2 lg:grid-cols-3", 4: "md:grid-cols-2 lg:grid-cols-4" };
 
-function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock; h1: boolean; source: string; underNav: boolean }) {
+function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afterLead }: { rendered: RenderedBlock; h1: boolean; source: string; underNav: boolean; cs: boolean; isLast: boolean; leadsNext: boolean; afterLead: boolean }) {
   const { block } = rendered;
   const hid = `block-${block.id}`;
+  // Per-layout classes; the `legacy` argument is exactly what the block used before layouts existed.
+  // A short intro paragraph that leads straight into the next block sits close to it (leadsNext / afterLead).
+  const sec = cs ? (leadsNext ? "pt-5 md:pt-7 pb-2" : afterLead ? "pt-2 pb-5 md:pb-7" : "py-5 md:py-7") : "py-12";
+  const tint = cs ? "py-10 md:py-12" : "py-12";
+  const frame = (legacy: string) => (cs ? `${FRAME} mx-auto` : legacy);
+  const wide = (legacy: string) => (cs ? `${WIDE} mx-auto` : legacy);
 
   switch (block.type) {
     case "hero": {
@@ -76,20 +99,37 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       );
     }
 
-    case "richText":
+    case "richText": {
+      const html = sanitizeRichText(block.data.html);
+      // A closing one-line disclaimer reads as a footnote, not as a prose section of its own.
+      if (cs && isLast && isFootnoteHtml(html)) {
+        return (
+          <section className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
+            <div className={frame("")}>
+              <div className="border-t border-border pt-4 text-sm text-muted" dangerouslySetInnerHTML={{ __html: html }} />
+            </div>
+          </section>
+        );
+      }
+      const width = cs ? READ : "max-w-3xl mx-auto";
+      const eyebrow = block.data.eyebrow;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12">
-          <div className="prose prose-lg dark:prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light prose-pre:overflow-x-auto prose-img:rounded-2xl">
-            <div dangerouslySetInnerHTML={{ __html: sanitizeRichText(block.data.html) }} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`}>
+          <div className={frame("")}>
+            {eyebrow && <p className={`${width} mb-2 text-sm font-semibold uppercase tracking-wider text-brand-orange-deep dark:text-brand-orange-light`}>{eyebrow}</p>}
+            <div className={`prose prose-lg dark:prose-invert ${width} prose-headings:font-bold prose-a:text-brand-orange-deep dark:prose-a:text-brand-orange-light prose-pre:overflow-x-auto prose-img:rounded-2xl ${cs ? "prose-h2:text-[1.75rem] prose-h2:leading-tight" : ""}`}>
+              <div dangerouslySetInnerHTML={{ __html: html }} />
+            </div>
           </div>
         </section>
       );
+    }
 
     case "cta": {
       const d = block.data;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-4xl mx-auto rounded-3xl border border-border bg-card p-8 md:p-12 text-center">
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`}>
+          <div className={`${frame("max-w-4xl mx-auto")} rounded-3xl border border-border bg-card p-8 md:p-12 text-center`}>
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">{d.heading}</h2>
             {d.text && <p className="mt-4 text-lg text-muted max-w-2xl mx-auto">{d.text}</p>}
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
@@ -104,10 +144,12 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
     case "cards": {
       const d = block.data;
       if (d.items.length === 0) return null;
+      // Stat cards' intro is a note about the figures, so it goes below them (Pages keep "above" unless set explicitly).
+      const below = cs ? introIsBelow(d.variant, d.introPlacement) : d.introPlacement === "below";
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={d.heading ? hid : undefined}>
-          <div className="max-w-6xl mx-auto">
-            <SectionHeading id={hid} heading={d.heading} intro={d.intro} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={d.heading ? hid : undefined}>
+          <div className={wide("max-w-6xl mx-auto")}>
+            <SectionHeading id={hid} heading={d.heading} intro={below ? undefined : d.intro} left={cs} />
             <ul className={`grid gap-6 ${GRID_COLS[d.columns] ?? GRID_COLS[3]}`}>
               {d.items.map((item, i) => (
                 <li key={i} className="rounded-2xl border border-border bg-card p-6 flex flex-col">
@@ -128,6 +170,7 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
                 </li>
               ))}
             </ul>
+            {below && d.intro && <p className="mt-4 text-sm md:text-base text-muted">{d.intro}</p>}
           </div>
         </section>
       );
@@ -137,9 +180,9 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const items = rendered.testimonials ?? [];
       if (items.length === 0) return null;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={block.data.heading ? hid : undefined}>
-          <div className="max-w-6xl mx-auto">
-            <SectionHeading id={hid} heading={block.data.heading} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={block.data.heading ? hid : undefined}>
+          <div className={wide("max-w-6xl mx-auto")}>
+            <SectionHeading id={hid} heading={block.data.heading} left={cs} />
             <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {items.map((t) => (
                 <li key={t.id}>
@@ -163,9 +206,9 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const items = rendered.faqs ?? [];
       if (items.length === 0) return null;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={block.data.heading ? hid : undefined}>
-          <div className="max-w-3xl mx-auto">
-            <SectionHeading id={hid} heading={block.data.heading} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={block.data.heading ? hid : undefined}>
+          <div className={frame("max-w-3xl mx-auto")}>
+            <SectionHeading id={hid} heading={block.data.heading} left={cs} />
             <div className="divide-y divide-border rounded-2xl border border-border bg-card">
               {items.map((f, i) => (
                 <details key={i} className="group p-5">
@@ -186,9 +229,9 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const packages = rendered.packages ?? [];
       if (packages.length === 0) return null;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={block.data.heading ? hid : undefined}>
-          <div className="max-w-6xl mx-auto">
-            <SectionHeading id={hid} heading={block.data.heading} intro={block.data.intro} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={block.data.heading ? hid : undefined}>
+          <div className={wide("max-w-6xl mx-auto")}>
+            <SectionHeading id={hid} heading={block.data.heading} intro={block.data.intro} left={cs} />
             <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {packages.map((p) => (
                 <li key={p.slug} className={`rounded-2xl border bg-card p-6 flex flex-col ${p.isMostPopular ? "border-brand-orange ring-1 ring-brand-orange" : "border-border"}`}>
@@ -223,10 +266,10 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const d = block.data;
       if (d.items.length === 0) return null;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-10" aria-labelledby={d.heading ? hid : undefined}>
-          <div className="max-w-6xl mx-auto">
-            <SectionHeading id={hid} heading={d.heading} />
-            <ul className="flex flex-wrap items-center justify-center gap-4">
+        <section className={`px-4 sm:px-6 lg:px-8 ${cs ? sec : "py-10"}`} aria-labelledby={d.heading ? hid : undefined}>
+          <div className={wide("max-w-6xl mx-auto")}>
+            <SectionHeading id={hid} heading={d.heading} left={cs} />
+            <ul className={`flex flex-wrap items-center gap-4 ${cs ? "" : "justify-center"}`}>
               {d.items.map((item, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium text-foreground">
                   <Img src={item.imageUrl} alt={item.imageAlt} className="h-8 w-auto" />
@@ -242,8 +285,8 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
     case "metricHero": {
       const d = block.data;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12 bg-tint" aria-labelledby={hid}>
-          <div className="max-w-4xl mx-auto text-center">
+        <section className={`px-4 sm:px-6 lg:px-8 ${tint} bg-tint`} aria-labelledby={hid}>
+          <div className={`${frame("max-w-4xl mx-auto")} text-center`}>
             {d.eyebrow && <p className="text-sm font-semibold uppercase tracking-wider text-brand-orange-deep dark:text-brand-orange-light mb-3">{d.eyebrow}</p>}
             <p className="text-6xl md:text-8xl font-bold leading-none text-brand-orange-deep dark:text-brand-orange-light">{d.value}</p>
             <p id={hid} className="mt-4 text-xl md:text-2xl font-semibold text-foreground">{d.label}</p>
@@ -264,8 +307,8 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const items = block.data.items;
       if (items.length === 0) return null;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-8">
-          <dl className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-px overflow-hidden rounded-2xl border border-border bg-border">
+        <section className={`px-4 sm:px-6 lg:px-8 ${cs ? sec : "py-8"}`}>
+          <dl className={`${wide("max-w-6xl mx-auto")} grid grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-px overflow-hidden rounded-2xl border border-border bg-border`}>
             {items.map((item, i) => (
               <div key={i} className="bg-card p-5">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-caption">{item.label}</dt>
@@ -281,17 +324,18 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const d = block.data;
       if (!tableIsRenderable(d.columns, d.rows)) return null;
       const last = d.columns.length - 1;
-      const emphasis = (c: number) => (d.highlightLastColumn && c === last && last > 0 ? "bg-tint font-bold text-brand-orange-deep dark:text-brand-orange-light" : "");
+      // The emphasized column gets a solid tint plus a left rule so it stays visible in both themes.
+      const emphasis = (c: number) => (d.highlightLastColumn && c === last && last > 0 ? "bg-brand-orange/15 border-l-2 border-brand-orange font-bold text-brand-orange-deep dark:text-brand-orange-light" : "");
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={d.heading ? hid : undefined}>
-          <div className="max-w-4xl mx-auto">
-            <SectionHeading id={hid} heading={d.heading} intro={d.intro} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={d.heading ? hid : undefined}>
+          <div className={frame("max-w-4xl mx-auto")}>
+            <SectionHeading id={hid} heading={d.heading} intro={d.intro} left={cs} />
             <div className="overflow-x-auto rounded-2xl border border-border bg-card" tabIndex={0} role="region" aria-label={d.heading || "Data table"}>
-              <table className="w-full min-w-[32rem] text-left text-sm md:text-base">
+              <table className="w-full min-w-[28rem] text-left text-base md:text-lg">
                 <thead>
-                  <tr className="border-b border-border">
+                  <tr className="border-b border-border bg-tint">
                     {d.columns.map((c, i) => (
-                      <th key={i} scope="col" className={`px-4 py-3 font-semibold text-foreground ${emphasis(i)}`}>{c}</th>
+                      <th key={i} scope="col" className={`px-4 md:px-5 py-3.5 text-sm md:text-base font-bold uppercase tracking-wide text-foreground ${emphasis(i)}`}>{c}</th>
                     ))}
                   </tr>
                 </thead>
@@ -300,9 +344,9 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
                     <tr key={r}>
                       {d.columns.map((_, c) =>
                         c === 0 ? (
-                          <th key={c} scope="row" className="px-4 py-3 font-medium text-foreground">{row[c]}</th>
+                          <th key={c} scope="row" className="px-4 md:px-5 py-4 font-semibold text-foreground">{row[c]}</th>
                         ) : (
-                          <td key={c} className={`px-4 py-3 text-muted ${emphasis(c)}`}>{row[c]}</td>
+                          <td key={c} className={`px-4 md:px-5 py-4 text-foreground ${emphasis(c)}`}>{row[c]}</td>
                         ),
                       )}
                     </tr>
@@ -310,7 +354,7 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
                 </tbody>
               </table>
             </div>
-            {d.footnote && <p className="mt-3 text-sm text-caption">{d.footnote}</p>}
+            {d.footnote && <p className="mt-3 text-sm md:text-base text-muted">{d.footnote}</p>}
           </div>
         </section>
       );
@@ -323,9 +367,9 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       if (items.length === 0) return null;
       const cols = d.columns === 1 ? "" : d.columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2";
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12" aria-labelledby={d.heading ? hid : undefined}>
-          <div className={`mx-auto ${d.columns === 1 ? "max-w-3xl" : "max-w-6xl"}`}>
-            <SectionHeading id={hid} heading={d.heading} />
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`} aria-labelledby={d.heading ? hid : undefined}>
+          <div className={cs ? (d.columns === 1 ? frame("") : wide("")) : `mx-auto ${d.columns === 1 ? "max-w-3xl" : "max-w-6xl"}`}>
+            <SectionHeading id={hid} heading={d.heading} intro={d.intro} left={cs} />
             <ul className={`grid gap-6 ${cols}`}>
               {items.map((item, i) => (
                 <li key={i}>
@@ -334,7 +378,7 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
                       <Img src={item.imageUrl} alt={item.imageAlt || item.caption} className="w-full" />
                       {item.badge && <span className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">{item.badge}</span>}
                     </div>
-                    {item.caption && <figcaption className="p-4 text-sm text-muted">{item.caption}</figcaption>}
+                    {item.caption && <figcaption className="p-4 text-base font-medium text-foreground">{item.caption}</figcaption>}
                   </figure>
                 </li>
               ))}
@@ -348,8 +392,8 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
       const d = block.data;
       if (!hasQuote(d.quote)) return null;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12">
-          <figure className="max-w-3xl mx-auto rounded-2xl border-l-4 border-brand-orange bg-card p-6 md:p-10">
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`}>
+          <figure className={`${frame("max-w-3xl mx-auto")} rounded-2xl border-l-4 border-brand-orange bg-card p-6 md:p-10`}>
             <blockquote className="text-xl md:text-2xl font-medium leading-relaxed text-foreground">&ldquo;{d.quote}&rdquo;</blockquote>
             {(d.name || d.role) && (
               <figcaption className="mt-5 text-sm text-muted">
@@ -366,8 +410,8 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
     case "takeaway": {
       const d = block.data;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-4xl mx-auto rounded-3xl bg-brand-orange-deep p-8 md:p-12 text-white">
+        <section className={`px-4 sm:px-6 lg:px-8 ${sec}`}>
+          <div className={`${frame("max-w-4xl mx-auto")} rounded-3xl bg-brand-orange-deep p-8 md:p-12 text-white`}>
             {d.label && <p className="text-sm font-semibold uppercase tracking-wider text-white/80">{d.label}</p>}
             <p className="mt-3 text-2xl md:text-4xl font-bold leading-snug">{d.text}</p>
           </div>
@@ -378,7 +422,7 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
     case "leadForm": {
       const d = block.data;
       return (
-        <section className="px-4 sm:px-6 lg:px-8 py-16 bg-tint">
+        <section className={`px-4 sm:px-6 lg:px-8 bg-tint ${cs ? tint : "py-16"}`}>
           <LeadFormBlock
             heading={d.heading}
             text={d.text}
@@ -400,10 +444,17 @@ function BlockView({ rendered, h1, source, underNav }: { rendered: RenderedBlock
  * `pageTitle` becomes the visible <h1> when no hero block provides one, so every blocks page has exactly one h1.
  * `source` is saved on leads submitted through a lead-form block.
  */
-export default function BlockRenderer({ blocks, pageTitle, source }: { blocks: RenderedBlock[]; pageTitle?: string; source: string }) {
+export default function BlockRenderer({ blocks, pageTitle, source, layout = "default" }: { blocks: RenderedBlock[]; pageTitle?: string; source: string; layout?: BlockLayout }) {
   const firstHero = blocks.findIndex((b) => b.block.type === "hero");
   // One FAQPage object for the whole page, however many FAQ blocks it has (duplicate FAQPage markup is invalid).
   const faqEntries = blocks.flatMap((b) => (b.block.type === "faq" ? b.faqs ?? [] : []));
+  const cs = layout === "caseStudy";
+  // richText that is only a short lead-in paragraph, directly before a block that has no heading of its own.
+  const leads = blocks.map((b, i) => {
+    const next = blocks[i + 1]?.block;
+    return cs && b.block.type === "richText" && !b.block.data.eyebrow && isFootnoteHtml(sanitizeRichText(b.block.data.html), 400)
+      && (next?.type === "proofGallery" || next?.type === "dataTable" || next?.type === "cards") && !next.data.heading;
+  });
   return (
     <>
       {faqEntries.length > 0 && <JsonLd schema={faqPageSchema(faqEntries)} />}
@@ -411,7 +462,7 @@ export default function BlockRenderer({ blocks, pageTitle, source }: { blocks: R
         <h1 className="px-4 pt-8 text-3xl md:text-5xl font-bold text-foreground leading-tight text-center">{pageTitle}</h1>
       )}
       {blocks.map((rendered, i) => (
-        <BlockView key={`${rendered.block.id}-${i}`} rendered={rendered} h1={i === firstHero && Boolean(pageTitle)} source={source} underNav={i === 0 && Boolean(pageTitle)} />
+        <BlockView key={`${rendered.block.id}-${i}`} rendered={rendered} h1={i === firstHero && Boolean(pageTitle)} source={source} underNav={i === 0 && Boolean(pageTitle)} cs={cs} isLast={i === blocks.length - 1} leadsNext={leads[i]} afterLead={i > 0 && leads[i - 1]} />
       ))}
     </>
   );

@@ -16,9 +16,9 @@ export function isBlockType(value: unknown): value is BlockType {
 export function defaultBlockData(type: BlockType): Record<string, unknown> {
   switch (type) {
     case "hero": return { eyebrow: "", heading: "", subheading: "", primaryCtaLabel: "", primaryCtaHref: "", secondaryCtaLabel: "", secondaryCtaHref: "", imageUrl: "", imageAlt: "" };
-    case "richText": return { html: "" };
+    case "richText": return { eyebrow: "", html: "" };
     case "cta": return { heading: "", text: "", buttonLabel: "", buttonHref: "", secondaryLabel: "", secondaryHref: "" };
-    case "cards": return { heading: "", intro: "", columns: 3, variant: "default", items: [{ title: "", text: "", href: "", linkLabel: "" }] };
+    case "cards": return { heading: "", intro: "", columns: 3, variant: "default", introPlacement: "auto", items: [{ title: "", text: "", href: "", linkLabel: "" }] };
     case "testimonials": return { heading: "", testimonialIds: [] };
     case "faq": return { heading: "Frequently asked questions", source: "custom", faqIds: [], items: [{ question: "", answer: "" }] };
     case "pricing": return { heading: "", intro: "", packageSlugs: [] };
@@ -27,7 +27,7 @@ export function defaultBlockData(type: BlockType): Record<string, unknown> {
     case "metricHero": return { eyebrow: "", label: "", value: "", from: "", to: "", caption: "" };
     case "factsStrip": return { items: [{ label: "", value: "" }] };
     case "dataTable": return { heading: "", intro: "", columns: ["", ""], rows: [["", ""]], footnote: "", highlightLastColumn: false };
-    case "proofGallery": return { heading: "", columns: 2, items: [{ imageUrl: "", imageAlt: "", caption: "", badge: "" }] };
+    case "proofGallery": return { heading: "", intro: "", columns: 2, items: [{ imageUrl: "", imageAlt: "", caption: "", badge: "" }] };
     case "pullQuote": return { quote: "", name: "", role: "" };
     case "takeaway": return { label: "Key takeaway", text: "" };
   }

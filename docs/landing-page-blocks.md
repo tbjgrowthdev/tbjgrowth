@@ -171,6 +171,29 @@ content is carried over as a `richText` block on first switch). The public page
 keeps its header (title, client, results, excerpt, website button, featured
 image) and renders the blocks after it; the header's `<h1>` is the only h1.
 
+### Case study layout
+
+The renderer takes `layout="caseStudy"` (only the case study page passes it);
+Pages and pSEO keep the original look. In this layout every block follows one
+width system that lines up with the header: `FRAME` (the header's content
+width) for the table, metric, takeaway, quote and CTA; `WIDE` (`max-w-6xl`) for
+cards, facts, galleries and badges; reading text is narrower (`READ`) and
+left-aligned. Section headings are left-aligned (centered only for the
+"statement" blocks: metric, takeaway, CTA), and vertical spacing is one scale.
+
+- `richText.eyebrow` (optional, plain text, 120 chars): a small label above the
+  content. Put the main heading (Heading 2) at the start of the content, e.g.
+  eyebrow "The business challenge", heading "Loved by regulars, unseen by
+  everyone else."
+- `cards.introPlacement` (`auto` | `above` | `below`, default `auto`): `auto`
+  shows the intro below stat cards (a footnote) and above other cards. On Pages,
+  only an explicit `below` moves it.
+- `proofGallery.intro` (optional): text directly above the images.
+- A closing `richText` that is a single short paragraph renders as a small
+  footnote (`isFootnoteHtml`); a short single-paragraph `richText` directly
+  before a gallery, table or cards block with no heading of its own sits close
+  to it.
+
 With no excerpt, the meta description falls back to the first prose block
 (`blocksToExcerpt`, render time only, never stored). Versioning, scheduled
 updates and restore treat `blocks` as they do for pages. Reusable-block usage

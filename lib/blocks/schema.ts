@@ -97,6 +97,8 @@ export const heroSchema = z
   .superRefine(ctaPairs([["primaryCtaLabel", "primaryCtaHref"], ["secondaryCtaLabel", "secondaryCtaHref"]]));
 
 export const richTextSchema = z.object({
+  // Small label shown above the content, as plain text (React text child, never HTML). Absent on old blocks.
+  eyebrow: text(120),
   // Sanitized on parse: whatever is stored is already clean, and the renderer sanitizes again.
   html: z.string().max(100_000).default("").transform((v) => sanitizeRichText(v)),
 });
@@ -118,6 +120,8 @@ export const cardsSchema = z.object({
   columns: z.coerce.number().int().min(2).max(4).default(3),
   // "stats" shows the title as a large figure (5.2×); "steps" numbers the cards. Absent = "default" (old data unchanged).
   variant: z.enum(["default", "stats", "steps"]).default("default"),
+  // Where `intro` goes. "auto": above the cards, except stat cards where it is a footnote below them.
+  introPlacement: z.enum(["auto", "above", "below"]).default("auto"),
   items: z
     .array(z.object({ title: z.string().trim().min(1, "Card title is required").max(120), text: longText(600), href: optionalHref, linkLabel: text(60) }))
     .max(MAX_ITEMS)
@@ -205,6 +209,7 @@ export const dataTableSchema = z
 
 export const proofGallerySchema = z.object({
   heading: text(200),
+  intro: longText(600),
   columns: z.coerce.number().int().min(1).max(3).default(2),
   // imageUrl may be empty while screenshots are being prepared; such items are skipped at render time.
   items: z

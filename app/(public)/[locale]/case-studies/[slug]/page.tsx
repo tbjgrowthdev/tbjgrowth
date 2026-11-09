@@ -188,7 +188,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         </header>
 
         {isValidImageSrc(study.featuredImage) && (
-          <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden mb-12 shadow-2xl">
+          <div className={`relative w-full aspect-[21/9] rounded-3xl overflow-hidden ${blocks.length > 0 ? "mb-6 md:mb-8" : "mb-12"} shadow-2xl`}>
             <Image
               src={cloudinaryUrl(study.featuredImage)}
               alt={study.featuredImageAlt || study.title}
@@ -222,7 +222,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         )}
       </article>
 
-      {blocks.length > 0 && <BlockRenderer blocks={blocks} source={`Case study: /case-studies/${study.slug}`} />}
+      {blocks.length > 0 && <BlockRenderer blocks={blocks} layout="caseStudy" source={`Case study: /case-studies/${study.slug}`} />}
     </main>
   );
 }
