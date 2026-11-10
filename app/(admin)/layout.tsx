@@ -147,12 +147,14 @@ export default async function AdminLayout({
       <SidebarFrame>
         <div className="flex-shrink-0 px-5 pt-5 pb-3">
           <Link href="/admin" aria-label="TBJ Growth Tech admin home" className="block w-fit rounded-2xl">
-            {/* The logo is never recolored: it always sits on a white tile so it stays legible in dark mode. */}
+            {/* Light mode uses the standard logo; dark mode swaps to the dark-theme logo so it stays legible on the dark tile. */}
             <span className="admin-brand-wide inline-flex items-center rounded-2xl bg-white px-3 py-2 ring-1 ring-[var(--border-c)]">
-              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-8 w-auto" />
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-8 w-auto dark:hidden" />
+              <Image src="/primary-logo-dark.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="hidden h-8 w-auto dark:block" />
             </span>
             <span className="admin-brand-mark h-11 w-11 overflow-hidden rounded-2xl bg-white ring-1 ring-[var(--border-c)]">
-              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-11 w-auto max-w-none" />
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-11 w-auto max-w-none dark:hidden" />
+              <Image src="/primary-logo-dark.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="hidden h-11 w-auto max-w-none dark:block" />
             </span>
           </Link>
           <div className="admin-brand-tag mt-1.5 flex justify-end pr-1">

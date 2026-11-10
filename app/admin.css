@@ -455,6 +455,13 @@ html.dark .kbd {
   color: var(--fg);
   border-color: var(--admin-input-border);
 }
+/* Sidebar drawer toggle: only needed below md, where the sidebar is off-canvas.
+   (.icon-btn sets display above, which would otherwise beat Tailwind's md:hidden.) */
+@media (min-width: 768px) {
+  .icon-btn.admin-menu-btn {
+    display: none;
+  }
+}
 .avatar-ring {
   position: relative;
   display: inline-flex;

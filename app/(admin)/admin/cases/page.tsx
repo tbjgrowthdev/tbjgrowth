@@ -20,8 +20,8 @@ export default async function CaseStudiesList() {
         </Link>
       </div>
 
-      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <table className="w-full text-left border-collapse">
+      <div className="bg-card rounded-lg shadow-sm border border-border overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left border-collapse">
           <thead>
             <tr className="bg-background border-b border-border">
               <th className="px-6 py-4 font-medium text-caption">Title</th>
@@ -58,11 +58,13 @@ export default async function CaseStudiesList() {
                       {caseStudy.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right flex justify-end gap-3">
+                  <td className="px-6 py-4">
+                    <div className="flex justify-end gap-3">
                     <Link href={`/admin/cases/${caseStudy.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
                       <Edit size={18} />
                     </Link>
                     <ContentDeleteButton id={caseStudy.id} kind="CASE_STUDY" onDelete={deleteCaseStudy} entityName="case study" />
+                    </div>
                   </td>
                 </tr>
               ))

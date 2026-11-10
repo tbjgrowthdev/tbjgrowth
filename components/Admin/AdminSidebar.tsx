@@ -61,7 +61,7 @@ export function SidebarToggle() {
       aria-label="Open menu"
       aria-controls="admin-sidebar"
       aria-expanded={open}
-      className="icon-btn md:hidden"
+      className="icon-btn admin-menu-btn md:hidden"
     >
       <Menu size={18} />
     </button>
