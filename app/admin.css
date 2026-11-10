@@ -53,6 +53,12 @@ html:has(.admin-shell) {
   --admin-grid: rgb(27 21 18 / 0.035);
   --admin-sb-w: 17rem;
 
+  /* Table header row: a deeper warm sand than the page (#F4EEE9) and the white body rows.
+     Text Cocoa #4E423C on #EADFD3 = 6.9:1; the 2px base line is decorative. */
+  --admin-thead-bg: #eadfd3;
+  --admin-thead-fg: #4e423c;
+  --admin-thead-line: #c9b5a4;
+
   --color-brand-orange: #cc4a19;
   --color-brand-orange-deep: #a83a11;
 
@@ -89,6 +95,12 @@ html.dark:has(.admin-shell) {
 
   --admin-raised: #2a201b;
   --admin-inset: #151110;
+
+  /* Table header row: warm cocoa lifted above the page (#151110) and body rows (#1E1714).
+     Text #E8DDD5 on #36271F = 10:1. */
+  --admin-thead-bg: #36271f;
+  --admin-thead-fg: #e8ddd5;
+  --admin-thead-line: #7a4a33;
   --admin-input-border: #857569;
   --admin-ring: #ff8a4c;
   --admin-orange: #ff7a35;
@@ -491,6 +503,40 @@ html.dark .avatar-ring {
   border-radius: 1rem;
   box-shadow: var(--admin-shadow);
 }
+/* ── Page headers: title spacing + graceful wrapping ──
+   Description/subtitle under any page title gets a consistent gap. */
+.admin-shell main .admin-title + p {
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+/* Header row = a flex row whose first child holds the PageTitle (directly or one level down).
+   It wraps instead of squeezing: the title block keeps a readable minimum width and the
+   action group drops to its own row (right-aligned on wide, full-width flow on narrow). */
+.admin-shell main .flex.justify-between:has(> .admin-title, > * > .admin-title) {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+.admin-shell main .flex.justify-between:has(> .admin-title, > * > .admin-title) > :has(.admin-title),
+.admin-shell main .flex.justify-between:has(> .admin-title, > * > .admin-title) > .admin-title {
+  flex: 1 1 26rem;
+  min-width: 0;
+}
+.admin-shell main .flex.justify-between:has(> .admin-title, > * > .admin-title) > :not(:has(.admin-title)):not(.admin-title) {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Labels never wrap on buttons, pills and chips. */
+.admin-shell main :is(button, a)[class*="px-"][class*="py-"]:not([class*="w-full"]):not([role="menuitem"]):not(.admin-nav-item),
+.admin-shell main span[class*="rounded-full"][class*="px-"],
+.chip,
+.btn-primary,
+.btn-secondary {
+  white-space: nowrap;
+}
+
 /* Density: legacy roomy card padding scaled down to match the dashboard. */
 .admin-shell main [class~="bg-card"][class~="border"][class~="p-6"]:not([role="dialog"]) {
   padding: 1.25rem;
@@ -574,15 +620,17 @@ html.dark .admin-shell :is(input:not([type="checkbox"], [type="radio"], [type="r
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--caption-fg);
+  color: var(--admin-thead-fg);
+  background-color: var(--admin-thead-bg);
+  border-bottom: 2px solid var(--admin-thead-line);
 }
 .admin-shell thead,
 .admin-shell thead tr {
-  background-color: var(--admin-inset);
+  background-color: var(--admin-thead-bg);
 }
-html.dark .admin-shell thead,
-html.dark .admin-shell thead tr {
-  background-color: var(--admin-raised);
+/* Header controls (sort buttons, checkboxes' labels) inherit the header colour. */
+.admin-shell thead th :is(button, a, label) {
+  color: inherit;
 }
 .admin-shell tbody tr {
   transition: background-color 0.12s;
