@@ -13,6 +13,7 @@ import {
 import { ACTION_EXPLANATION, ACTION_LABEL, type CannibalizationActionType, type SharedQuery } from "@/lib/content-cannibalization/types";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Pair = Awaited<ReturnType<typeof listCannibalizationPairsAction>>[number];
 
@@ -87,7 +88,7 @@ export default function CannibalizationListClient({ pairs }: { pairs: Pair[] }) 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Content Cannibalization</h1>
+          <PageTitle>Content Cannibalization</PageTitle>
           <p className="text-caption">
             Pairs of published pages competing for the same search intent. Every suggestion here is advisory — nothing is merged, redirected, or
             edited automatically; you decide what (if anything) to do, then mark it resolved.

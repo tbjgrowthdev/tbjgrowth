@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getExecutiveAnalyticsAction } from "@/app/(admin)/actions/executive-analytics";
 import { WINDOW_OPTIONS, type ExecutiveAnalyticsData } from "@/lib/executive-analytics/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const GRADE_STYLE: Record<string, string> = {
   EXCELLENT: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
@@ -115,7 +116,7 @@ export default function ExecutiveAnalyticsClient({ initialData, initialDays }: {
   if (!data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Executive Analytics</h1>
+        <PageTitle>Executive Analytics</PageTitle>
         <p className="text-caption">You don&apos;t have permission to view this.</p>
       </div>
     );
@@ -125,7 +126,7 @@ export default function ExecutiveAnalyticsClient({ initialData, initialDays }: {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Executive Analytics</h1>
+          <PageTitle>Executive Analytics</PageTitle>
           <p className="text-caption">
             One rollup across traffic, leads, content, SEO health, AI usage/cost, and production — every number here is read from a feature already built
             elsewhere; this page adds no new data of its own.

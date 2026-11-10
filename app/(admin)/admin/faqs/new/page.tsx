@@ -1,9 +1,10 @@
 import FaqForm from "@/components/Admin/FaqForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewFaq() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Add Question</h1>
+      <PageTitle className="mb-6">Add Question</PageTitle>
       <FaqForm />
     </div>
   );

@@ -2,6 +2,7 @@ import { getPages, deletePage } from "../../actions/pages";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
 import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function PagesList() {
   const pages = await getPages();
@@ -9,7 +10,7 @@ export default async function PagesList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Pages</h1>
+        <PageTitle>Pages</PageTitle>
         <Link 
           href="/admin/pages/new" 
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

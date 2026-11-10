@@ -1,7 +1,14 @@
+import Link from "next/link";
+import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { getWebVitalsSummary, getRecentFailedLogins } from "@/app/(admin)/actions/technical";
+import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
+import { hasPermission } from "@/lib/permissions";
+import { isValidImageSrc } from "@/lib/utils";
 import SslChecker from "@/components/Admin/SslChecker";
-import { FileText, FileEdit, Users, ShieldAlert, Database, Activity } from "lucide-react";
+import PageTitle from "@/components/Admin/PageTitle";
+import DashboardGreeting from "@/components/Admin/DashboardGreeting";
+import { FileText, FileEdit, Users, ShieldAlert, Database, Activity, CheckCircle2, TriangleAlert, XCircle, ArrowRight, Plus, Images, Inbox, Gauge } from "lucide-react";
 
 const METRIC_LABELS: Record<string, string> = {
   LCP: "Largest Contentful Paint",
@@ -11,10 +18,34 @@ const METRIC_LABELS: Record<string, string> = {
   TTFB: "Time to First Byte",
 };
 
-const RATING_COLOR: Record<string, string> = {
-  good: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20",
-  "needs-improvement": "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20",
-  poor: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20",
+// Status is carried by icon + label + a left accent, never by color alone.
+const RATING: Record<string, { label: string; icon: typeof CheckCircle2; tone: string; bar: string }> = {
+  good: {
+    label: "Good",
+    icon: CheckCircle2,
+    tone: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    bar: "bg-green-700 dark:bg-green-400",
+  },
+  "needs-improvement": {
+    label: "Needs improvement",
+    icon: TriangleAlert,
+    tone: "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300",
+    bar: "bg-amber-700 dark:bg-amber-400",
+  },
+  poor: {
+    label: "Poor",
+    icon: XCircle,
+    tone: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+    bar: "bg-red-700 dark:bg-red-400",
+  },
+};
+
+const ROLE_LABEL: Record<string, string> = {
+  SUPER_ADMIN: "Super Admin",
+  ADMIN: "Admin",
+  EDITOR: "Editor",
+  SEO_MANAGER: "SEO Manager",
+  CONTRIBUTOR: "Contributor",
 };
 
 function formatMetricValue(metric: string, value: number) {
@@ -22,109 +53,228 @@ function formatMetricValue(metric: string, value: number) {
   return `${Math.round(value)}ms`;
 }
 
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  href,
+  hrefLabel,
+  emptyNote,
+}: {
+  label: string;
+  value: number;
+  icon: typeof FileText;
+  href?: string;
+  hrefLabel: string;
+  emptyNote: string;
+}) {
+  return (
+    <div className="admin-card flex flex-col p-6">
+      <div className="flex items-center justify-between gap-3">
+        <p className="eyebrow">{label}</p>
+        <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-stat text-brand-orange-deep dark:text-brand-orange-light">
+          <Icon size={20} aria-hidden="true" />
+        </span>
+      </div>
+      <p className="mt-4 font-heading text-5xl font-bold leading-none tracking-tight text-foreground tabular-nums">{value}</p>
+      <p className="mt-2 min-h-[1.25rem] text-sm text-caption">{value === 0 ? emptyNote : " "}</p>
+      {href && (
+        <Link href={href} className="mt-3 inline-flex w-fit items-center gap-1.5 text-sm font-bold text-brand-orange-deep hover:underline dark:text-brand-orange-light">
+          {hrefLabel}
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export default async function AdminDashboard() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const [pageCount, publishedPostCount, newLeadsCount, vitals, failedLogins] = await Promise.all([
+  const [pageCount, publishedPostCount, newLeadsCount, vitals, failedLogins, admin] = await Promise.all([
     prisma.page.count(),
     prisma.post.count({ where: { status: "PUBLISHED" } }),
     prisma.formSubmission.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
     getWebVitalsSummary(),
     getRecentFailedLogins(24),
+    getCurrentAdmin(),
   ]);
 
-  return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Dashboard Overview</h1>
+  const name = admin?.name || "Admin";
+  const firstName = name.split(/\s+/)[0] || name;
+  const role = admin?.role;
+  const canSeeLeads = hasPermission(role, "USER_MANAGEMENT");
+  const canSeeMedia = hasPermission(role, "MEDIA_MANAGEMENT");
+  const today = new Intl.DateTimeFormat("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date());
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-card p-6 rounded-lg shadow-sm border border-border flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-stat">
-            <FileText className="text-brand-orange-deep dark:text-brand-orange-light" size={22} />
-          </div>
-          <div>
-            <h3 className="text-caption text-sm font-medium">Total Pages</h3>
-            <p className="text-3xl font-bold text-foreground">{pageCount}</p>
-          </div>
+  return (
+    <div className="mx-auto w-full max-w-[1400px] space-y-6">
+      <PageTitle>Dashboard Overview</PageTitle>
+
+      {/* Hero / greeting */}
+      <section className="admin-card relative overflow-hidden p-6 sm:p-8" aria-label="Welcome">
+        {/* Orbit rings: brand motif, one corner only */}
+        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 sm:-right-16">
+          <span className="orbit inset-0" />
+          <span className="orbit inset-10 opacity-70" />
+          <span className="orbit inset-20 opacity-50" />
         </div>
-        <div className="bg-card p-6 rounded-lg shadow-sm border border-border flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-stat">
-            <FileEdit className="text-brand-orange-deep dark:text-brand-orange-light" size={22} />
+
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
+          <span className="avatar-ring !h-16 !w-16 !text-xl">
+            {isValidImageSrc(admin?.image) ? <Image src={admin!.image!} alt="" fill className="object-cover" /> : <span aria-hidden="true">{name.charAt(0).toUpperCase()}</span>}
+          </span>
+          <div className="min-w-0">
+            <DashboardGreeting name={firstName} />
+            <p className="mt-1 text-sm text-muted sm:text-base">Here&rsquo;s your site overview for today &mdash; {today}</p>
           </div>
-          <div>
-            <h3 className="text-caption text-sm font-medium">Published Posts</h3>
-            <p className="text-3xl font-bold text-foreground">{publishedPostCount}</p>
-          </div>
+          {role && (
+            <div className="sm:ml-auto sm:pr-28">
+              <span className="chip chip-ink">{ROLE_LABEL[role] ?? role}</span>
+            </div>
+          )}
         </div>
-        <div className="bg-card p-6 rounded-lg shadow-sm border border-border flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-stat">
-            <Users className="text-brand-orange-deep dark:text-brand-orange-light" size={22} />
-          </div>
-          <div>
-            <h3 className="text-caption text-sm font-medium">New Leads (30d)</h3>
-            <p className="text-3xl font-bold text-foreground">{newLeadsCount}</p>
-          </div>
+
+        <div className="relative mt-6 flex flex-wrap gap-3 border-t border-border pt-5">
+          <Link href="/admin/posts/new" className="btn-primary">
+            <Plus size={16} aria-hidden="true" />
+            New blog post
+          </Link>
+          <Link href="/admin/pages/new" className="btn-secondary">
+            New page
+          </Link>
+          <Link href="/admin/cases/new" className="btn-secondary">
+            New case study
+          </Link>
+          {canSeeMedia && (
+            <Link href="/admin/media" className="btn-secondary">
+              <Images size={15} aria-hidden="true" />
+              Media library
+            </Link>
+          )}
+          {canSeeLeads && (
+            <Link href="/admin/leads" className="btn-secondary">
+              <Inbox size={15} aria-hidden="true" />
+              Leads
+            </Link>
+          )}
         </div>
+      </section>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <StatCard label="Total Pages" value={pageCount} icon={FileText} href="/admin/pages" hrefLabel="Manage pages" emptyNote="No pages yet" />
+        <StatCard label="Published Posts" value={publishedPostCount} icon={FileEdit} href="/admin/posts" hrefLabel="Manage posts" emptyNote="Nothing published yet" />
+        <StatCard
+          label="New Leads (30d)"
+          value={newLeadsCount}
+          icon={Users}
+          href={canSeeLeads ? "/admin/leads" : undefined}
+          hrefLabel="View leads"
+          emptyNote="No new leads in the last 30 days"
+        />
       </div>
 
       {/* Core Web Vitals */}
-      <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Activity size={18} />
-            Core Web Vitals (p75, last 7 days)
-          </h2>
-          <span className="text-xs text-caption">{vitals.totalSamples} real visitor samples</span>
-        </div>
-        {vitals.metrics.length === 0 ? (
-          <p className="text-sm text-caption">
-            No visitor data collected yet. Metrics populate automatically as people browse the live site.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {vitals.metrics.map((m) => (
-              <div key={m.metric} className={`p-3 rounded-lg ${RATING_COLOR[m.rating] || "bg-background"}`}>
-                <p className="text-xs font-medium opacity-80" title={METRIC_LABELS[m.metric]}>{m.metric}</p>
-                <p className="text-lg font-bold">{formatMetricValue(m.metric, m.p75)}</p>
-                <p className="text-[10px] opacity-70 capitalize">{m.rating.replace("-", " ")}</p>
-              </div>
-            ))}
+      <section className="admin-card p-6 sm:p-7" aria-labelledby="cwv-title">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-stat text-brand-orange-deep dark:text-brand-orange-light">
+              <Activity size={20} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="eyebrow">Performance</p>
+              <h2 id="cwv-title" className="font-heading text-lg font-bold leading-tight tracking-tight text-foreground">
+                Core Web Vitals (p75, last 7 days)
+              </h2>
+            </div>
           </div>
+          <span className="chip chip-sand">{vitals.totalSamples} real visitor samples</span>
+        </div>
+
+        {vitals.metrics.length === 0 ? (
+          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-dashed border-border bg-[var(--admin-inset)] p-5">
+            <Gauge size={20} className="flex-none text-caption" aria-hidden="true" />
+            <p className="text-sm text-muted">No visitor data collected yet. Metrics populate automatically as people browse the live site.</p>
+          </div>
+        ) : (
+          <ul className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+            {vitals.metrics.map((m) => {
+              const r = RATING[m.rating] ?? RATING.good;
+              const StatusIcon = r.icon;
+              return (
+                <li key={m.metric} className="relative overflow-hidden rounded-2xl border border-border bg-[var(--admin-inset)] p-4 pl-5">
+                  <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 ${r.bar}`} />
+                  <p className="eyebrow" title={METRIC_LABELS[m.metric]}>
+                    {m.metric}
+                  </p>
+                  <p className="mt-1 font-heading text-2xl font-bold tracking-tight text-foreground tabular-nums">{formatMetricValue(m.metric, m.p75)}</p>
+                  <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${r.tone}`}>
+                    <StatusIcon size={13} aria-hidden="true" />
+                    {r.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </div>
+      </section>
 
       {/* Technical Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <SslChecker />
 
-        <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-          <div className="flex items-center gap-2 mb-3">
-            <Database size={16} className="text-caption" />
-            <h3 className="text-sm font-semibold text-foreground">Database Backups</h3>
+        <section className="admin-card p-6" aria-labelledby="backup-title">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-stat text-brand-orange-deep dark:text-brand-orange-light">
+              <Database size={20} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="eyebrow">Data</p>
+              <h3 id="backup-title" className="font-heading text-lg font-bold leading-tight tracking-tight text-foreground">
+                Database Backups
+              </h3>
+            </div>
           </div>
-          <p className="text-xs text-caption">
+          <p className="mt-5 text-sm leading-relaxed text-muted">
             Backups are managed by Neon (your Postgres host), which takes continuous point-in-time-recovery snapshots automatically. No action needed here — manage retention in your Neon project dashboard.
           </p>
-        </div>
+        </section>
 
-        <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldAlert size={16} className="text-caption" />
-            <h3 className="text-sm font-semibold text-foreground">Failed Logins (24h)</h3>
+        <section className="admin-card p-6" aria-labelledby="logins-title">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-stat text-brand-orange-deep dark:text-brand-orange-light">
+                <ShieldAlert size={20} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="eyebrow">Security</p>
+                <h3 id="logins-title" className="font-heading text-lg font-bold leading-tight tracking-tight text-foreground">
+                  Failed Logins (24h)
+                </h3>
+              </div>
+            </div>
+            {failedLogins.length === 0 && <span className="chip chip-ink">All clear</span>}
           </div>
           {failedLogins.length === 0 ? (
-            <p className="text-xs text-green-600 dark:text-green-400">No failed login attempts.</p>
+            <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-green-800 dark:text-green-300">
+              <CheckCircle2 size={16} aria-hidden="true" />
+              No failed login attempts.
+            </p>
           ) : (
-            <ul className="space-y-1 max-h-24 overflow-y-auto">
+            <ul className="mt-5 max-h-32 space-y-1.5 overflow-y-auto">
               {failedLogins.slice(0, 5).map((a) => (
-                <li key={a.id} className="text-xs text-caption truncate">
-                  {a.email} — {new Date(a.createdAt).toLocaleTimeString()}
+                <li key={a.id} className="flex items-center gap-2 truncate rounded-xl bg-[var(--admin-inset)] px-3 py-1.5 text-xs text-muted">
+                  <TriangleAlert size={13} className="flex-none text-amber-700 dark:text-amber-400" aria-hidden="true" />
+                  <span className="truncate">
+                    {a.email} — {new Date(a.createdAt).toLocaleTimeString()}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

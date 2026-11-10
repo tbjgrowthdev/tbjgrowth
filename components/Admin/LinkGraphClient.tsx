@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { getInternalLinkGraphAction } from "@/app/(admin)/actions/link-graph";
 import type { LinkGraphContentType, LinkGraphNode } from "@/lib/link-graph/types";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Result = Awaited<ReturnType<typeof getInternalLinkGraphAction>>;
 
@@ -68,7 +69,7 @@ export default function LinkGraphClient({ result }: { result: Result }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Internal Link Graph</h1>
+        <PageTitle>Internal Link Graph</PageTitle>
         <p className="text-caption">
           Every internal link found in published/indexable content&apos;s own body, source page to target page. Hover a node to trace its
           connections; the table below lists each link with its anchor text, how many times it appears, and the target&apos;s type and topic.

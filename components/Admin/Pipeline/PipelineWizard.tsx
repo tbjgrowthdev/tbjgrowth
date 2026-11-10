@@ -21,6 +21,7 @@ import type { Brief, Research, SearchIntent, Outline, QaReport, QaCheck, LinkSug
 import { describeActionError, requestPipelineStage } from "@/lib/admin/action-errors";
 import ImageInput from "@/components/Admin/Media/ImageInput";
 import { toast, withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type RunAndContent = NonNullable<Awaited<ReturnType<typeof getPipelineRunAction>>> & { jobs: Awaited<ReturnType<typeof getJobsForRunAction>> };
 type Job = RunAndContent["jobs"][number];
@@ -225,7 +226,7 @@ export default function PipelineWizard({ run, content, jobs }: RunAndContent) {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{brief?.topic || "AI Content Pipeline Run"}</h1>
+          <PageTitle>{brief?.topic || "AI Content Pipeline Run"}</PageTitle>
           <p className="text-caption">{run.contentType === "CASE_STUDY" ? "Case Study" : "Blog Post"}</p>
         </div>
         {editorHref && (

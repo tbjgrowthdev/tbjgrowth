@@ -2,6 +2,7 @@ import { getFaqs, deleteFaq } from "../../actions/faqs";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
 import DeleteButton from "@/components/Admin/DeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function FaqsList() {
   const faqs = await getFaqs();
@@ -9,7 +10,7 @@ export default async function FaqsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">FAQ</h1>
+        <PageTitle>FAQ</PageTitle>
         <Link
           href="/admin/faqs/new"
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

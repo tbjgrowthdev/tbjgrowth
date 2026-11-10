@@ -1,5 +1,6 @@
 import { getMediaAssets, getMediaFolders } from "@/app/(admin)/actions/media";
 import MediaLibraryClient from "@/components/Admin/Media/MediaLibraryClient";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function MediaLibraryPage() {
   const [assets, folders] = await Promise.all([getMediaAssets(), getMediaFolders()]);
@@ -7,7 +8,7 @@ export default async function MediaLibraryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Media Library</h1>
+        <PageTitle>Media Library</PageTitle>
         <p className="text-caption">Upload, search, and manage images used across the site.</p>
       </div>
 

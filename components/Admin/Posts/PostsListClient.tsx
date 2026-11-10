@@ -7,6 +7,7 @@ import { Plus, Edit } from "lucide-react";
 import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
 import BulkActionsBar from "./BulkActionsBar";
 import { deletePost } from "@/app/(admin)/actions/posts";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Post = {
   id: string;
@@ -58,7 +59,7 @@ export default function PostsListClient({
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Blog Posts</h1>
+        <PageTitle>Blog Posts</PageTitle>
         <Link
           href="/admin/posts/new"
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

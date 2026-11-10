@@ -11,6 +11,7 @@ import {
 } from "@/app/(admin)/actions/content-recommendations";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Recommendation = Awaited<ReturnType<typeof listRecommendationsAction>>[number];
 
@@ -78,7 +79,7 @@ export default function RecommendationsListClient({ recommendations }: { recomme
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Content Recommendations</h1>
+          <PageTitle>Content Recommendations</PageTitle>
           <p className="text-caption">
             Keyword gaps found by comparing real search demand (Search Console, Rank Tracker) against what&apos;s already published — each one is a
             topic suggestion, not a draft.

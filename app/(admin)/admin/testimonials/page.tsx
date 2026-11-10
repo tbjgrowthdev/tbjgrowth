@@ -2,6 +2,7 @@ import { getTestimonials, deleteTestimonial } from "../../actions/testimonials";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
 import DeleteButton from "@/components/Admin/DeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function TestimonialsList() {
   const testimonials = await getTestimonials();
@@ -9,7 +10,7 @@ export default async function TestimonialsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Testimonials</h1>
+        <PageTitle>Testimonials</PageTitle>
         <Link 
           href="/admin/testimonials/new" 
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

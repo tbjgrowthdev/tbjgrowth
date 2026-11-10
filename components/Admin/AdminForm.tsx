@@ -7,6 +7,7 @@ import { Save, AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { Role } from "@/lib/generated/prisma/client";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function AdminForm() {
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function AdminForm() {
         <Link href="/admin/admins" className="p-2 bg-card rounded-lg hover:bg-tint transition-colors">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold text-foreground">Add Team Member</h1>
+        <PageTitle>Add Team Member</PageTitle>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">

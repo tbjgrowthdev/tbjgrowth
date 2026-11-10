@@ -1,6 +1,7 @@
 import { getTestimonial } from "@/app/(admin)/actions/testimonials";
 import TestimonialForm from "@/components/Admin/TestimonialForm";
 import { notFound } from "next/navigation";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function EditTestimonial({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +13,7 @@ export default async function EditTestimonial({ params }: { params: Promise<{ id
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Testimonial: {t.clientName}</h1>
+      <PageTitle className="mb-6">Edit Testimonial: {t.clientName}</PageTitle>
       <TestimonialForm initialData={t} />
     </div>
   );

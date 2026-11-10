@@ -2,6 +2,7 @@ import { getPartners, deletePartner } from "../../actions/partners";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
 import DeleteButton from "@/components/Admin/DeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function PartnersList() {
   const partners = await getPartners();
@@ -9,7 +10,7 @@ export default async function PartnersList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Trusted Partners</h1>
+        <PageTitle>Trusted Partners</PageTitle>
         <Link 
           href="/admin/partners/new" 
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

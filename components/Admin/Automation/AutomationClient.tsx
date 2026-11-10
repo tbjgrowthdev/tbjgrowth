@@ -17,6 +17,7 @@ import RunsPanel from "./RunsPanel";
 import SocialDraftsPanel from "./SocialDraftsPanel";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Rule = Awaited<ReturnType<typeof listAutomationRulesAction>>[number];
 type RunsProp = Parameters<typeof RunsPanel>[0]["initialRuns"];
@@ -154,7 +155,7 @@ export default function AutomationClient({ rules, runs, socialDrafts }: { rules:
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Webhook &amp; Automation Engine</h1>
+        <PageTitle>Webhook &amp; Automation Engine</PageTitle>
         <p className="text-caption">Event → Condition → Action chains. Every action reuses an existing tool (the SEO audit, Content Refresh, the Integration Hub&apos;s Slack/Webhooks) — this engine is the wiring between them. Actions that write to live content need approval by default.</p>
       </div>
 

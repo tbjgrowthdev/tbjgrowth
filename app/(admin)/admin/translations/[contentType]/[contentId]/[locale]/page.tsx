@@ -5,6 +5,7 @@ import { getBaseContentForTranslation, getExistingTranslation } from "@/app/(adm
 import { TRANSLATION_FIELD_MAP, type TranslatableKind } from "@/lib/translation";
 import { getLocaleByCode } from "@/lib/i18n";
 import TranslationEditor from "@/components/Admin/Translations/TranslationEditor";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const VALID_TYPES: TranslatableKind[] = ["POST", "PAGE", "CASE_STUDY", "SERVICE", "CATEGORY", "TAG"];
 
@@ -44,9 +45,9 @@ export default async function TranslationEditorPage({
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
+        <PageTitle>
           Translate to {locale.label}
-        </h1>
+        </PageTitle>
         <p className="text-caption">
           {contentType.replace("_", " ")} &middot; {"title" in base ? base.title : "name" in base ? base.name : contentId}
         </p>

@@ -5,6 +5,7 @@ import { Loader2, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
 import { getCanonicalHreflangReport } from "@/app/(admin)/actions/canonical-hreflang";
 import type { CanonicalContentType, CanonicalIssue, HreflangIssue } from "@/lib/canonical-hreflang";
 import { describeActionError } from "@/lib/admin/action-errors";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Result = Awaited<ReturnType<typeof getCanonicalHreflangReport>>;
 
@@ -89,7 +90,7 @@ export default function CanonicalHreflangClient({ initialResult }: { initialResu
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Canonical &amp; Hreflang</h1>
+          <PageTitle>Canonical &amp; Hreflang</PageTitle>
           <p className="text-caption">
             Every published Post, Page, Case Study, and indexable Service gets an auto-generated canonical URL
             (its own URL) unless overridden in its SEO panel, plus hreflang alternates for any published translation.

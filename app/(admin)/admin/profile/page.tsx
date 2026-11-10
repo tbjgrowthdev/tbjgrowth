@@ -3,6 +3,7 @@ import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
 import { getMyTwoFactorStatus, getMySessions, getMyLoginHistory } from "@/app/(admin)/actions/security";
 import ProfileForm from "@/components/Admin/ProfileForm";
 import SecuritySettings from "@/components/Admin/SecuritySettings";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function ProfilePage() {
   const user = await getCurrentAdmin();
@@ -20,7 +21,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+        <PageTitle>My Profile</PageTitle>
         <p className="text-caption">Manage your account details and password.</p>
       </div>
       <ProfileForm user={user} />

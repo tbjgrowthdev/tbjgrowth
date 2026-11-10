@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion } from "framer-motion";
+import PageTitle from "@/components/Admin/PageTitle";
 import { Lock, Mail, ArrowRight, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
@@ -51,31 +53,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      {/* Background gradients */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full blur-3xl bg-brand-orange/10 dark:bg-brand-orange/5" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full blur-3xl bg-off-black/10 dark:bg-off-black/20" />
+    <div className="admin-canvas relative flex min-h-screen items-center justify-center overflow-hidden p-4">
+      {/* Orbit rings: brand motif, one corner only */}
+      <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem]">
+        <span className="orbit inset-0" />
+        <span className="orbit inset-16 opacity-70" />
+        <span className="orbit inset-32 opacity-50" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10"
+        className="relative z-10 w-full max-w-md"
       >
-        <div className="bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
+        <div className="admin-card overflow-hidden !rounded-[1.75rem]">
           {/* Header */}
-          <div className="p-8 pb-6 bg-gradient-to-br from-background to-card border-b border-border text-center">
-            <div className="inline-flex p-4 rounded-2xl bg-cream dark:bg-brand-orange-deep/20 text-brand-orange-deep dark:text-brand-orange-light mb-4">
-              <Lock className="w-8 h-8" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Secure Access
-            </h1>
-            <p className="text-sm text-muted">
-              Sign in to access the TBJ Administration Panel.
-            </p>
+          <div className="border-b border-border p-8 pb-6 text-center">
+            <span className="inline-flex items-center rounded-2xl bg-white px-4 py-2.5 ring-1 ring-[var(--border-c)]">
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-9 w-auto" />
+            </span>
+            <p className="eyebrow eyebrow-accent mt-6">Administration panel</p>
+            <PageTitle className="mt-2">Secure Access</PageTitle>
+            <p className="mt-3 text-sm text-muted">Sign in to access the TBJ Administration Panel.</p>
           </div>
 
           {/* Form */}
@@ -85,7 +85,8 @@ export default function LoginPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-start gap-2 border border-red-100 dark:border-red-900/30"
+                  role="alert"
+                  className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-300"
                 >
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
                   <p>{error}</p>
@@ -95,7 +96,7 @@ export default function LoginPage() {
               {!needsTwoFactor ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-muted mb-1.5">
+                    <label htmlFor="login-email" className="block text-sm font-bold text-foreground mb-1.5">
                       Email Address
                     </label>
                     <div className="relative">
@@ -103,18 +104,20 @@ export default function LoginPage() {
                         <Mail className="h-5 w-5 text-caption" />
                       </div>
                       <input
+                        id="login-email"
                         type="email"
+                        autoComplete="username"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
+                        className="w-full pl-10 pr-4 py-3 border rounded-2xl transition-all text-foreground"
                         placeholder="admin@example.com"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-muted mb-1.5">
+                    <label htmlFor="login-password" className="block text-sm font-bold text-foreground mb-1.5">
                       Password
                     </label>
                     <div className="relative">
@@ -122,11 +125,13 @@ export default function LoginPage() {
                         <Lock className="h-5 w-5 text-caption" />
                       </div>
                       <input
+                        id="login-password"
+                        autoComplete="current-password"
                         type={showPassword ? "text" : "password"}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-11 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
+                        className="w-full pl-10 pr-11 py-3 border rounded-2xl transition-all text-foreground"
                         placeholder="••••••••"
                       />
                       <button
@@ -143,7 +148,7 @@ export default function LoginPage() {
                 </>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-1.5">
+                  <label className="block text-sm font-bold text-foreground mb-1.5">
                     {useBackupCode ? "Backup code" : "Authenticator code"}
                   </label>
                   <div className="relative">
@@ -156,7 +161,7 @@ export default function LoginPage() {
                       autoFocus
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all text-foreground"
+                      className="w-full pl-10 pr-4 py-3 border rounded-2xl transition-all text-foreground"
                       placeholder={useBackupCode ? "XXXX-XXXX" : "6-digit code"}
                     />
                   </div>
@@ -167,7 +172,7 @@ export default function LoginPage() {
                       setCode("");
                       setError("");
                     }}
-                    className="mt-2 text-xs text-caption hover:text-foreground underline transition-colors"
+                    className="mt-3 text-xs font-semibold text-muted hover:text-foreground underline transition-colors"
                   >
                     {useBackupCode ? "Use authenticator app instead" : "Use a backup code instead"}
                   </button>
@@ -177,7 +182,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-brand-orange-deep to-brand-orange hover:from-brand-orange-deep hover:to-brand-orange-deep text-white rounded-xl font-medium shadow-lg shadow-brand-orange/30 flex items-center justify-center gap-2 transition-all disabled:opacity-70"
+                className="btn-primary w-full !py-3.5 disabled:opacity-70"
               >
                 {isLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

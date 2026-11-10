@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getSeoExperiments } from "../../actions/seo-experiments";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const STATUS_STYLE: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
@@ -24,7 +25,7 @@ export default async function SeoExperimentsList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">SEO Experimentation</h1>
+          <PageTitle>SEO Experimentation</PageTitle>
           <p className="text-caption">Sequential before/after tests on title, meta description, CTA, internal links, and content sections — one version live at a time.</p>
         </div>
         <Link href="/admin/seo-experiments/new" className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors whitespace-nowrap">

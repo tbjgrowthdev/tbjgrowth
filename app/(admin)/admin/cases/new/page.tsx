@@ -1,9 +1,10 @@
 import CaseStudyForm from "@/components/Admin/CaseStudyForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewCaseStudy() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Create New Case Study</h1>
+      <PageTitle className="mb-6">Create New Case Study</PageTitle>
       <CaseStudyForm />
     </div>
   );

@@ -9,6 +9,7 @@ import DeleteButton from "@/components/Admin/DeleteButton";
 import RoleSelect from "@/components/Admin/RoleSelect";
 import { isValidImageSrc } from "@/lib/utils";
 import type { Role } from "@/lib/generated/prisma/client";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const ROLE_BADGE: Record<Role, { label: string; className: string; icon: typeof ShieldAlert }> = {
   SUPER_ADMIN: { label: "Super Admin", className: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400", icon: ShieldAlert },
@@ -37,7 +38,7 @@ export default async function AdminsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Team Members</h1>
+          <PageTitle>Team Members</PageTitle>
           <p className="text-caption">Manage who has access to this dashboard and what they can do.</p>
         </div>
         <Link

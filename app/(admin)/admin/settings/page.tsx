@@ -7,6 +7,7 @@ import AiProviderSettings from "@/components/Admin/AiProviderSettings";
 import { hasPermission } from "@/lib/permissions";
 import { PROVIDER_LABEL, resolveAiConfig } from "@/lib/content-pipeline/providers/config";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function SettingsPage() {
   const settings = await getSiteSettings();
@@ -18,7 +19,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Global Site Settings</h1>
+      <PageTitle>Global Site Settings</PageTitle>
 
       {nap.checked && (
         <div className={`p-4 rounded-lg flex items-start gap-3 text-sm ${nap.issues.length === 0 ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400" : "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"}`}>

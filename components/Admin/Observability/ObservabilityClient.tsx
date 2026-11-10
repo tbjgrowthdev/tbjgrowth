@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, Database, Server, Mail, Webhook, Plug, Bot
 import { getObservabilityDataAction } from "@/app/(admin)/actions/observability";
 import type { ObservabilityData } from "@/lib/observability/types";
 import { describeActionError } from "@/lib/admin/action-errors";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const WINDOW_LABEL: Record<number, string> = { 24: "Last 24h", 168: "Last 7d", 720: "Last 30d" };
 
@@ -35,7 +36,7 @@ export default function ObservabilityClient({ initialData, initialHours }: { ini
   if (!data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Observability</h1>
+        <PageTitle>Observability</PageTitle>
         <p className="text-caption">You don&apos;t have permission to view this.</p>
       </div>
     );
@@ -47,7 +48,7 @@ export default function ObservabilityClient({ initialData, initialHours }: { ini
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Observability</h1>
+          <PageTitle>Observability</PageTitle>
           <p className="text-caption">
             Application errors, request/query performance, and business-critical failures — rolled up from the signals this app already records
             (ErrorLog, UptimeCheck, AiJob, ScheduledJob, Integration Hub, EmailLog, SlowQueryLog). No external monitoring agent is involved.

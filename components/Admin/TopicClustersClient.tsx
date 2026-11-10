@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { getTopicClustersAction } from "@/app/(admin)/actions/topic-clusters";
 import type { ClusterContentType, TopicClusterMember } from "@/lib/topic-clusters/types";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Result = Awaited<ReturnType<typeof getTopicClustersAction>>;
 
@@ -50,7 +51,7 @@ export default function TopicClustersClient({ result }: { result: Result }) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Topic Clusters</h1>
+        <PageTitle>Topic Clusters</PageTitle>
         <p className="text-caption">
           Published/indexable content grouped by shared topic (word-overlap similarity), each with a pillar — its most substantial page —
           and the rest classified as cluster content (already links to the pillar) or supporting content (same topic, but not linked up to

@@ -2,6 +2,7 @@ import { getSystems, deleteSystem } from "../../actions/systems";
 import Link from "next/link";
 import { Plus, Edit } from "lucide-react";
 import DeleteButton from "@/components/Admin/DeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function SystemsList() {
   const systems = await getSystems();
@@ -9,7 +10,7 @@ export default async function SystemsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">TBJ Systems</h1>
+        <PageTitle>TBJ Systems</PageTitle>
         <Link 
           href="/admin/systems/new" 
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

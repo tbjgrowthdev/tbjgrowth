@@ -1,6 +1,7 @@
 import { getLeads } from "../../actions/forms";
 import { Mail, Phone, Building } from "lucide-react";
 import MarkReadButton from "@/components/Admin/MarkReadButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function LeadsList() {
   const leads = await getLeads();
@@ -8,7 +9,7 @@ export default async function LeadsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Lead Captures & Forms</h1>
+        <PageTitle>Lead Captures & Forms</PageTitle>
       </div>
 
       <div className="space-y-4">

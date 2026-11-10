@@ -9,6 +9,7 @@ import { SECTION_HELP, SECTION_LABEL } from "@/lib/brand-kb/constants";
 import type { BrandSectionKey } from "@/lib/generated/prisma/client";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Detail = Awaited<ReturnType<typeof getBrandSectionDetailAction>>;
 type Section = NonNullable<NonNullable<Detail>["section"]>;
@@ -75,7 +76,7 @@ export default function BrandKbEditor({
         <Link href="/admin/brand-kb" className="text-sm text-caption hover:text-foreground">
           ← Brand Knowledge Base
         </Link>
-        <h1 className="text-2xl font-bold text-foreground mt-1">{SECTION_LABEL[sectionKey]}</h1>
+        <PageTitle className="mt-1">{SECTION_LABEL[sectionKey]}</PageTitle>
         <p className="text-caption text-sm mt-1">{SECTION_HELP[sectionKey]}</p>
       </div>
 

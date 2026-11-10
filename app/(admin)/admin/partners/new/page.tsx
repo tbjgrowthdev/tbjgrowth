@@ -1,9 +1,10 @@
 import PartnerForm from "@/components/Admin/PartnerForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewPartner() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Create New Partner</h1>
+      <PageTitle className="mb-6">Create New Partner</PageTitle>
       <PartnerForm />
     </div>
   );

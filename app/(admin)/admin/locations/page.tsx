@@ -2,6 +2,7 @@ import { getLocations, deleteLocation } from "../../actions/locations";
 import Link from "next/link";
 import { Plus, Edit, ExternalLink } from "lucide-react";
 import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const MARKET_LABEL: Record<string, string> = { uk: "UK", bangladesh: "Bangladesh", gulf: "Gulf (UAE)" };
 
@@ -11,7 +12,7 @@ export default async function LocationsList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Locations</h1>
+        <PageTitle>Locations</PageTitle>
         <Link href="/admin/locations/new" className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors">
           <Plus size={18} />
           Add Location

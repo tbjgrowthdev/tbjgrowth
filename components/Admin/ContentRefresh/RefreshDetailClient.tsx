@@ -16,6 +16,7 @@ import { SIGNAL_LABEL, type DetectedSignal } from "@/lib/content-refresh/types";
 import { STAGE_LABEL } from "@/lib/content-pipeline/types";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Detail = Awaited<ReturnType<typeof getRefreshDetailAction>>;
 type Refresh = NonNullable<Detail>["refresh"];
@@ -62,7 +63,7 @@ export default function RefreshDetailClient({ refresh, content, jobs }: { refres
           <Link href="/admin/content-refresh" className="text-sm text-caption hover:text-foreground">
             ← Content Refresh Engine
           </Link>
-          <h1 className="text-2xl font-bold text-foreground mt-1">{content?.title || refresh.contentId}</h1>
+          <PageTitle className="mt-1">{content?.title || refresh.contentId}</PageTitle>
           <p className="text-caption">{refresh.contentType === "CASE_STUDY" ? "Case Study" : "Blog Post"} — status: {refresh.status}</p>
         </div>
         {editorHref && (

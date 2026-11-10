@@ -18,8 +18,8 @@ const STATUS_OPTIONS = ["DRAFT", "REVIEW", "CHANGES_REQUESTED", "APPROVED", "SCH
 
 const EMPTY_FILTERS: SearchFilters = {};
 
-export default function ContentSearchClient({ facets }: { facets: { categories: string[]; tags: string[]; authors: string[] } }) {
-  const [filters, setFilters] = useState<SearchFilters>(EMPTY_FILTERS);
+export default function ContentSearchClient({ facets, initialQuery }: { facets: { categories: string[]; tags: string[]; authors: string[] }; initialQuery?: string }) {
+  const [filters, setFilters] = useState<SearchFilters>(initialQuery ? { query: initialQuery } : EMPTY_FILTERS);
   const [results, setResults] = useState<SearchResultItem[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);

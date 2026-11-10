@@ -4,6 +4,7 @@ import {
   getTranslationStatusMap,
 } from "@/app/(admin)/actions/translations";
 import TranslationsListClient from "@/components/Admin/Translations/TranslationsListClient";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function TranslationsPage() {
   const [content, taxonomy] = await Promise.all([getTranslatableContent(), getTranslatableTaxonomy()]);
@@ -41,7 +42,7 @@ export default async function TranslationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Translations</h1>
+        <PageTitle>Translations</PageTitle>
         <p className="text-caption">
           Manage Bangla and Arabic translations, and English regional copy for Bangladesh/Gulf, for every page, post,
           case study, service, category, and tag.

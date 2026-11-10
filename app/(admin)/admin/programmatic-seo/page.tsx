@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getPSeoTemplates } from "../../actions/programmatic-seo";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function ProgrammaticSeoList() {
   const templates = await getPSeoTemplates();
@@ -9,7 +10,7 @@ export default async function ProgrammaticSeoList() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Programmatic SEO</h1>
+          <PageTitle>Programmatic SEO</PageTitle>
           <p className="text-caption">Template + dataset combinations that generate landing pages, with quality guardrails deciding what actually goes live.</p>
         </div>
         <Link href="/admin/programmatic-seo/new" className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors whitespace-nowrap">

@@ -1,0 +1,700 @@
+/*
+ * TBJ Admin theme ("warm console").
+ *
+ * Imported by the admin and login layouts only. Everything is gated on the
+ * `.admin-shell` marker (placed on the admin/login root element) so nothing
+ * here can reach the public site:
+ *
+ *   - Design tokens are redefined on <html> via `html:has(.admin-shell)`. That
+ *     reaches portalled UI (SweetAlert dialogs, toasts) which lives outside the
+ *     shell element, and it re-themes every existing `bg-card`, `text-caption`,
+ *     `border-border`... utility in the 100+ admin screens without touching
+ *     each one. These rules are un-layered, so they beat Tailwind's layers.
+ *   - Base element styles (inputs, tables, scrollbars, focus rings) and a few
+ *     shared component classes (.admin-card, .eyebrow, .chip ...) follow.
+ *
+ * Contrast notes (WCAG AA, measured against the surfaces they sit on):
+ *   light  fg #1B1512 / cocoa #4E423C / caption #6B5D55 on white, sand, peach >= 5.5:1
+ *          ember #A83A11 on white/peach >= 5.8:1; white on button orange #CC4A19 = 4.6:1
+ *          input border #918278 on white 3.7:1, on sand 3.2:1
+ *   dark   fg #F6EFEA / muted #D9CDC5 / caption #B0A199 on #151110, #1E1714, #2A201B >= 6:1
+ *          orange text #FF9557 on card >= 7:1; input border #857569 >= 3.9:1
+ */
+
+/* ───────────────────────── Tokens ───────────────────────── */
+
+html:has(.admin-shell) {
+  color-scheme: light;
+
+  --font-body: var(--font-manrope), var(--font-inter), system-ui, sans-serif;
+  --font-serif-accent: var(--font-instrument-serif), "Instrument Serif", Georgia, serif;
+
+  --bg: #f4eee9; /* Sand */
+  --fg: #1b1512; /* Ink */
+  --card-bg: #ffffff;
+  --card-fg: #1b1512;
+  --border-c: #e6dcd4;
+  --accent-border-c: #f3c7ac;
+  --muted-fg: #4e423c; /* Cocoa */
+  --caption-fg: #6b5d55;
+  --stat-bg: #fff2e9; /* Peach */
+  --tint-bg: #fff2e9;
+
+  --admin-raised: #ffffff;
+  --admin-inset: #f4eee9;
+  --admin-input-border: #918278;
+  --admin-ring: #e2571f;
+  --admin-orange: #e2571f; /* decorative: dots, rings, edges (never small text) */
+  --admin-orange-text: #a83a11; /* Ember: orange used as text */
+  --admin-primary: #cc4a19; /* filled buttons with white text (4.6:1) */
+  --admin-primary-hover: #a83a11;
+  --admin-shadow: 0 1px 2px rgb(27 21 18 / 0.04), 0 8px 24px -12px rgb(27 21 18 / 0.1);
+  --admin-shadow-pop: 0 18px 48px -12px rgb(27 21 18 / 0.28);
+  --admin-grid: rgb(27 21 18 / 0.035);
+  --admin-sb-w: 17rem;
+
+  --color-brand-orange: #cc4a19;
+  --color-brand-orange-deep: #a83a11;
+
+  /* Status palette, light: text shades darkened to stay >= 4.5:1 on their own tints. */
+  --color-red-500: #c62828;
+  --color-red-600: #b91c1c;
+  --color-red-700: #9f1717;
+  --color-green-500: #15803d;
+  --color-green-600: #166534;
+  --color-green-700: #14532d;
+  --color-amber-500: #a85a06;
+  --color-amber-600: #965006;
+  --color-amber-700: #7c4204;
+  --color-yellow-500: #8f5a00;
+  --color-yellow-600: #7d4e00;
+  --color-yellow-700: #6a4200;
+  --color-blue-600: #1d4ed8;
+  --color-blue-700: #1e40af;
+}
+
+html.dark:has(.admin-shell) {
+  color-scheme: dark;
+
+  --bg: #151110;
+  --fg: #f6efea;
+  --card-bg: #1e1714;
+  --card-fg: #f6efea;
+  --border-c: #3a2e28;
+  --accent-border-c: #5a3322;
+  --muted-fg: #d9cdc5;
+  --caption-fg: #b0a199;
+  --stat-bg: #33201a;
+  --tint-bg: #2e201a;
+
+  --admin-raised: #2a201b;
+  --admin-inset: #151110;
+  --admin-input-border: #857569;
+  --admin-ring: #ff8a4c;
+  --admin-orange: #ff7a35;
+  --admin-orange-text: #ff9557;
+  --admin-primary: #cc4a19;
+  --admin-primary-hover: #e2571f;
+  --admin-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 10px 28px -14px rgb(0 0 0 / 0.7);
+  --admin-shadow-pop: 0 18px 48px -8px rgb(0 0 0 / 0.75);
+  --admin-grid: rgb(255 244 235 / 0.03);
+
+  /* Dark status shades: light enough for text on Ink surfaces. */
+  --color-red-500: #f87171;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-green-500: #4ade80;
+  --color-green-600: #4ade80;
+  --color-green-700: #86efac;
+  --color-amber-500: #fbbf24;
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-yellow-500: #facc15;
+  --color-yellow-600: #facc15;
+  --color-yellow-700: #fde047;
+  --color-blue-600: #60a5fa;
+  --color-blue-700: #93c5fd;
+}
+
+/* ───────────────────────── Shell ───────────────────────── */
+
+.admin-shell {
+  font-family: var(--font-body);
+  color: var(--fg);
+}
+
+.admin-shell *:focus-visible {
+  outline: 2px solid var(--admin-ring);
+  outline-offset: 2px;
+}
+
+.admin-shell ::selection {
+  background: color-mix(in srgb, var(--admin-orange) 30%, transparent);
+}
+
+/* Sand grid texture behind the content (brand motif, kept very faint). */
+.admin-canvas {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to right, var(--admin-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--admin-grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+/* Headlines: Syne Bold, -2% tracking, 104% leading, one serif-italic accent word. */
+.admin-title {
+  font-family: var(--font-syne), var(--font-heading), sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  text-wrap: balance;
+}
+.admin-title .accent {
+  font-family: var(--font-serif-accent);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--admin-orange-text);
+  /* Instrument Serif runs small next to Syne; lift it so the pair looks matched. */
+  font-size: 1.12em;
+  line-height: 0.9;
+}
+
+/* Small uppercase labels. */
+.eyebrow {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--caption-fg);
+}
+.eyebrow-accent {
+  color: var(--admin-orange-text);
+}
+
+/* Cards */
+.admin-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-c);
+  border-radius: 1.25rem;
+  box-shadow: var(--admin-shadow);
+}
+.admin-card-ink {
+  background: #1b1512;
+  color: #f6efea;
+  border: 1px solid #3a2e28;
+  border-radius: 1.25rem;
+}
+html.dark .admin-card-ink {
+  background: #2a201b;
+  border-color: #4a3b33;
+}
+
+/* Pills & chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  background: var(--stat-bg);
+  color: var(--admin-orange-text);
+}
+.chip-sand {
+  background: var(--admin-inset);
+  color: var(--muted-fg);
+}
+html.dark .chip-sand {
+  background: var(--admin-raised);
+}
+.chip-ink {
+  background: #1b1512;
+  color: #fff;
+}
+html.dark .chip-ink {
+  background: #f6efea;
+  color: #1b1512;
+}
+.chip-ink::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: #ff7a35;
+  flex: none;
+}
+html.dark .chip-ink::before {
+  background: #cc4a19;
+}
+
+/* Buttons (shared classes for new markup) */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.55rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--admin-primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--admin-primary-hover);
+}
+.btn-secondary {
+  background: var(--admin-inset);
+  color: var(--fg);
+  border: 1px solid var(--border-c);
+}
+.btn-secondary:hover {
+  border-color: var(--admin-input-border);
+}
+html.dark .btn-secondary {
+  background: var(--admin-raised);
+}
+
+/* Orbit rings, one corner only */
+.orbit {
+  position: absolute;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--admin-orange) 55%, transparent);
+  border-radius: 9999px;
+}
+
+/* ───────────────────────── Sidebar ───────────────────────── */
+
+.admin-sidebar {
+  width: var(--admin-sb-w);
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-c);
+}
+.admin-nav-group + .admin-nav-group {
+  margin-top: 1.25rem;
+}
+.admin-nav-title {
+  padding: 0 0.75rem 0.4rem;
+}
+.admin-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted-fg);
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.admin-nav-item:hover {
+  background: var(--tint-bg);
+  color: var(--fg);
+}
+.admin-nav-item[aria-current="page"] {
+  background: var(--tint-bg);
+  color: var(--admin-orange-text);
+  font-weight: 800;
+}
+.admin-nav-item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -0.5rem;
+  top: 0.4rem;
+  bottom: 0.4rem;
+  width: 3px;
+  border-radius: 9999px;
+  background: var(--admin-orange);
+}
+.admin-nav-item[data-sub] {
+  margin-left: 1.5rem;
+  width: calc(100% - 1.5rem);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--caption-fg);
+}
+.admin-nav-item[data-sub][aria-current="page"] {
+  color: var(--admin-orange-text);
+}
+.admin-nav-item[data-sub]::after {
+  content: "";
+  position: absolute;
+  left: -0.55rem;
+  top: 50%;
+  width: 0.45rem;
+  height: 1px;
+  background: var(--border-c);
+}
+.admin-nav-item[data-danger] {
+  color: var(--color-red-600);
+}
+.admin-nav-item[data-danger]:hover {
+  background: color-mix(in srgb, var(--color-red-600) 10%, transparent);
+  color: var(--color-red-600);
+}
+.admin-nav-icon {
+  flex: none;
+  display: inline-flex;
+}
+
+/* Desktop collapse: html[data-sb="collapsed"] is set before paint (see layout) so there is no shift. */
+@media (min-width: 768px) {
+  html[data-sb="collapsed"] {
+    --admin-sb-w: 5.25rem;
+  }
+  html[data-sb="collapsed"] .admin-nav-label,
+  html[data-sb="collapsed"] .admin-nav-title span,
+  html[data-sb="collapsed"] .admin-brand-wide,
+  html[data-sb="collapsed"] .admin-brand-tag {
+    display: none;
+  }
+  html[data-sb="collapsed"] .admin-brand-mark {
+    display: block;
+  }
+  html[data-sb="collapsed"] .admin-nav-item {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  html[data-sb="collapsed"] .admin-nav-item[data-sub] {
+    margin-left: 0;
+    width: 100%;
+  }
+  html[data-sb="collapsed"] .admin-nav-item[data-sub]::after {
+    display: none;
+  }
+  html[data-sb="collapsed"] .admin-nav-title {
+    height: 1px;
+    margin: 0.5rem 0.75rem;
+    padding: 0;
+    background: var(--border-c);
+  }
+  html[data-sb="collapsed"] .admin-collapse-icon {
+    transform: rotate(180deg);
+  }
+}
+.admin-brand-mark {
+  display: none;
+}
+
+/* ───────────────────────── Top bar ───────────────────────── */
+
+.admin-search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 2.75rem;
+  min-width: 0;
+  padding: 0 0.5rem 0 1rem;
+  border-radius: 9999px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-c);
+  color: var(--caption-fg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.admin-search:focus-within {
+  border-color: var(--admin-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-ring) 25%, transparent);
+}
+.admin-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg);
+}
+.kbd {
+  flex: none;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-c);
+  background: var(--admin-inset);
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--muted-fg);
+}
+html.dark .kbd {
+  background: var(--admin-raised);
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  border-radius: 9999px;
+  border: 1px solid var(--border-c);
+  background: var(--card-bg);
+  color: var(--muted-fg);
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  color: var(--fg);
+  border-color: var(--admin-input-border);
+}
+.avatar-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: #1b1512;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--admin-orange);
+}
+html.dark .avatar-ring {
+  background: #f6efea;
+  color: #1b1512;
+}
+
+/* ───────────────────────── Legacy utilities, restyled ─────────────────────────
+   Existing screens keep their markup; these rules lift them to the new look. */
+
+/* Large-radius cards: any bordered bg-card block. */
+.admin-shell main [class~="bg-card"][class~="border"][class*="rounded-"]:not([role="menu"]):not([role="dialog"]) {
+  border-radius: 1.25rem;
+  box-shadow: var(--admin-shadow);
+}
+.admin-shell .shadow-sm {
+  box-shadow: var(--admin-shadow);
+}
+
+/* Pill buttons: padded rounded buttons/links. Menus, nav and tab-like rows are excluded. */
+.admin-shell :is(button, a)[class*="rounded-"][class*="px-"][class*="py-"]:not([role="menuitem"]):not(.admin-nav-item):not([class*="rounded-none"]):not([class*="w-full"][class*="text-left"]) {
+  border-radius: 9999px;
+}
+.admin-shell :is(button, a)[class~="bg-brand-orange"] {
+  font-weight: 700;
+}
+.admin-shell :is(button, a)[class~="bg-brand-orange"]:hover {
+  background-color: var(--admin-primary-hover);
+}
+.admin-shell button:disabled {
+  cursor: not-allowed;
+}
+
+/* Form controls */
+.admin-shell :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]), select, textarea):not(.admin-search input) {
+  background-color: var(--admin-inset);
+  border-color: var(--admin-input-border);
+  color: var(--fg);
+}
+html.dark .admin-shell :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]), select, textarea):not(.admin-search input) {
+  background-color: var(--admin-inset);
+}
+.admin-shell :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"], [type="hidden"]), select, textarea):not(.admin-search input):not([class*="rounded-full"]) {
+  border-radius: 0.75rem;
+}
+.admin-shell :is(input, textarea)::placeholder {
+  color: var(--caption-fg);
+  opacity: 1;
+}
+.admin-shell :is(input, select, textarea):focus {
+  border-color: var(--admin-ring);
+  outline: 2px solid color-mix(in srgb, var(--admin-ring) 55%, transparent);
+  outline-offset: 0;
+}
+.admin-shell :is(input, select, textarea):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.admin-shell input[type="checkbox"],
+.admin-shell input[type="radio"] {
+  accent-color: var(--admin-primary);
+  width: 1rem;
+  height: 1rem;
+}
+.admin-shell input[type="file"] {
+  color: var(--muted-fg);
+}
+.admin-shell input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  border: 1px solid var(--admin-input-border);
+  border-radius: 9999px;
+  background: var(--admin-inset);
+  color: var(--fg);
+  padding: 0.35rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-shell select option {
+  background: var(--card-bg);
+  color: var(--fg);
+}
+
+/* Tables */
+.admin-shell table {
+  border-collapse: collapse;
+}
+.admin-shell thead th {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--caption-fg);
+}
+.admin-shell thead,
+.admin-shell thead tr {
+  background-color: var(--admin-inset);
+}
+html.dark .admin-shell thead,
+html.dark .admin-shell thead tr {
+  background-color: var(--admin-raised);
+}
+.admin-shell tbody tr {
+  transition: background-color 0.12s;
+}
+.admin-shell tbody tr:hover {
+  background-color: color-mix(in srgb, var(--tint-bg) 55%, transparent);
+}
+.admin-shell [class*="divide-y"] > * {
+  border-color: var(--border-c);
+}
+
+/* Tailwind tints that were light-only get a safe dark counterpart */
+html.dark .admin-shell .bg-white {
+  background-color: var(--card-bg);
+}
+html.dark .admin-shell .bg-gray-100,
+html.dark .admin-shell .bg-gray-200 {
+  background-color: var(--admin-raised);
+}
+html.dark .admin-shell .text-gray-500,
+html.dark .admin-shell .text-gray-700 {
+  color: var(--caption-fg);
+}
+
+/* Code / pre */
+.admin-shell :is(pre, code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.admin-shell pre {
+  background: var(--admin-inset);
+  color: var(--fg);
+  border: 1px solid var(--border-c);
+  border-radius: 0.875rem;
+}
+
+/* Rich text editor (Tiptap) */
+.admin-shell .ProseMirror {
+  color: var(--fg);
+  caret-color: var(--admin-orange);
+}
+.admin-shell .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--caption-fg);
+}
+.admin-shell .ProseMirror :is(h1, h2, h3, h4) {
+  font-family: var(--font-syne), sans-serif;
+  letter-spacing: -0.01em;
+}
+.admin-shell .ProseMirror a {
+  color: var(--admin-orange-text);
+}
+.admin-shell .ProseMirror blockquote {
+  border-left: 3px solid var(--admin-orange);
+  padding-left: 1rem;
+  color: var(--muted-fg);
+}
+.admin-shell .ProseMirror pre {
+  background: var(--admin-raised);
+}
+.admin-shell .ProseMirror ::selection {
+  background: color-mix(in srgb, var(--admin-orange) 35%, transparent);
+}
+
+/* Native date/time pickers follow color-scheme; make the picker icon legible in dark. */
+html.dark .admin-shell :is(input[type="date"], input[type="datetime-local"], input[type="time"], input[type="month"])::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+}
+
+/* Scrollbars */
+.admin-shell .scrollbar-thin {
+  scrollbar-color: var(--admin-input-border) transparent;
+}
+.admin-shell .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--admin-input-border) 65%, transparent);
+}
+
+/* ───────────────────────── Dialogs (SweetAlert2) ───────────────────────── */
+
+html:has(.admin-shell) .tbj-swal-popup {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-c);
+  border-radius: 1.5rem !important;
+  box-shadow: var(--admin-shadow-pop) !important;
+  font-family: var(--font-body);
+}
+html:has(.admin-shell) .tbj-swal-title {
+  font-family: var(--font-syne), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+html:has(.admin-shell) .swal2-container.swal2-backdrop-show {
+  background: rgb(21 17 16 / 0.6) !important;
+}
+html:has(.admin-shell) .swal2-styled {
+  border-radius: 9999px !important;
+  font-weight: 700 !important;
+}
+html:has(.admin-shell) .swal2-styled:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-ring) 40%, transparent) !important;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+html:has(.admin-shell) .tbj-swal-confirm {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  border-radius: 9999px;
+}
+html:has(.admin-shell) .tbj-swal-confirm:hover {
+  background: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+}
+html:has(.admin-shell) .tbj-swal-confirm.tbj-swal-danger {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+html:has(.admin-shell) .tbj-swal-confirm.tbj-swal-danger:hover {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+html:has(.admin-shell) .tbj-swal-cancel {
+  border-radius: 9999px;
+  border-color: var(--admin-input-border);
+}

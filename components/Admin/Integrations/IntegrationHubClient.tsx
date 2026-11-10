@@ -15,6 +15,7 @@ import type { getProviderFieldDefsAction } from "@/app/(admin)/actions/integrati
 import type { IntegrationProvider } from "@/lib/integrations/types";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type StatusView = Awaited<ReturnType<typeof listIntegrationStatusesAction>>[number];
 type FieldDef = Awaited<ReturnType<typeof getProviderFieldDefsAction>>[number];
@@ -159,7 +160,7 @@ export default function IntegrationHubClient({ statuses, fieldDefs }: { statuses
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Integration Hub</h1>
+        <PageTitle>Integration Hub</PageTitle>
         <p className="text-caption">
           One place to see every integration&apos;s status. Google Search Console/Analytics, AI providers, and email are managed by their own
           dedicated setup elsewhere — this hub mirrors their status rather than storing a second copy of their credentials. Everything else

@@ -2,20 +2,28 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, Blocks, FileText, FileEdit, LineChart, Settings, Briefcase, Users, Star, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink, Network, Layers, MapPin, FileStack, FlaskConical, GitCompare, Stethoscope, Plug, Zap, BarChart3, Gauge } from "lucide-react";
+import { LayoutDashboard, Blocks, FileText, FileEdit, LineChart, Settings, Briefcase, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink, Network, Layers, MapPin, FileStack, FlaskConical, GitCompare, Stethoscope, Plug, Zap, BarChart3, Gauge, Wrench, CircleDollarSign, Handshake, Inbox, Star } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import ThemeToggle from "@/components/Admin/ThemeToggle";
 import VisitSiteMenu from "@/components/Admin/VisitSiteMenu";
 import { AdminSidebarProvider, SidebarFrame, SidebarToggle } from "@/components/Admin/AdminSidebar";
+import { NavItem, SidebarCollapseButton, TopSearch } from "@/components/Admin/AdminNav";
 import { Toaster } from "@/components/Admin/Toast";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
+import "../admin.css";
 
 // Applies to every /admin/* route via metadata inheritance — the whole admin
 // dashboard is behind auth and must never appear in search results.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
+
+type NavEntry = { href: string; label: string; icon: React.ComponentType<{ size?: number }>; show?: boolean; sub?: boolean };
+type NavGroup = { title: string; items: NavEntry[] };
+
+// Runs before first paint so a collapsed sidebar never flashes open (see app/admin.css).
+const SIDEBAR_INIT = `try{if(localStorage.getItem("tbj-admin-sidebar")==="collapsed")document.documentElement.dataset.sb="collapsed"}catch(e){}`;
 
 export default async function AdminLayout({
   children,
@@ -39,286 +47,158 @@ export default async function AdminLayout({
   const canTranslate = hasPermission(role, "EDIT");
   const canCreateContent = hasPermission(role, "CREATE");
 
+  const seoItems: NavEntry[] = [
+    { href: "/admin/seo", label: "SEO & Analytics", icon: LineChart },
+    { href: "/admin/redirects", label: "Redirects", icon: Route },
+    { href: "/admin/keywords", label: "Keyword Tracking", icon: Target },
+    { href: "/admin/link-monitor", label: "Link Monitor", icon: Link2Off },
+    { href: "/admin/seo-audits", label: "Automated SEO Audits", icon: ClipboardCheck },
+    { href: "/admin/orphan-pages", label: "Orphan Page Detection", icon: Unlink },
+    { href: "/admin/link-graph", label: "Internal Link Graph", icon: Network },
+    { href: "/admin/topic-clusters", label: "Topic Clusters", icon: Layers },
+    { href: "/admin/programmatic-seo", label: "Programmatic SEO", icon: FileStack },
+    { href: "/admin/seo-experiments", label: "SEO Experiments", icon: FlaskConical },
+    { href: "/admin/seo-change-log", label: "SEO Change Impact", icon: GitCompare },
+    { href: "/admin/gsc-import", label: "Search Console Import", icon: Download },
+    { href: "/admin/ga4-import", label: "GA4 Analytics Integration", icon: TrendingUp },
+  ].map((item) => ({ ...item, show: canManageSeo }));
+
+  const groups: NavGroup[] = [
+    {
+      title: "Overview",
+      items: [
+        { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/admin/search", label: "Search", icon: SearchIcon },
+      ],
+    },
+    {
+      title: "Content",
+      items: [
+        { href: "/admin/pages", label: "Pages", icon: FileText },
+        { href: "/admin/blocks", label: "Reusable Blocks", icon: Blocks, sub: true },
+        { href: "/admin/posts", label: "Blog Posts", icon: FileEdit },
+        { href: "/admin/categories", label: "Categories", icon: Folder, sub: true },
+        { href: "/admin/tags", label: "Tags", icon: Tag, sub: true },
+        { href: "/admin/cases", label: "Case Studies", icon: Briefcase },
+        { href: "/admin/locations", label: "Locations", icon: MapPin },
+        { href: "/admin/services", label: "Services", icon: Wrench },
+        { href: "/admin/pricing", label: "Pricing", icon: CircleDollarSign, show: canManagePricing },
+        { href: "/admin/testimonials", label: "Testimonials", icon: Star },
+        { href: "/admin/partners", label: "Partners", icon: Handshake },
+        { href: "/admin/faqs", label: "FAQ", icon: HelpCircle },
+        { href: "/admin/systems", label: "TBJ Systems", icon: BrainCircuit },
+        { href: "/admin/media", label: "Media Library", icon: Images, show: canManageMedia },
+        { href: "/admin/translations", label: "Translations", icon: Languages, show: canTranslate },
+      ],
+    },
+    {
+      title: "Intelligence",
+      items: [
+        { href: "/admin/ai-pipeline", label: "AI Content Pipeline", icon: Sparkles, show: canCreateContent },
+        { href: "/admin/content-refresh", label: "Content Refresh", icon: RefreshCw, show: canTranslate },
+        { href: "/admin/content-recommendations", label: "Content Recommendations", icon: Lightbulb, show: canTranslate },
+        { href: "/admin/content-cannibalization", label: "Content Cannibalization", icon: Copy, show: canTranslate },
+        { href: "/admin/content-health", label: "Content Health Score", icon: HeartPulse, show: canTranslate },
+        { href: "/admin/seo-performance-feedback", label: "SEO Performance Feedback", icon: Stethoscope, show: canTranslate },
+        { href: "/admin/automation", label: "Automation Engine", icon: Zap, show: canTranslate },
+        { href: "/admin/canonical-hreflang", label: "Canonical & Hreflang", icon: Globe2, show: canTranslate },
+      ],
+    },
+    {
+      title: "Leads",
+      items: [
+        { href: "/admin/booking", label: "Booking", icon: CalendarClock },
+        { href: "/admin/leads", label: "Leads", icon: Inbox, show: canManageUsers },
+      ],
+    },
+    { title: "SEO", items: seoItems },
+    {
+      title: "System",
+      items: [
+        { href: "/admin/monitoring", label: "Monitoring", icon: Activity, show: canManageSettings },
+        { href: "/admin/observability", label: "Observability", icon: Gauge, show: canManageSettings },
+        { href: "/admin/brand-kb", label: "Brand Knowledge Base", icon: BookOpen, show: canManageSettings },
+        { href: "/admin/settings", label: "Settings", icon: Settings, show: canManageSettings },
+        { href: "/admin/executive-analytics", label: "Executive Analytics", icon: BarChart3, show: canManageSettings },
+        { href: "/admin/integrations", label: "Integration Hub", icon: Plug, show: canManageIntegrations },
+        { href: "/admin/import-export", label: "Import / Export", icon: ArrowDownUp, show: canExport },
+      ],
+    },
+    {
+      title: "Account",
+      items: [
+        { href: "/admin/profile", label: "My Profile", icon: UserCircle },
+        { href: "/admin/admins", label: "Team Members", icon: ShieldAlert, show: canManageUsers },
+        { href: "/admin/audit-log", label: "Audit Log", icon: History, show: canManageUsers },
+      ],
+    },
+  ];
+
   return (
     <AdminSidebarProvider>
+    <script dangerouslySetInnerHTML={{ __html: SIDEBAR_INIT }} />
     {/* `relative` makes this the containing block for anything position:absolute inside the admin (sr-only inputs,
         dropdown panels, ...). Without it such elements resolve against the page itself, escape this overflow-hidden clip
         and stretch the document, which shows up as an extra scrollbar and the whole layout scrolling up with a blank
         strip below. `h-dvh` tracks the visible viewport on mobile, where 100vh is taller than the screen. */}
-    <div className="relative h-dvh bg-background flex overflow-hidden">
+    <div className="admin-shell relative h-dvh bg-background flex overflow-hidden">
       {/* Sidebar — pinned to the viewport; only its own nav list scrolls if it's
           taller than the screen, independently of the main content below. */}
       <SidebarFrame>
-        <div className="h-16 flex-shrink-0 flex items-center px-6 border-b border-border">
-          <span className="text-xl font-bold text-foreground">TBJ Admin</span>
-        </div>
-        <nav className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 space-y-1">
-          <Link href="/admin" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <LayoutDashboard size={20} />
-            Dashboard
+        <div className="flex-shrink-0 px-5 pt-5 pb-3">
+          <Link href="/admin" aria-label="TBJ Growth Tech admin home" className="block w-fit rounded-2xl">
+            {/* The logo is never recolored: it always sits on a white tile so it stays legible in dark mode. */}
+            <span className="admin-brand-wide inline-flex items-center rounded-2xl bg-white px-3 py-2 ring-1 ring-[var(--border-c)]">
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-8 w-auto" />
+            </span>
+            <span className="admin-brand-mark h-11 w-11 overflow-hidden rounded-2xl bg-white ring-1 ring-[var(--border-c)]">
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-11 w-auto max-w-none" />
+            </span>
           </Link>
-          <Link href="/admin/search" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <SearchIcon size={20} />
-            Search
-          </Link>
-          <Link href="/admin/pages" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <FileText size={20} />
-            Pages
-          </Link>
-          <Link href="/admin/blocks" className="flex items-center gap-3 pl-9 pr-3 py-1.5 text-sm text-caption hover:bg-tint rounded-md transition-colors">
-            <Blocks size={16} />
-            Reusable Blocks
-          </Link>
-          <Link href="/admin/posts" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <FileEdit size={20} />
-            Blog Posts
-          </Link>
-          <Link href="/admin/categories" className="flex items-center gap-3 pl-9 pr-3 py-1.5 text-sm text-caption hover:bg-tint rounded-md transition-colors">
-            <Folder size={16} />
-            Categories
-          </Link>
-          <Link href="/admin/tags" className="flex items-center gap-3 pl-9 pr-3 py-1.5 text-sm text-caption hover:bg-tint rounded-md transition-colors">
-            <Tag size={16} />
-            Tags
-          </Link>
-          <Link href="/admin/cases" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <Briefcase size={20} />
-            Case Studies
-          </Link>
-          <Link href="/admin/locations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <MapPin size={20} />
-            Locations
-          </Link>
-          <Link href="/admin/services" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <LayoutDashboard size={20} />
-            Services
-          </Link>
-          {canManagePricing && (
-            <Link href="/admin/pricing" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <Tag size={20} />
-            Pricing
-          </Link>
-          )}
-          <Link href="/admin/testimonials" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <Star size={20} />
-            Testimonials
-          </Link>
-          <Link href="/admin/partners" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <Users size={20} />
-            Partners
-          </Link>
-          {canManageMedia && (
-            <Link href="/admin/media" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Images size={20} />
-              Media Library
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/translations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Languages size={20} />
-              Translations
-            </Link>
-          )}
-          {canCreateContent && (
-            <Link href="/admin/ai-pipeline" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Sparkles size={20} />
-              AI Content Pipeline
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/content-refresh" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <RefreshCw size={20} />
-              Content Refresh
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/content-recommendations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Lightbulb size={20} />
-              Content Recommendations
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/content-cannibalization" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Copy size={20} />
-              Content Cannibalization
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/content-health" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <HeartPulse size={20} />
-              Content Health Score
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/seo-performance-feedback" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Stethoscope size={20} />
-              SEO Performance Feedback
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/automation" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Zap size={20} />
-              Automation Engine
-            </Link>
-          )}
-          {canTranslate && (
-            <Link href="/admin/canonical-hreflang" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Globe2 size={20} />
-              Canonical &amp; Hreflang
-            </Link>
-          )}
-          <Link href="/admin/faqs" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <HelpCircle size={20} />
-            FAQ
-          </Link>
-          <Link href="/admin/systems" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <BrainCircuit size={20} />
-            TBJ Systems
-          </Link>
-          <Link href="/admin/booking" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-            <CalendarClock size={20} />
-            Booking
-          </Link>
-          {canManageUsers && (
-            <Link href="/admin/leads" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <FileText size={20} />
-              Leads
-            </Link>
-          )}
-          {canManageSeo && (
-            <>
-              <Link href="/admin/seo" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <LineChart size={20} />
-                SEO & Analytics
-              </Link>
-              <Link href="/admin/redirects" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Route size={20} />
-                Redirects
-              </Link>
-              <Link href="/admin/keywords" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Target size={20} />
-                Keyword Tracking
-              </Link>
-              <Link href="/admin/link-monitor" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Link2Off size={20} />
-                Link Monitor
-              </Link>
-              <Link href="/admin/seo-audits" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <ClipboardCheck size={20} />
-                Automated SEO Audits
-              </Link>
-              <Link href="/admin/orphan-pages" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Unlink size={20} />
-                Orphan Page Detection
-              </Link>
-              <Link href="/admin/link-graph" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Network size={20} />
-                Internal Link Graph
-              </Link>
-              <Link href="/admin/topic-clusters" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Layers size={20} />
-                Topic Clusters
-              </Link>
-              <Link href="/admin/programmatic-seo" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <FileStack size={20} />
-                Programmatic SEO
-              </Link>
-              <Link href="/admin/seo-experiments" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <FlaskConical size={20} />
-                SEO Experiments
-              </Link>
-              <Link href="/admin/seo-change-log" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <GitCompare size={20} />
-                SEO Change Impact
-              </Link>
-              <Link href="/admin/gsc-import" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Download size={20} />
-                Search Console Import
-              </Link>
-              <Link href="/admin/ga4-import" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <TrendingUp size={20} />
-                GA4 Analytics Integration
-              </Link>
-            </>
-          )}
-          {canManageSettings && (
-            <>
-              <Link href="/admin/monitoring" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Activity size={20} />
-                Monitoring
-              </Link>
-              <Link href="/admin/observability" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Gauge size={20} />
-                Observability
-              </Link>
-              <Link href="/admin/brand-kb" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <BookOpen size={20} />
-                Brand Knowledge Base
-              </Link>
-              <Link href="/admin/settings" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <Settings size={20} />
-                Settings
-              </Link>
-              <Link href="/admin/executive-analytics" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                <BarChart3 size={20} />
-                Executive Analytics
-              </Link>
-            </>
-          )}
-          {canManageIntegrations && (
-            <Link href="/admin/integrations" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <Plug size={20} />
-              Integration Hub
-            </Link>
-          )}
-          {canExport && (
-            <Link href="/admin/import-export" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <ArrowDownUp size={20} />
-              Import / Export
-            </Link>
-          )}
-          <div className="pt-4 mt-4 border-t border-border space-y-1">
-            <Link href="/admin/profile" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-              <UserCircle size={20} />
-              My Profile
-            </Link>
-            {canManageUsers && (
-              <>
-                <Link href="/admin/admins" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                  <ShieldAlert size={20} />
-                  Team Members
-                </Link>
-                <Link href="/admin/audit-log" className="flex items-center gap-3 px-3 py-2 text-muted hover:bg-tint hover:text-brand-orange-deep dark:hover:text-brand-orange-light rounded-md transition-colors">
-                  <History size={20} />
-                  Audit Log
-                </Link>
-              </>
-            )}
-            <LogoutButton />
+          <div className="admin-brand-tag mt-1.5 flex justify-end pr-1">
+            <span className="eyebrow rounded-full border border-border px-2 py-0.5 !text-[0.625rem]">Admin</span>
           </div>
+        </div>
+        <nav aria-label="Admin" className="flex-1 overflow-y-auto scrollbar-thin px-4 pb-4 pt-2">
+          {groups.map((group) => {
+            const items = group.items.filter((i) => i.show !== false);
+            if (items.length === 0) return null;
+            return (
+              <div key={group.title} className="admin-nav-group">
+                <p className="eyebrow admin-nav-title">
+                  <span>{group.title}</span>
+                </p>
+                <div className="space-y-0.5">
+                  {items.map(({ href, label, icon: Icon, sub }) => (
+                    <NavItem key={href} href={href} sub={sub} icon={<Icon size={sub ? 15 : 18} />}>
+                      {label}
+                    </NavItem>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
+        <div className="flex-shrink-0 space-y-0.5 border-t border-border px-4 py-3">
+          <SidebarCollapseButton />
+          <LogoutButton />
+        </div>
       </SidebarFrame>
 
       {/* Main Content — its own scroll region, independent of the sidebar's. */}
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Top Navbar — stays pinned above the scrolling content. */}
-        <header className="h-16 flex-shrink-0 bg-card border-b border-border flex items-center gap-3 px-4 sm:px-6 justify-between">
-          <div className="flex items-center gap-3 min-w-0">
-            <SidebarToggle />
-            <div className="text-sm text-caption truncate">Welcome back, {userName}</div>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <header className="flex-shrink-0 bg-card/90 backdrop-blur border-b border-border flex items-center gap-3 px-4 sm:px-6 py-3.5">
+          <SidebarToggle />
+          <TopSearch />
+          <div className="ml-auto flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <VisitSiteMenu />
             <ThemeToggle />
-            <Link
-              href="/admin/profile"
-              className="relative w-8 h-8 rounded-full overflow-hidden bg-brand-orange-deep flex items-center justify-center text-white text-sm font-semibold hover:ring-2 hover:ring-brand-orange-light transition-all"
-              title="My Profile"
-            >
+            <Link href="/admin/profile" className="avatar-ring" title={`My Profile (${userName})`} aria-label={`My Profile (${userName})`}>
               {isValidImageSrc(userImage) ? (
-                <Image src={userImage} alt={userName} fill className="object-cover" />
+                <Image src={userImage} alt="" fill className="object-cover" />
               ) : (
-                <span>{userName.charAt(0).toUpperCase()}</span>
+                <span aria-hidden="true">{userName.charAt(0).toUpperCase()}</span>
               )}
             </Link>
           </div>
@@ -326,7 +206,7 @@ export default async function AdminLayout({
 
         {/* Page Content */}
         {/* `relative`: absolute descendants are positioned (and clipped/scrolled) inside this region, not against the page. */}
-        <div className="relative flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6">
+        <div className="admin-canvas relative flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

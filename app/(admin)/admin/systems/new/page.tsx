@@ -1,9 +1,10 @@
 import SystemForm from "@/components/Admin/SystemForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewSystem() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Create New System</h1>
+      <PageTitle className="mb-6">Create New System</PageTitle>
       <SystemForm />
     </div>
   );

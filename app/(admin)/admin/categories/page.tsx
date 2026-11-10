@@ -1,5 +1,6 @@
 import { getCategories, createCategory, deleteCategory } from "@/app/(admin)/actions/taxonomy";
 import TaxonomyManager from "@/components/Admin/TaxonomyManager";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function CategoriesPage() {
   const categories = await getCategories();
@@ -7,7 +8,7 @@ export default async function CategoriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Categories</h1>
+        <PageTitle>Categories</PageTitle>
         <p className="text-caption">Organize blog posts into categories.</p>
       </div>
       <TaxonomyManager

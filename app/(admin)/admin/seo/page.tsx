@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import BrokenLinkChecker from "@/components/Admin/BrokenLinkChecker";
 import GoogleIntegrationPanel from "@/components/Admin/GoogleIntegrationPanel";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function SEODashboard({
   searchParams,
@@ -32,7 +33,7 @@ export default async function SEODashboard({
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-foreground">SEO & Analytics Dashboard</h1>
+        <PageTitle>SEO & Analytics Dashboard</PageTitle>
       </div>
 
       <GoogleIntegrationPanel

@@ -1,6 +1,7 @@
 import { getPartner } from "@/app/(admin)/actions/partners";
 import PartnerForm from "@/components/Admin/PartnerForm";
 import { notFound } from "next/navigation";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function EditPartner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +13,7 @@ export default async function EditPartner({ params }: { params: Promise<{ id: st
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Partner: {p.name}</h1>
+      <PageTitle className="mb-6">Edit Partner: {p.name}</PageTitle>
       <PartnerForm initialData={p} />
     </div>
   );

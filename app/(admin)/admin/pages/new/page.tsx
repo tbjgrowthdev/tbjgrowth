@@ -1,9 +1,10 @@
 import PageForm from "@/components/Admin/PageForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Create New Page</h1>
+      <PageTitle className="mb-6">Create New Page</PageTitle>
       <PageForm />
     </div>
   );

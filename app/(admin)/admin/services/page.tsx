@@ -2,6 +2,7 @@ import { getServices, deleteService } from "../../actions/services";
 import Link from "next/link";
 import { Plus, Edit, ExternalLink } from "lucide-react";
 import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function ServicesList() {
   const services = await getServices();
@@ -9,7 +10,7 @@ export default async function ServicesList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Agency Services</h1>
+        <PageTitle>Agency Services</PageTitle>
         <Link 
           href="/admin/services/new" 
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

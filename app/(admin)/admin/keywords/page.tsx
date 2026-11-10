@@ -1,6 +1,7 @@
 import { getTrackedKeywords, getCompetitorDomains } from "@/app/(admin)/actions/keywords";
 import { findKeywordIntentConflicts } from "@/lib/keyword-mapping";
 import KeywordTrackingManager from "@/components/Admin/KeywordTrackingManager";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function KeywordsPage() {
   const [keywords, competitors] = await Promise.all([getTrackedKeywords(), getCompetitorDomains()]);
@@ -9,7 +10,7 @@ export default async function KeywordsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Keyword Tracking</h1>
+        <PageTitle>Keyword Tracking</PageTitle>
         <p className="text-caption">
           Central keyword system: search intent, target market/language, target URL, search volume &amp; difficulty where available, current
           ranking, and status. Rank checks and metrics refreshes use DataForSEO and are run on demand.

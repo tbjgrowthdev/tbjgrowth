@@ -8,6 +8,7 @@ import { listRefreshCandidatesAction, scanAndUpsertCandidatesAction } from "@/ap
 import { SIGNAL_LABEL, type DetectedSignal } from "@/lib/content-refresh/types";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Candidate = Awaited<ReturnType<typeof listRefreshCandidatesAction>>[number];
 
@@ -56,7 +57,7 @@ export default function RefreshListClient({ candidates }: { candidates: Candidat
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Content Refresh Engine</h1>
+          <PageTitle>Content Refresh Engine</PageTitle>
           <p className="text-caption">
             Detects published content that&apos;s aging, outdated, or declining in rankings/traffic/CTR. The AI only ever proposes a revision — nothing is
             overwritten until a human approves and applies it.

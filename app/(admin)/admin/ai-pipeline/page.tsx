@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, ListChecks, DollarSign, BookText } from "lucide-react";
 import { getPipelineRunsAction } from "@/app/(admin)/actions/content-pipeline";
 import { STAGE_LABEL } from "@/lib/content-pipeline/types";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function AiPipelinePage() {
   const runs = await getPipelineRunsAction();
@@ -10,7 +11,7 @@ export default async function AiPipelinePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">AI Content Pipeline</h1>
+          <PageTitle>AI Content Pipeline</PageTitle>
           <p className="text-caption">
             Brief → Search Intent → Research → Outline → Draft → SEO → Internal Links → Schema → QA → Human Approval → Publish.
           </p>

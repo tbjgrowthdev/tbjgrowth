@@ -2,6 +2,7 @@ import { getCaseStudies, deleteCaseStudy } from "../../actions/cases";
 import Link from "next/link";
 import { Plus, Edit, Star } from "lucide-react";
 import ContentDeleteButton from "@/components/Admin/ContentDeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function CaseStudiesList() {
   const caseStudies = await getCaseStudies();
@@ -9,7 +10,7 @@ export default async function CaseStudiesList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Case Studies</h1>
+        <PageTitle>Case Studies</PageTitle>
         <Link 
           href="/admin/cases/new" 
           className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors"

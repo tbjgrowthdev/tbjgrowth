@@ -1,9 +1,10 @@
 import LocationForm from "@/components/Admin/LocationForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewLocation() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Create New Location</h1>
+      <PageTitle className="mb-6">Create New Location</PageTitle>
       <LocationForm />
     </div>
   );

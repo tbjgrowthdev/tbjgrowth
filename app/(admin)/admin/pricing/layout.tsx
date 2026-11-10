@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { hasPermission } from "@/lib/permissions";
 import PricingTabs from "@/components/Admin/Pricing/PricingTabs";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function PricingAdminLayout({ children }: { children: ReactNode }) {
   const data = await getAdminPricing();
@@ -30,7 +31,7 @@ export default async function PricingAdminLayout({ children }: { children: React
   return (
     <div>
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-foreground">Pricing</h1>
+        <PageTitle>Pricing</PageTitle>
         <p className="text-caption">Everything on the public /pricing page is managed here. Prices are set per currency.</p>
       </div>
       <PricingTabs />

@@ -2,6 +2,7 @@ import { getPost } from "@/app/(admin)/actions/posts";
 import { getCategories, getTags } from "@/app/(admin)/actions/taxonomy";
 import PostForm from "@/components/Admin/PostForm";
 import { notFound } from "next/navigation";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function EditPost({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -13,7 +14,7 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Post: {post.title}</h1>
+      <PageTitle className="mb-6">Edit Post: {post.title}</PageTitle>
       <PostForm initialData={post} categories={categories} tags={tags} />
     </div>
   );

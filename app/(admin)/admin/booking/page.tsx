@@ -2,6 +2,7 @@ import { getAllSlots, getBookings, deleteSlot } from "@/app/(admin)/actions/book
 import AddSlotForm from "@/components/Admin/AddSlotForm";
 import CancelBookingButton from "@/components/Admin/CancelBookingButton";
 import DeleteButton from "@/components/Admin/DeleteButton";
+import PageTitle from "@/components/Admin/PageTitle";
 
 function formatDateTime(date: Date) {
   const d = new Date(date);
@@ -18,7 +19,7 @@ export default async function BookingAdminPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Booking</h1>
+      <PageTitle>Booking</PageTitle>
 
       <AddSlotForm />
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { getCostSummaryAction } from "@/app/(admin)/actions/content-pipeline";
+import PageTitle from "@/components/Admin/PageTitle";
 
 const CONTENT_TYPE_LABEL: Record<string, string> = {
   POST: "Blog Posts",
@@ -18,7 +19,7 @@ export default async function AiCostDashboardPage() {
   if (!summary) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">AI Cost Tracking</h1>
+        <PageTitle>AI Cost Tracking</PageTitle>
         <p className="text-caption">You don&apos;t have permission to view this.</p>
       </div>
     );
@@ -35,7 +36,7 @@ export default async function AiCostDashboardPage() {
         <Link href="/admin/ai-pipeline" className="text-sm text-caption hover:text-foreground">
           ← AI Content Pipeline
         </Link>
-        <h1 className="text-2xl font-bold text-foreground mt-1">AI Cost Tracking</h1>
+        <PageTitle className="mt-1">AI Cost Tracking</PageTitle>
         <p className="text-caption">
           Estimated spend, computed from recorded token usage against{" "}
           <code className="text-xs bg-tint px-1 py-0.5 rounded">lib/content-pipeline/pricing.ts</code> — verify those rates against each provider&apos;s

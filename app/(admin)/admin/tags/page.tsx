@@ -1,5 +1,6 @@
 import { getTags, createTag, deleteTag } from "@/app/(admin)/actions/taxonomy";
 import TaxonomyManager from "@/components/Admin/TaxonomyManager";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function TagsPage() {
   const tags = await getTags();
@@ -7,7 +8,7 @@ export default async function TagsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Tags</h1>
+        <PageTitle>Tags</PageTitle>
         <p className="text-caption">Fine-grained labels for blog posts.</p>
       </div>
       <TaxonomyManager

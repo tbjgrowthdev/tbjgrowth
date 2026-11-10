@@ -27,14 +27,14 @@ export function SidebarFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-30 bg-black/50 md:hidden" aria-hidden="true" onClick={() => setOpen(false)} />}
+      {open && <div className="fixed inset-0 z-30 bg-[#151110]/60 md:hidden" aria-hidden="true" onClick={() => setOpen(false)} />}
       <aside
         id="admin-sidebar"
         // Following any nav link closes the drawer on mobile.
         onClickCapture={(e) => {
           if ((e.target as HTMLElement).closest("a")) setOpen(false);
         }}
-        className={`fixed inset-y-0 left-0 z-40 w-64 flex-shrink-0 bg-card border-r border-border flex flex-col h-full transition-transform duration-200 md:static md:translate-x-0 ${
+        className={`admin-sidebar fixed inset-y-0 left-0 z-40 max-w-[85vw] flex-shrink-0 flex flex-col h-full transition-transform duration-200 md:static md:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -42,7 +42,7 @@ export function SidebarFrame({ children }: { children: React.ReactNode }) {
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Close menu"
-          className="md:hidden absolute top-4 right-3 p-1.5 rounded-md text-caption hover:text-foreground hover:bg-tint"
+          className="md:hidden absolute top-4 right-3 z-10 w-9 h-9 inline-flex items-center justify-center rounded-full text-muted hover:text-foreground hover:bg-tint"
         >
           <X size={20} />
         </button>
@@ -61,7 +61,7 @@ export function SidebarToggle() {
       aria-label="Open menu"
       aria-controls="admin-sidebar"
       aria-expanded={open}
-      className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-border text-muted hover:text-foreground hover:bg-tint flex-shrink-0"
+      className="icon-btn md:hidden"
     >
       <Menu size={18} />
     </button>

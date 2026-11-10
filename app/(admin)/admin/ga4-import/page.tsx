@@ -1,5 +1,6 @@
 import { getGa4Data } from "@/app/(admin)/actions/ga4-import";
 import Ga4ImportManager from "@/components/Admin/Ga4ImportManager";
+import PageTitle from "@/components/Admin/PageTitle";
 
 // GA4's own data for the most recent day or two can still be processing,
 // so the default range ends 2 days back rather than today.
@@ -19,7 +20,7 @@ export default async function Ga4ImportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">GA4 Analytics Integration</h1>
+        <PageTitle>GA4 Analytics Integration</PageTitle>
         <p className="text-caption">
           Tracks organic sessions, landing pages, engagement, conversions, and conversion rate from Google Analytics — showing the SEO →
           Traffic → Conversion relationship per page.

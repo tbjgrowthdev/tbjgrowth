@@ -1,9 +1,10 @@
 import PSeoTemplateForm from "@/components/Admin/PSeoTemplateForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewPSeoTemplate() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">New Programmatic SEO Template</h1>
+      <PageTitle className="mb-6">New Programmatic SEO Template</PageTitle>
       <PSeoTemplateForm />
     </div>
   );

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getPSeoTemplate } from "@/app/(admin)/actions/programmatic-seo";
 import PSeoTemplateForm from "@/components/Admin/PSeoTemplateForm";
 import PSeoDatasetManager from "@/components/Admin/PSeoDatasetManager";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function EditPSeoTemplate({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -14,7 +15,7 @@ export default async function EditPSeoTemplate({ params }: { params: Promise<{ i
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-bold text-foreground mb-6">Template: {template.name}</h1>
+        <PageTitle className="mb-6">Template: {template.name}</PageTitle>
         <PSeoTemplateForm initialData={template} />
       </div>
       <div>

@@ -1,4 +1,5 @@
 import BriefForm from "@/components/Admin/Pipeline/BriefForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function NewPipelineRunPage({ searchParams }: { searchParams: Promise<{ topic?: string; contentType?: string; keyword?: string; format?: string }> }) {
   const params = await searchParams;
@@ -7,7 +8,7 @@ export default async function NewPipelineRunPage({ searchParams }: { searchParam
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">New AI Content Brief</h1>
+        <PageTitle>New AI Content Brief</PageTitle>
         <p className="text-caption">Describe what you want written — the pipeline takes it from here, one reviewable stage at a time.</p>
       </div>
       <BriefForm

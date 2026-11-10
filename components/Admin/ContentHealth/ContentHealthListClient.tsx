@@ -7,6 +7,7 @@ import { listHealthScoresAction, scanAndUpsertHealthScoresAction } from "@/app/(
 import { FACTOR_LABEL, GRADE_LABEL, type FactorScore } from "@/lib/content-health/types";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Score = Awaited<ReturnType<typeof listHealthScoresAction>>[number];
 
@@ -53,7 +54,7 @@ export default function ContentHealthListClient({ scores }: { scores: Score[] })
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Content Health Score</h1>
+          <PageTitle>Content Health Score</PageTitle>
           <p className="text-caption">
             Every published post and case study scored across 8 factors — freshness, traffic, ranking, CTR, internal links, SEO completeness,
             search intent, and conversion. A factor with no data for a page (nothing connected, nothing tracked) is left out of its score rather

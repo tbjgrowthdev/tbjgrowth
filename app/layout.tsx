@@ -22,6 +22,26 @@ const syne = localFont({
   display: "swap",
 });
 
+// Admin-only brand fonts (Manrope body/eyebrows, Instrument Serif Italic accent
+// word). Self-hosted like the two above; preload is off so public pages don't
+// fetch them - the @font-face only downloads once an admin screen uses it.
+const manrope = localFont({
+  src: "./fonts/manrope-latin-normal-300-800.woff2",
+  weight: "300 800",
+  variable: "--font-manrope",
+  display: "swap",
+  preload: false,
+});
+
+const instrumentSerif = localFont({
+  src: "./fonts/instrument-serif-latin-italic-400.ttf",
+  weight: "400",
+  style: "italic",
+  variable: "--font-instrument-serif",
+  display: "swap",
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: "TBJ Growth | AI-Powered Digital Growth Agency",
   description: "Experience the complete business growth journey with TBJ Growth: Build, Attract, Convert, Automate, Scale.",
@@ -36,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${syne.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${syne.variable} ${manrope.variable} ${instrumentSerif.variable}`}>
       <body className="min-h-full flex flex-col font-body antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"

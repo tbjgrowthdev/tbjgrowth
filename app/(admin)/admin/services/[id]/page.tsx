@@ -1,6 +1,7 @@
 import { getService } from "@/app/(admin)/actions/services";
 import ServiceForm from "@/components/Admin/ServiceForm";
 import { notFound } from "next/navigation";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function EditService({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +13,7 @@ export default async function EditService({ params }: { params: Promise<{ id: st
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Edit Service: {service.title}</h1>
+      <PageTitle className="mb-6">Edit Service: {service.title}</PageTitle>
       <ServiceForm initialData={service} />
     </div>
   );

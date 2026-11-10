@@ -12,6 +12,7 @@ import {
 import { SIGNAL_LABEL, type PerformanceFeedbackSeverity, type PerformanceSignal } from "@/lib/seo-performance-feedback/types";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Row = Awaited<ReturnType<typeof listPerformanceFeedbackAction>>[number];
 
@@ -92,7 +93,7 @@ export default function PerformanceFeedbackListClient({ rows }: { rows: Row[] })
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">SEO Performance Feedback</h1>
+          <PageTitle>SEO Performance Feedback</PageTitle>
           <p className="text-caption">
             Search Console, GA4, and CMS data, synthesized into one AI diagnosis and recommendation list per page. Detects ranking, CTR,
             traffic, and conversion decline, cannibalization, and content decay. Entirely advisory — nothing is changed automatically; act on

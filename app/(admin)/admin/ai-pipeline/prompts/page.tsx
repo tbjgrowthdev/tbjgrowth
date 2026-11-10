@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listPromptTemplatesAction } from "@/app/(admin)/actions/content-pipeline";
 import { CATEGORY_LABEL, WIRED_CATEGORIES } from "@/lib/content-pipeline/prompt-library";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function PromptLibraryPage() {
   const rows = await listPromptTemplatesAction();
@@ -11,7 +12,7 @@ export default async function PromptLibraryPage() {
         <Link href="/admin/ai-pipeline" className="text-sm text-caption hover:text-foreground">
           ← AI Content Pipeline
         </Link>
-        <h1 className="text-2xl font-bold text-foreground mt-1">AI Prompt Library</h1>
+        <PageTitle className="mt-1">AI Prompt Library</PageTitle>
         <p className="text-caption">
           Editable, versioned prompts behind the content pipeline. Blog, Case Study, and SEO are read by a live stage today; the rest are ready to author
           ahead of the feature that will eventually use them.

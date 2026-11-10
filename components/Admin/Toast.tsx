@@ -21,9 +21,9 @@ export { toast, dismissToast } from "@/lib/admin/toast-store";
 const EMPTY: ToastItem[] = [];
 
 const STYLE: Record<ToastKind, { icon: typeof Info; accent: string; iconClass: string }> = {
-  success: { icon: CheckCircle2, accent: "bg-green-500", iconClass: "text-green-600 dark:text-green-400" },
-  error: { icon: AlertCircle, accent: "bg-red-500", iconClass: "text-red-600 dark:text-red-400" },
-  info: { icon: Info, accent: "bg-brand-orange", iconClass: "text-brand-orange-deep dark:text-brand-orange-light" },
+  success: { icon: CheckCircle2, accent: "bg-green-700 dark:bg-green-400", iconClass: "text-green-600 dark:text-green-400" },
+  error: { icon: AlertCircle, accent: "bg-red-700 dark:bg-red-400", iconClass: "text-red-600 dark:text-red-400" },
+  info: { icon: Info, accent: "bg-[var(--admin-orange)]", iconClass: "text-brand-orange-deep dark:text-brand-orange-light" },
 };
 
 function ToastCard({ item }: { item: ToastItem }) {
@@ -55,7 +55,8 @@ function ToastCard({ item }: { item: ToastItem }) {
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="pointer-events-auto relative w-full sm:w-96 overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-lg shadow-black/10 dark:shadow-black/40"
+      style={{ boxShadow: "var(--admin-shadow-pop)" }}
+      className="pointer-events-auto relative w-full sm:w-96 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground"
     >
       <span className={`absolute inset-y-0 left-0 w-1 ${accent}`} aria-hidden="true" />
       <div className="flex items-start gap-3 py-3 pl-4 pr-2">
@@ -68,7 +69,7 @@ function ToastCard({ item }: { item: ToastItem }) {
           type="button"
           onClick={() => dismissToast(item.id)}
           aria-label="Dismiss notification"
-          className="flex-shrink-0 rounded-md p-1 text-caption hover:bg-tint hover:text-foreground"
+          className="flex-shrink-0 rounded-full p-1.5 text-caption hover:bg-tint hover:text-foreground"
         >
           <X size={16} />
         </button>

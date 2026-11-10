@@ -1,5 +1,6 @@
 import { getMonitoringData } from "@/app/(admin)/actions/monitoring";
 import MonitoringClient from "@/components/Admin/MonitoringClient";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function MonitoringPage() {
   const { backups, uptime, errors, loginHistory } = await getMonitoringData();
@@ -7,7 +8,7 @@ export default async function MonitoringPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Monitoring</h1>
+        <PageTitle>Monitoring</PageTitle>
         <p className="text-caption">
           Database backups, uptime probes, and error reports. Backups and uptime checks run on a schedule in
           GitHub Actions (outside this app) and report their results here — see docs/runbooks/database-restore.md

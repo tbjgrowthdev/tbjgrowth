@@ -4,6 +4,7 @@ import { getContentBlocks, getContentBlockUsageCounts, deleteContentBlock } from
 import DeleteButton from "@/components/Admin/DeleteButton";
 import { BLOCK_LABELS } from "@/lib/blocks/fields";
 import type { BlockType } from "@/lib/blocks/types";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function ReusableBlocksList() {
   const [blocks, usage] = await Promise.all([getContentBlocks(), getContentBlockUsageCounts()]);
@@ -11,7 +12,7 @@ export default async function ReusableBlocksList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-2xl font-bold text-foreground">Reusable Blocks</h1>
+        <PageTitle>Reusable Blocks</PageTitle>
         <Link href="/admin/blocks/new" className="flex items-center gap-2 px-4 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange transition-colors">
           <Plus size={18} />
           New Block

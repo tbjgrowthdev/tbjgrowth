@@ -9,6 +9,7 @@ import { CATEGORY_LABEL, WIRED_CATEGORIES } from "@/lib/content-pipeline/prompt-
 import type { PromptCategory } from "@/lib/generated/prisma/client";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Detail = Awaited<ReturnType<typeof getPromptTemplateDetailAction>>;
 type Template = NonNullable<NonNullable<Detail>["template"]>;
@@ -93,7 +94,7 @@ export default function PromptEditor({
         <Link href="/admin/ai-pipeline/prompts" className="text-sm text-caption hover:text-foreground">
           ← Prompt Library
         </Link>
-        <h1 className="text-2xl font-bold text-foreground mt-1">{CATEGORY_LABEL[category]} prompt</h1>
+        <PageTitle className="mt-1">{CATEGORY_LABEL[category]} prompt</PageTitle>
         {!isWired && (
           <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-4 py-2 mt-2">
             <AlertTriangle size={14} />

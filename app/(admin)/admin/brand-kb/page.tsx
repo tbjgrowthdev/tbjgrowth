@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listBrandSectionsAction } from "@/app/(admin)/actions/brand-kb";
 import { SECTION_LABEL } from "@/lib/brand-kb/constants";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default async function BrandKnowledgeBasePage() {
   const rows = await listBrandSectionsAction();
@@ -8,7 +9,7 @@ export default async function BrandKnowledgeBasePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Brand Knowledge Base</h1>
+        <PageTitle>Brand Knowledge Base</PageTitle>
         <p className="text-caption">
           The brand context injected into every AI Content Pipeline generation call — voice, audience, terminology, forbidden terms, and more. A section
           with nothing authored yet falls back to a minimal built-in default, so the pipeline keeps working either way.

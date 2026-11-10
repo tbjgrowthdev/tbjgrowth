@@ -1,9 +1,10 @@
 import TestimonialForm from "@/components/Admin/TestimonialForm";
+import PageTitle from "@/components/Admin/PageTitle";
 
 export default function NewTestimonial() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Create New Testimonial</h1>
+      <PageTitle className="mb-6">Create New Testimonial</PageTitle>
       <TestimonialForm />
     </div>
   );

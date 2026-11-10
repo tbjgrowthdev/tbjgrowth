@@ -12,6 +12,7 @@ import {
 } from "@/app/(admin)/actions/orphan-pages";
 import { describeActionError } from "@/lib/admin/action-errors";
 import { withToast } from "@/lib/admin/toast";
+import PageTitle from "@/components/Admin/PageTitle";
 
 type Row = Awaited<ReturnType<typeof listOrphanPagesAction>>[number];
 
@@ -76,7 +77,7 @@ export default function OrphanPagesListClient({ pages }: { pages: Row[] }) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Orphan Page Detection</h1>
+          <PageTitle>Orphan Page Detection</PageTitle>
           <p className="text-caption">
             Published blog posts and case studies with no (or only one) inbound internal link, plus suggested pages to link from. Every
             suggestion is advisory — nothing is edited automatically; add the link yourself, then mark it resolved.
