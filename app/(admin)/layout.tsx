@@ -188,7 +188,7 @@ export default async function AdminLayout({
       {/* Main Content — its own scroll region, independent of the sidebar's. */}
       <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Top Navbar — stays pinned above the scrolling content. */}
-        <header className="flex-shrink-0 bg-card/90 backdrop-blur border-b border-border flex items-center gap-3 px-4 sm:px-6 py-3.5">
+        <header className="flex-shrink-0 bg-card/90 backdrop-blur border-b border-border flex items-center gap-3 px-4 sm:px-5 py-3">
           <SidebarToggle />
           <TopSearch />
           <div className="ml-auto flex items-center gap-2 sm:gap-3 flex-shrink-0">
@@ -206,7 +206,7 @@ export default async function AdminLayout({
 
         {/* Page Content */}
         {/* `relative`: absolute descendants are positioned (and clipped/scrolled) inside this region, not against the page. */}
-        <div className="admin-canvas relative flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-6 lg:p-8">
+        <div className="admin-canvas relative flex-1 overflow-y-auto scrollbar-thin p-4 sm:p-5 lg:p-6">
           {children}
         </div>
       </main>

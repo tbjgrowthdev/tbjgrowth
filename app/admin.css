@@ -146,7 +146,7 @@ html.dark:has(.admin-shell) {
 .admin-title {
   font-family: var(--font-syne), var(--font-heading), sans-serif;
   font-weight: 700;
-  font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem);
+  font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
   line-height: 1.04;
   letter-spacing: -0.02em;
   color: var(--fg);
@@ -180,7 +180,7 @@ html.dark:has(.admin-shell) {
 .admin-card {
   background: var(--card-bg);
   border: 1px solid var(--border-c);
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   box-shadow: var(--admin-shadow);
 }
 .admin-card-ink {
@@ -481,8 +481,15 @@ html.dark .avatar-ring {
 
 /* Large-radius cards: any bordered bg-card block. */
 .admin-shell main [class~="bg-card"][class~="border"][class*="rounded-"]:not([role="menu"]):not([role="dialog"]) {
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   box-shadow: var(--admin-shadow);
+}
+/* Density: legacy roomy card padding scaled down to match the dashboard. */
+.admin-shell main [class~="bg-card"][class~="border"][class~="p-6"]:not([role="dialog"]) {
+  padding: 1.25rem;
+}
+.admin-shell main [class~="bg-card"][class~="border"][class~="p-8"]:not([role="dialog"]) {
+  padding: 1.5rem;
 }
 .admin-shell .shadow-sm {
   box-shadow: var(--admin-shadow);

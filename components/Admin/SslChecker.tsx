@@ -24,15 +24,15 @@ export default function SslChecker() {
   };
 
   return (
-    <section className="admin-card flex flex-col p-6" aria-labelledby="ssl-title">
+    <section className="admin-card flex flex-col p-4 sm:p-5" aria-labelledby="ssl-title">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-stat text-brand-orange-deep dark:text-brand-orange-light">
-            <ShieldCheck size={20} aria-hidden="true" />
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-stat text-brand-orange-deep dark:text-brand-orange-light">
+            <ShieldCheck size={18} aria-hidden="true" />
           </span>
           <div>
             <p className="eyebrow">Security</p>
-            <h3 id="ssl-title" className="font-heading text-lg font-bold leading-tight tracking-tight text-foreground">
+            <h3 id="ssl-title" className="font-heading text-base font-bold leading-tight tracking-tight text-foreground">
               SSL Certificate
             </h3>
           </div>
@@ -43,7 +43,7 @@ export default function SslChecker() {
         </button>
       </div>
 
-      <div className="mt-5 flex-1">
+      <div className="mt-3 flex-1">
         {actionError && (
           <p role="alert" className="flex items-start gap-2 text-sm font-semibold text-red-700 dark:text-red-400">
             <TriangleAlert size={16} className="mt-0.5 flex-none" aria-hidden="true" />
@@ -59,7 +59,7 @@ export default function SslChecker() {
               {result.error}
             </p>
           ) : (
-            <div className="flex items-center gap-3 rounded-2xl bg-[var(--admin-inset)] p-3.5">
+            <div className="flex items-center gap-3 rounded-2xl bg-[var(--admin-inset)] p-3">
               {result.valid ? (
                 <ShieldCheck size={22} className="flex-none text-green-700 dark:text-green-400" aria-hidden="true" />
               ) : (

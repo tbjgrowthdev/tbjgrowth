@@ -13,7 +13,7 @@ export default function DashboardGreeting({ name }: { name: string }) {
   );
   const hello = hour < 0 ? "Welcome back" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   return (
-    <h2 className="font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
+    <h2 className="font-heading text-xl font-bold leading-tight tracking-tight text-foreground sm:text-2xl">
       {hello}, {name}!
     </h2>
   );
