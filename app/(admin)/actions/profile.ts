@@ -1,24 +1,30 @@
 "use server";
 
+import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { AuthError, requireSession } from "@/lib/auth-guard";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { logAudit } from "@/lib/audit-log";
 
-export async function getCurrentAdmin() {
-  // requireSession (not bare getServerSession) so a revoked session is refused too.
-  const session = await requireSession().catch(() => null);
-  if (!session) return null;
-
+// Memoized per request: the admin layout and the page both need the current
+// user. Kept as a non-exported helper (a "use server" file can only export
+// async functions) keyed by user id; the auth check stays in the exported
+// action below, and cache() never outlives a single request.
+const loadAdminById = cache(async (id: string) => {
   try {
-    return await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
+    return await prisma.user.findUnique({ where: { id } });
   } catch (error) {
     console.error("Failed to fetch current admin:", error);
     return null;
   }
+});
+
+export async function getCurrentAdmin() {
+  // requireSession (not bare getServerSession) so a revoked session is refused too.
+  const session = await requireSession().catch(() => null);
+  if (!session) return null;
+  return loadAdminById(session.user.id);
 }
 
 export async function updateProfile(data: {

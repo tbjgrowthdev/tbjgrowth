@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { siteFontVariables } from "./site-fonts";
 
 const inter = localFont({
   src: "./fonts/inter-latin-normal-100-900.woff2",
@@ -56,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${syne.variable} ${manrope.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${syne.variable} ${manrope.variable} ${instrumentSerif.variable} ${siteFontVariables}`}>
       <body className="min-h-full flex flex-col font-body antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"

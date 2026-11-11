@@ -18,6 +18,29 @@ export async function createAdminSession(userId: string, ip: string | null, user
   return session.id;
 }
 
+export type AdminSessionStatus = "active" | "revoked" | "missing";
+
+// Single-read replacement for isSessionRevoked + touchAdminSession: one
+// AdminSession lookup answers "is this session still valid?" and, only when
+// lastSeenAt is older than TOUCH_THROTTLE_MS, refreshes it. A failed read
+// throws (fail closed, like isSessionRevoked); a failed refresh is only logged
+// (like touchAdminSession). Never cached across requests — callers dedupe per
+// render only (see lib/auth-guard.ts).
+export async function checkAndTouchAdminSession(sessionId: string | undefined | null): Promise<AdminSessionStatus> {
+  if (!sessionId) return "missing";
+  const session = await prisma.adminSession.findUnique({ where: { id: sessionId } });
+  if (!session) return "missing";
+  if (session.revokedAt !== null) return "revoked";
+  if (Date.now() - session.lastSeenAt.getTime() >= TOUCH_THROTTLE_MS) {
+    try {
+      await prisma.adminSession.update({ where: { id: sessionId }, data: { lastSeenAt: new Date() } });
+    } catch (error) {
+      console.error("Failed to touch admin session:", error);
+    }
+  }
+  return "active";
+}
+
 export async function isSessionRevoked(sessionId: string | undefined | null): Promise<boolean> {
   if (!sessionId) return true;
   const session = await prisma.adminSession.findUnique({ where: { id: sessionId } });

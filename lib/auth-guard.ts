@@ -1,7 +1,8 @@
+import { cache } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { hasPermission, type Permission } from "@/lib/permissions";
-import { isSessionRevoked, touchAdminSession } from "@/lib/session-tracking";
+import { checkAndTouchAdminSession } from "@/lib/session-tracking";
 
 export class AuthError extends Error {}
 
@@ -24,16 +25,28 @@ export class AuthError extends Error {}
 // can't do this same check itself (no direct Prisma access in that Edge
 // context, see lib/redirect-cache.ts), so this is the real enforcement
 // point, same as permission checks already are.
-export async function requireSession() {
+// Memoized per request render (React cache): a page that runs several loaders
+// in Promise.all, plus the layout, verifies the session once instead of once
+// per loader. cache() is scoped to a single server request, so nothing is
+// shared across requests — a revoked session is refused on the very next
+// request, and every Server Action invocation is its own request and re-checks.
+// It resolves to a result instead of throwing so each caller gets its own
+// fresh AuthError.
+const verifySession = cache(async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id || !session.user.role) {
-    throw new AuthError("Not authenticated");
+    return { session: null, error: "Not authenticated" } as const;
   }
-  if (await isSessionRevoked(session.user.sessionId)) {
-    throw new AuthError("This session has been revoked. Please sign in again.");
+  if ((await checkAndTouchAdminSession(session.user.sessionId)) !== "active") {
+    return { session: null, error: "This session has been revoked. Please sign in again." } as const;
   }
-  await touchAdminSession(session.user.sessionId);
-  return session;
+  return { session, error: null } as const;
+});
+
+export async function requireSession() {
+  const result = await verifySession();
+  if (!result.session) throw new AuthError(result.error);
+  return result.session;
 }
 
 export async function requirePermission(permission: Permission) {

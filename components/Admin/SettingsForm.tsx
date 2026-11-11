@@ -6,6 +6,7 @@ import { updateSiteSettings, generateIndexNowKey } from "@/app/(admin)/actions/s
 import { Save, AlertCircle, RefreshCw } from "lucide-react";
 import ImageInput from "./Media/ImageInput";
 import { withToast } from "@/lib/admin/toast";
+import { DEFAULT_FONT, fontsFor, buildFontStack, getSiteFont } from "@/lib/site-fonts";
 
 export default function SettingsForm({ initialData = null }: { initialData?: any }) {
   const router = useRouter();
@@ -53,6 +54,10 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
     usdPerGbp: initialData?.usdPerGbp?.toString() || "1.27",
     bdtPerGbp: initialData?.bdtPerGbp?.toString() || "148.0",
     indexNowEnabled: initialData?.indexNowEnabled ?? false,
+    headingFont: initialData?.headingFont || "",
+    bodyFont: initialData?.bodyFont || "",
+    headingFontBn: initialData?.headingFontBn || "",
+    bodyFontBn: initialData?.bodyFontBn || "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -274,6 +279,47 @@ export default function SettingsForm({ initialData = null }: { initialData?: any
             helpText="Recommended size: 1200 × 630 px."
             previewClassName="w-40 h-[84px]"
           />
+        </div>
+
+        <div className="bg-card p-6 rounded-xl shadow-sm border border-border md:col-span-2">
+          <h2 className="text-xl font-bold text-foreground mb-2">Typography</h2>
+          <p className="text-sm text-caption mb-4">
+            Fonts for the whole public website, chosen separately for English (Latin) and Bengali text. Applies right after saving, no deploy needed. Leave a field on Default to keep the current look.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {([
+              { role: "heading", title: "Headings", latin: "headingFont", bengali: "headingFontBn" },
+              { role: "body", title: "Body text", latin: "bodyFont", bengali: "bodyFontBn" },
+            ] as const).map(({ role, title, latin, bengali }) => (
+              <div key={role} className="space-y-3">
+                <h3 className="font-semibold text-foreground">{title}</h3>
+                {([
+                  { name: latin, script: "latin", label: "English font" },
+                  { name: bengali, script: "bengali", label: "Bengali font" },
+                ] as const).map(({ name, script, label }) => (
+                  <div key={name}>
+                    <label htmlFor={name} className="block text-sm font-medium text-muted mb-1">{label}</label>
+                    <select
+                      id={name}
+                      name={name}
+                      value={formData[name]}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, [name]: e.target.value }))}
+                      className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground"
+                    >
+                      <option value="">Default ({getSiteFont(DEFAULT_FONT[script][role])?.label})</option>
+                      {fontsFor(script, role).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
+                    </select>
+                  </div>
+                ))}
+                <p
+                  className="rounded-lg border border-border p-3 text-foreground"
+                  style={{ fontFamily: buildFontStack(formData[latin], formData[bengali], role), fontWeight: role === "heading" ? 700 : 400, fontSize: role === "heading" ? "1.5rem" : "1rem" }}
+                >
+                  Grow your business today<br />আপনার ব্যবসা বড় করুন
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="bg-card p-6 rounded-xl shadow-sm border border-border md:col-span-2">

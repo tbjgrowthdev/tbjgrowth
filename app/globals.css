@@ -41,8 +41,11 @@
   --color-featured-border: var(--featured-border);
 
   /* Typography */
-  --font-heading: var(--font-syne);
-  --font-body: var(--font-inter);
+  /* Bengali/Arabic faces are in every stack so those scripts never use a system
+     font. The public layout overrides these with the admin-chosen fonts
+     (lib/site-fonts.ts). */
+  --font-heading: var(--font-syne), var(--font-inter), var(--font-bn), var(--font-ar), sans-serif;
+  --font-body: var(--font-inter), var(--font-bn), var(--font-ar), sans-serif;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

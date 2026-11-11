@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
+import { normalizeFontKey } from "@/lib/site-fonts";
 import { ensureIndexNowKey } from "@/lib/search-engine-ping";
 
 // Memoized per-request: the root layout, every detail page's generateMetadata,
@@ -32,6 +33,18 @@ export const getSiteSettings = cache(async function getSiteSettings() {
 export async function updateSiteSettings(id: string, data: any) {
   try {
     await requirePermission("SETTINGS_MANAGEMENT");
+    // Fonts are an allowlist: anything else is refused, not stored.
+    for (const [field, role, script] of [
+      ["headingFont", "heading", "latin"],
+      ["bodyFont", "body", "latin"],
+      ["headingFontBn", "heading", "bengali"],
+      ["bodyFontBn", "body", "bengali"],
+    ] as const) {
+      if (data && field in data) {
+        if (data[field] === "" || data[field] == null) data[field] = null;
+        else if (normalizeFontKey(data[field], role, script) === null) return { success: false, error: `Unknown ${script} ${role} font` };
+      }
+    }
     const before = await prisma.siteSetting.findUnique({ where: { id } });
     const settings = await prisma.siteSetting.update({
       where: { id },

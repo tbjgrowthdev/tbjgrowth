@@ -1308,6 +1308,12 @@ model SiteSetting {
   indexNowKey     String?
   usdPerGbp       Float?   @default(1.27) // exchange rate for pricing display
   bdtPerGbp       Float?   @default(148.0)
+  // Public-site fonts, keys from lib/site-fonts.ts; null = site default (Syne / Inter).
+  headingFont     String?
+  bodyFont        String?
+  // Bengali-script fonts, chosen independently of the Latin ones above.
+  headingFontBn   String?
+  bodyFontBn      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
