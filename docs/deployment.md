@@ -42,6 +42,17 @@ The regional Cache API layer only works on a custom domain. On `*.workers.dev` i
 
 `opennextjs-cloudflare build` fails on Windows with pnpm (`Cannot read directory ".open-next/server-functions/default/node_modules/.pnpm/...": Access is denied`). This happens with or without the cache config. Build and deploy from WSL, macOS/Linux, or CI.
 
+### Images
+
+`/_next/image` doesn't optimize anything on this deployment. Without an `IMAGES` binding, OpenNext returns the original file at any requested width. `next.config.ts` therefore uses a custom loader (`lib/image-loader.ts`):
+
+- **Cloudinary URLs** load directly from Cloudinary as `f_auto,q_auto,c_limit,w_<width>`. Each new image and width combination uses one Cloudinary transformation (free plan: 25 credits a month, 1 credit = 1,000 transformations or 1 GB of bandwidth). Check usage in the Cloudinary console.
+- **Same-site files** (`/public`, static imports) go through **Cloudflare Image Transformations** at `/cdn-cgi/image/width=…,quality=85,format=auto/…`. This must be enabled on the `tbjgrowthtech.com` zone: **Cloudflare dashboard → Images → Transformations → Enable** for the zone. Leave "resize from any origin" off; only same-site images are transformed. Free up to 5,000 unique transformations a month (one source image at one width = one; format and quality don't count separately). After that it's $0.50 per 1,000. On the Free plan, new transformations past the limit fail rather than being billed.
+- `/cdn-cgi/` only works on the zone. On `*.workers.dev`, static images 404. Under `next dev` the loader serves originals.
+- Plain `<img>` tags (CMS block images, testimonial avatars) use `responsiveImgProps()` from the same file, so they're resized too.
+
+Enable Transformations **before** deploying code that uses this loader. Otherwise every static image on the site 404s.
+
 ### Runtime constraints this choice imposes
 
 Several architectural decisions elsewhere in this codebase exist *because* the target is a Cloudflare Worker, not a long-lived Node server:
@@ -122,6 +133,7 @@ app/api/cron/orphan-pages-scan
 app/api/cron/scheduled-jobs
 app/api/cron/seo-audit-scan
 app/api/cron/uptime-report
+app/api/cron/log-retention
 ```
 
 The GitHub Actions workflows that call these need matching secrets configured in **Settings → Secrets and variables → Actions** — see `docs/backup-process.md` for the full secret list (`PRODUCTION_URL`, `CRON_SECRET`, `DATABASE_URL_DIRECT`, R2 credentials, Neon API credentials). Run each workflow once manually (Actions tab → the workflow → **Run workflow**) after adding secrets, before trusting the schedule.

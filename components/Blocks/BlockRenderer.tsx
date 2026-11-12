@@ -2,6 +2,7 @@ import Link from "next/link";
 import JsonLd from "@/components/JsonLd";
 import { faqPageSchema } from "@/lib/schema";
 import { isDisplayableImageUrl } from "@/lib/image-hosts";
+import { responsiveImgProps } from "@/lib/image-loader";
 import { isSafeHref } from "@/lib/blocks/schema";
 import { sanitizeRichText } from "@/lib/sanitize";
 import { hasQuote, introIsBelow, isFootnoteHtml, tableIsRenderable, visibleProofItems } from "@/lib/blocks/visible";
@@ -30,10 +31,14 @@ function BlockLink({ href, className, children }: { href: string; className?: st
   return href.startsWith("#") ? <a href={href} className={className}>{children}</a> : <Link href={href} className={className}>{children}</Link>;
 }
 
-function Img({ src, alt, className }: { src: string; alt: string; className?: string }) {
+// A plain <img> (block images have no known dimensions, so next/image's
+// width/height or fill would change the layout), resized through the same
+// loader as next/image. `sizes` is the image's rendered width.
+function Img({ src, alt, className, sizes }: { src: string; alt: string; className?: string; sizes: string }) {
   if (!src || !isDisplayableImageUrl(src)) return null;
+  const { src: resized, srcSet } = responsiveImgProps(src);
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className={className} loading="lazy" />;
+  return <img src={resized} srcSet={srcSet} sizes={srcSet ? sizes : undefined} alt={alt} className={className} loading="lazy" decoding="async" />;
 }
 
 // Layouts. "default" (pages, pSEO templates) is the original look and must not change. "caseStudy" puts every block in
@@ -96,7 +101,7 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
                 </div>
               )}
             </div>
-            <Img src={d.imageUrl} alt={d.imageAlt} className="w-full rounded-2xl" />
+            <Img src={d.imageUrl} alt={d.imageAlt} className="w-full rounded-2xl" sizes="(min-width: 1024px) 556px, 100vw" />
           </div>
         </section>
       );
@@ -279,7 +284,7 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
             <ul className={`flex flex-wrap items-center gap-4 ${cs ? "" : "justify-center"}`}>
               {d.items.map((item, i) => (
                 <li key={i} className="flex items-center gap-3 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium text-foreground">
-                  <Img src={item.imageUrl} alt={item.imageAlt} className="h-8 w-auto" />
+                  <Img src={item.imageUrl} alt={item.imageAlt} className="h-8 w-auto" sizes="128px" />
                   {item.label}
                 </li>
               ))}
@@ -391,7 +396,12 @@ function BlockView({ rendered, h1, source, underNav, cs, isLast, leadsNext, afte
                 <li key={i}>
                   <figure className="rounded-2xl border border-border bg-card overflow-hidden">
                     <div className="relative">
-                      <Img src={item.imageUrl} alt={item.imageAlt || item.caption} className="w-full" />
+                      <Img
+                        src={item.imageUrl}
+                        alt={item.imageAlt || item.caption}
+                        className="w-full"
+                        sizes={d.columns === 1 ? "(min-width: 832px) 768px, 100vw" : d.columns === 3 ? "(min-width: 1024px) 368px, (min-width: 640px) 50vw, 100vw" : "(min-width: 640px) 50vw, 100vw"}
+                      />
                       {item.badge && <span className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">{item.badge}</span>}
                     </div>
                     {item.caption && <figcaption className="p-4 text-base font-medium text-foreground">{item.caption}</figcaption>}

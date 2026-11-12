@@ -165,8 +165,9 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                 <Image
                   src="/primarylogo.png"
                   alt="TBJ Growth Tech"
-                  width={1100}
-                  height={300}
+                  width={1000}
+                  height={200}
+                  sizes="180px"
                   priority
                   className="h-8 lg:h-9 w-auto dark:hidden"
                 />
@@ -175,6 +176,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                   alt="TBJ Growth Tech"
                   width={1000}
                   height={200}
+                  sizes="180px"
                   priority
                   className="hidden h-8 lg:h-9 w-auto dark:block"
                 />
@@ -372,6 +374,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                       alt="TBJ Growth Tech"
                       width={1000}
                       height={200}
+                      sizes="180px"
                       className="h-7 w-auto dark:hidden"
                     />
                     <Image
@@ -379,6 +382,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                       alt="TBJ Growth Tech"
                       width={1000}
                       height={200}
+                      sizes="180px"
                       className="hidden h-7 w-auto dark:block"
                     />
                   </div>

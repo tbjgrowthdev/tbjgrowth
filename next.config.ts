@@ -55,7 +55,16 @@ const nextConfig: NextConfig = {
     cpus: 1,
   },
   images: {
-    formats: ["image/avif", "image/webp"],
+    // Cloudinary and Cloudflare Image Transformations do the resizing and
+    // format choice; /_next/image is a pass-through on OpenNext without an
+    // IMAGES binding. See lib/image-loader.ts.
+    loader: "custom",
+    loaderFile: "./lib/image-loader.ts",
+    // Static images default to quality 85 in the loader; 75 is Next's default
+    // quality value and stays allowed for any <Image quality={75}>.
+    qualities: [75, 85],
+    // Not enforced with a custom loader. Kept because the same host list
+    // drives the CSP img-src above and the admin image field.
     remotePatterns: ALLOWED_IMAGE_HOSTS.map((hostname) => ({ protocol: "https" as const, hostname })),
   },
   async headers() {

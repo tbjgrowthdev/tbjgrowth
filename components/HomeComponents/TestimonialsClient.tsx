@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getIcon } from "@/components/ui/IconRenderer";
 import { isDisplayableImageUrl } from "@/lib/image-hosts";
+import { responsiveImgProps } from "@/lib/image-loader";
 
 // Global metrics
 const globalMetrics = [
@@ -167,7 +168,7 @@ function TestimonialCard({
             {/* The avatar field holds either initials or an image URL (set from the admin's image field). */}
             {testimonial.avatar && isDisplayableImageUrl(testimonial.avatar) ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={testimonial.avatar} alt={testimonial.author} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+              <img {...responsiveImgProps(testimonial.avatar)} sizes="48px" alt={testimonial.author} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             ) : (
               testimonial.avatar || testimonial.author.substring(0, 2).toUpperCase()
             )}

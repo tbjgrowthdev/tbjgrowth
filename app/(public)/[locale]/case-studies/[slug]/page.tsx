@@ -199,6 +199,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
               src={cloudinaryUrl(study.featuredImage)}
               alt={study.featuredImageAlt || study.title}
               fill
+              sizes="(min-width: 896px) 832px, 100vw"
               className="object-cover"
               priority
             />
@@ -220,7 +221,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {study.imageGallery.filter(isValidImageSrc).map((url: string, i: number) => (
                 <div key={url} className="relative aspect-video rounded-xl overflow-hidden border border-border">
-                  <Image src={cloudinaryUrl(url)} alt={`${study.title} gallery image ${i + 1}`} fill className="object-cover" />
+                  <Image src={cloudinaryUrl(url)} alt={`${study.title} gallery image ${i + 1}`} fill sizes="(min-width: 1024px) 270px, (min-width: 640px) 50vw, 100vw" className="object-cover" />
                 </div>
               ))}
             </div>

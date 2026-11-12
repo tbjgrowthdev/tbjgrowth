@@ -54,6 +54,7 @@ function CaseStudyCard({ study, index }: { study: CaseStudy; index: number }) {
               src={cloudinaryUrl(study.featuredImage)}
               alt={study.featuredImageAlt || study.title}
               fill
+              sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (

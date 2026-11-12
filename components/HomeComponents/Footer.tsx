@@ -115,6 +115,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
                     alt="TBJ Growth Tech"
                     width={1000}
                     height={200}
+                    sizes="180px"
                     className="h-9 w-auto dark:hidden"
                   />
                   <Image
@@ -122,6 +123,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
                     alt="TBJ Growth Tech"
                     width={1000}
                     height={200}
+                    sizes="180px"
                     className="hidden h-9 w-auto dark:block"
                   />
                 </div>

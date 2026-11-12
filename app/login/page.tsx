@@ -71,8 +71,8 @@ export default function LoginPage() {
           {/* Header */}
           <div className="border-b border-border p-8 pb-6 text-center">
             <span className="inline-flex items-center rounded-2xl bg-white px-4 py-2.5 ring-1 ring-[var(--border-c)] dark:bg-[var(--card-bg)]">
-              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="h-9 w-auto dark:hidden" />
-              <Image src="/primary-logo-dark.png" alt="TBJ Growth Tech" width={1000} height={200} priority className="hidden h-9 w-auto dark:block" />
+              <Image src="/primarylogo.png" alt="TBJ Growth Tech" width={1000} height={200} sizes="180px" priority className="h-9 w-auto dark:hidden" />
+              <Image src="/primary-logo-dark.png" alt="TBJ Growth Tech" width={1000} height={200} sizes="180px" priority className="hidden h-9 w-auto dark:block" />
             </span>
             <p className="eyebrow eyebrow-accent mt-6">Administration panel</p>
             <PageTitle className="mt-2">Secure Access</PageTitle>
