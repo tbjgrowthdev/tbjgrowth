@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { slugify } from "@/lib/utils";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
@@ -56,6 +56,7 @@ export async function deleteCategory(id: string) {
     const before = await prisma.category.findUnique({ where: { id } });
     await prisma.category.delete({ where: { id } });
     revalidatePath("/admin/categories");
+    revalidatePublicSite();
     await logAudit({
       action: "delete",
       category: "Content",
@@ -124,6 +125,7 @@ export async function deleteTag(id: string) {
     const before = await prisma.tag.findUnique({ where: { id } });
     await prisma.tag.delete({ where: { id } });
     revalidatePath("/admin/tags");
+    revalidatePublicSite();
     await logAudit({
       action: "delete",
       category: "Content",

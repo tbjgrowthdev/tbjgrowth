@@ -9,6 +9,14 @@ import { organizationSchema, webSiteSchema, localBusinessSchema } from "@/lib/sc
 import { resolveRouteLocale } from "@/lib/i18n";
 import { siteFontCss } from "@/lib/site-fonts";
 
+// Empty on purpose: nothing is rendered at build time, but declaring it is
+// what lets Next.js cache each page the first time it is requested (ISR).
+// Without it the [locale] segment makes every public route dynamic, so every
+// request is rendered live and `revalidate` is ignored.
+export function generateStaticParams() {
+  return [];
+}
+
 export default async function PublicLayout({
   children,
   params,

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { slugify } from "@/lib/utils";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { TRANSITIONS, transitionContent, type WorkflowAction } from "@/lib/workflow";
@@ -258,6 +258,7 @@ export async function deletePost(id: string, options?: DeleteOptions) {
       where: { id },
     });
     revalidatePath("/admin/posts");
+    revalidatePublicSite();
     await logAudit({
       action: "delete",
       category: "Content",

@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { parseCsv } from "@/lib/programmatic-seo/csv";
@@ -91,6 +91,7 @@ export async function deletePSeoTemplate(id: string): Promise<ActionResult<null>
     const before = await prisma.pSeoTemplate.findUnique({ where: { id } });
     await prisma.pSeoTemplate.delete({ where: { id } });
     revalidatePath("/admin/programmatic-seo");
+    revalidatePublicSite();
     await logAudit({ action: "delete", category: "Content", entityType: "PSeoTemplate", entityId: id, entityLabel: before?.name });
     return { success: true, data: null };
   } catch (error) {
@@ -176,6 +177,7 @@ export async function deletePSeoDataset(id: string): Promise<ActionResult<null>>
     const before = await prisma.pSeoDataset.findUnique({ where: { id } });
     await prisma.pSeoDataset.delete({ where: { id } });
     revalidatePath("/admin/programmatic-seo");
+    revalidatePublicSite();
     await logAudit({ action: "delete", category: "Content", entityType: "PSeoDataset", entityId: id, entityLabel: before?.name });
     return { success: true, data: null };
   } catch (error) {

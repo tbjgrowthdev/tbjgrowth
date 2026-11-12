@@ -17,6 +17,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
 export const revalidate = 3600;
 
+// Empty on purpose: see app/(public)/[locale]/layout.tsx. Required here too
+// because this route has its own dynamic segment.
+export function generateStaticParams() {
+  return [];
+}
+
 const getServiceById = cache((id: string) =>
   prisma.agencyService.findUnique({ where: { id }, include: { faqs: { orderBy: { order: "asc" } } } })
 );

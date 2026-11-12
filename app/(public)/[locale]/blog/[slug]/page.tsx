@@ -24,6 +24,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
 export const revalidate = 3600;
 
+// Empty on purpose: see app/(public)/[locale]/layout.tsx. Required here too
+// because this route has its own dynamic segment.
+export function generateStaticParams() {
+  return [];
+}
+
 // generateMetadata and the page component both need this post for the same
 // request — cache() + one shared query shape means a single DB round trip.
 const getPostBySlug = cache((slug: string) =>

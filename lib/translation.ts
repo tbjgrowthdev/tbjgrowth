@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { checkStale } from "@/lib/stale-check";
@@ -254,6 +254,7 @@ export async function saveTranslationDraft(
     });
 
     revalidatePath("/admin/translations");
+    revalidatePublicSite();
     await logAudit({
       action: existing ? "update" : "create",
       category: "Content",
@@ -292,6 +293,7 @@ export async function publishTranslation(contentType: TranslatableKind, contentI
       data: { status: "PUBLISHED" },
     });
     revalidatePath("/admin/translations");
+    revalidatePublicSite();
     await logAudit({
       action: "publish",
       category: "Content",
@@ -320,6 +322,7 @@ export async function unpublishTranslation(contentType: TranslatableKind, conten
     }
     const translation = await prisma.contentTranslation.update({ where: { id: existing.id }, data: { status: "DRAFT" } });
     revalidatePath("/admin/translations");
+    revalidatePublicSite();
     await logAudit({
       action: "unpublish",
       category: "Content",
@@ -348,6 +351,7 @@ export async function deleteTranslation(contentType: TranslatableKind, contentId
     }
     await prisma.contentTranslation.delete({ where: { id: existing.id } });
     revalidatePath("/admin/translations");
+    revalidatePublicSite();
     await logAudit({
       action: "delete",
       category: "Content",

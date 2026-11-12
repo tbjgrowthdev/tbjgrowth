@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/revalidate";
 import type { ContentType } from "@/lib/generated/prisma/client";
 import { syncTaxonomy } from "@/lib/content-relations";
 import { normalizeBlocksInput } from "@/lib/blocks/schema";

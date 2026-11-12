@@ -17,6 +17,31 @@ There are two deployment configs present in the repo (`wrangler.jsonc` + `open-n
 
 Plain Vercel-style commands also exist (`build`, `start`, `dev`) and still work for local development (`next dev`) — they are not how this app is deployed.
 
+### ISR page cache (R2 + D1 + Durable Object)
+
+Public pages under `app/(public)/[locale]` are cached (ISR). Three things have to be in place, or every page view is rendered live and queries Neon:
+
+1. **`generateStaticParams` returning `[]`** in `app/(public)/[locale]/layout.tsx` and every `[slug]` page. Without it Next.js treats the `[locale]` segment as fully dynamic and ignores `revalidate`. Check with `next build`: public routes must show `●`, not `ƒ`.
+2. **Cache overrides** in `open-next.config.ts`: R2 incremental cache (with a regional Cache API layer), D1 tag cache, Durable Object queue. OpenNext's defaults are no-op "dummy" caches.
+3. **Bindings** in `wrangler.jsonc`: R2 bucket `tbj-next-cache`, D1 database `tbj-next-tag-cache` (its real `database_id` must replace the placeholder), the `DOQueueHandler` Durable Object, and the `WORKER_SELF_REFERENCE` service binding.
+
+One-time setup, before the first deploy with this config:
+
+```bash
+npx wrangler r2 bucket create tbj-next-cache
+npx wrangler d1 create tbj-next-tag-cache   # paste the printed database_id into wrangler.jsonc
+```
+
+`npm run deploy` creates the D1 `revalidations` table and the Durable Object on its own.
+
+**Invalidation.** Admin code imports `revalidatePath` from `@/lib/revalidate`, not `next/cache`. Next.js tags cached pages by their internal route and pathname (`/(public)/[locale]/blog/page`, `/en-gb/blog`), so a plain `revalidatePath("/blog")` matches nothing. The wrapper passes `/admin/...` paths through unchanged and turns any other path into one invalidation of the whole public site (`revalidatePublicSite()`). Each page then re-renders once on its next visit. New admin actions that change anything a public page shows must call one of these two functions.
+
+**Verify after deploying:** request a public page twice. The second response should carry `x-nextjs-cache: HIT`. Save an edit in the admin, and the next request should be a `MISS` that shows the new content.
+
+The regional Cache API layer only works on a custom domain. On `*.workers.dev` it does nothing and every hit reads from R2 instead, which is still cached, just a little slower.
+
+`opennextjs-cloudflare build` fails on Windows with pnpm (`Cannot read directory ".open-next/server-functions/default/node_modules/.pnpm/...": Access is denied`). This happens with or without the cache config. Build and deploy from WSL, macOS/Linux, or CI.
+
 ### Runtime constraints this choice imposes
 
 Several architectural decisions elsewhere in this codebase exist *because* the target is a Cloudflare Worker, not a long-lived Node server:

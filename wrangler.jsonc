@@ -8,5 +8,26 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  "keep_vars": true
+  "keep_vars": true,
+
+  // --- ISR cache (see open-next.config.ts and docs/deployment.md) ---
+  // The Worker calls itself to re-render a page in the background.
+  // "service" must match "name" above.
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "tbj" }],
+  // Rendered pages. Create this bucket before deploying.
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tbj-next-cache" }],
+  // Revalidation timestamps written by revalidatePath(). Create this database
+  // before deploying and paste its ID here. The deploy command creates the table.
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "tbj-next-tag-cache",
+      "database_id": "832db460-09ac-40c4-9517-ce04bc8770f0"
+    }
+  ],
+  // Background revalidation queue. Created automatically by the deploy.
+  "durable_objects": {
+    "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }]
 }

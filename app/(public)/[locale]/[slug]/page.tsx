@@ -16,6 +16,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
 export const revalidate = 3600;
 
+// Empty on purpose: see app/(public)/[locale]/layout.tsx. Required here too
+// because this route has its own dynamic segment.
+export function generateStaticParams() {
+  return [];
+}
+
 // generateMetadata and the page component both need this record for the same
 // request — cache() means the second call is served from memory, not the DB.
 const getPageBySlug = cache((slug: string) => prisma.page.findUnique({ where: { slug } }));

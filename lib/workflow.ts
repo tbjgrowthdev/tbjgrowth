@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import type { Permission } from "@/lib/permissions";
 import type { ContentType, PostStatus, Prisma } from "@/lib/generated/prisma/client";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/revalidate";
 import { logAudit, type AuditCategory } from "@/lib/audit-log";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";

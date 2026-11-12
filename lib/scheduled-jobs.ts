@@ -8,7 +8,7 @@ import { sanitizeRichText } from "@/lib/sanitize";
 import { sendScheduledJobFailureNotification } from "@/lib/email";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/revalidate";
 import type { ContentType, ScheduledJobType, PostStatus, Prisma } from "@/lib/generated/prisma/client";
 
 const MAX_ATTEMPTS = 5;

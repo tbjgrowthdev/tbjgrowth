@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { TRANSITIONS, transitionContent, type WorkflowAction } from "@/lib/workflow";
 import { scheduleContentJob } from "@/app/(admin)/actions/scheduling";
@@ -141,6 +141,7 @@ export async function bulkAssignCategory(postIds: string[], categoryId: string) 
       after: { postIds, categoryId, categoryName: category.name },
     });
     revalidatePath("/admin/posts");
+    revalidatePublicSite();
     return { success: true };
   } catch (error: any) {
     if (error instanceof AuthError) return { success: false, error: error.message };
@@ -169,6 +170,7 @@ export async function bulkAssignTags(postIds: string[], tagIds: string[]) {
       after: { postIds, tagIds },
     });
     revalidatePath("/admin/posts");
+    revalidatePublicSite();
     return { success: true };
   } catch (error: any) {
     if (error instanceof AuthError) return { success: false, error: error.message };
@@ -203,6 +205,7 @@ export async function bulkReassignAuthor(postIds: string[], authorId: string) {
       after: { postIds, authorId, authorName: author.name },
     });
     revalidatePath("/admin/posts");
+    revalidatePublicSite();
     return { success: true };
   } catch (error: any) {
     if (error instanceof AuthError) return { success: false, error: error.message };
@@ -239,6 +242,7 @@ export async function bulkUpdateSeo(postIds: string[], data: { isIndexable?: boo
       after: { postIds, ...updateData },
     });
     revalidatePath("/admin/posts");
+    revalidatePublicSite();
     return { success: true };
   } catch (error: any) {
     if (error instanceof AuthError) return { success: false, error: error.message };

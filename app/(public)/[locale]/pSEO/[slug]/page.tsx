@@ -13,6 +13,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
 export const revalidate = 3600;
 
+// Empty on purpose: see app/(public)/[locale]/layout.tsx. Required here too
+// because this route has its own dynamic segment.
+export function generateStaticParams() {
+  return [];
+}
+
 // A page still NEEDS_REVIEW never renders publicly at all — not even
 // noindexed — until a human either fixes the underlying row/template and
 // regenerates, or explicitly overrides it. "Controlled" means it isn't

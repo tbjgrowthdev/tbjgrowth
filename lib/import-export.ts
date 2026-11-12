@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { slugify } from "@/lib/utils";
 import { recordVersion } from "@/lib/versioning";
 import { syncTaxonomy } from "@/lib/content-relations";
@@ -157,6 +157,7 @@ export async function importPagesJson(jsonText: string, actor: Actor): Promise<I
   }
 
   revalidatePath("/admin/pages");
+  revalidatePublicSite();
   return result;
 }
 
@@ -586,6 +587,7 @@ export async function importCategoriesCsv(csvText: string): Promise<ImportResult
     }
   }
   revalidatePath("/admin/categories");
+  revalidatePublicSite();
   return result;
 }
 
@@ -621,6 +623,7 @@ export async function importTagsCsv(csvText: string): Promise<ImportResult> {
     }
   }
   revalidatePath("/admin/tags");
+  revalidatePublicSite();
   return result;
 }
 
@@ -869,5 +872,6 @@ export async function importSeoCsv(csvText: string, actor: Actor): Promise<Impor
   revalidatePath("/admin/pages");
   revalidatePath("/admin/cases");
   revalidatePath("/admin/services");
+  revalidatePublicSite();
   return result;
 }

@@ -12,6 +12,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 
 export const revalidate = 3600;
 
+// Empty on purpose: see app/(public)/[locale]/layout.tsx. Required here too
+// because this route has its own dynamic segment.
+export function generateStaticParams() {
+  return [];
+}
+
 // A location only renders under a locale whose market matches its own
 // (see the Location model's comment in prisma/schema.prisma) — a Dhaka
 // office has nothing to say under the Gulf or UK locale, so that combination

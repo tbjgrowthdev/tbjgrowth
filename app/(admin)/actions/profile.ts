@@ -3,7 +3,7 @@
 import { cache } from "react";
 import prisma from "@/lib/prisma";
 import { AuthError, requireSession } from "@/lib/auth-guard";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import bcrypt from "bcryptjs";
 import { logAudit } from "@/lib/audit-log";
 
@@ -61,6 +61,7 @@ export async function updateProfile(data: {
     });
 
     revalidatePath("/admin", "layout");
+    revalidatePublicSite();
     await logAudit({
       action: "update",
       category: "Users",

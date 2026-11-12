@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/revalidate";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 

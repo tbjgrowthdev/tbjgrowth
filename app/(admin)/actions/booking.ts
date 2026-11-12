@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "@/lib/revalidate";
 import { sendBookingNotification } from "@/lib/email";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 

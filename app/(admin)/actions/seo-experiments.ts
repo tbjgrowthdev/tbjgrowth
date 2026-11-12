@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidatePublicSite } from "@/lib/revalidate";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { getExperimentableContent } from "@/lib/seo-experiments/content-access";
@@ -84,6 +84,7 @@ export async function launchSeoExperimentAction(id: string): Promise<ActionResul
     await requirePermission("EDIT");
     await launchExperiment(id);
     revalidatePath("/admin/seo-experiments");
+    revalidatePublicSite();
     await logAudit({ action: "update", category: "Content", entityType: "SeoExperiment", entityId: id, entityLabel: "Launched" });
     return { success: true, data: null };
   } catch (error) {
@@ -98,6 +99,7 @@ export async function revertSeoExperimentAction(id: string): Promise<ActionResul
     await requirePermission("EDIT");
     await revertExperiment(id);
     revalidatePath("/admin/seo-experiments");
+    revalidatePublicSite();
     await logAudit({ action: "update", category: "Content", entityType: "SeoExperiment", entityId: id, entityLabel: "Reverted" });
     return { success: true, data: null };
   } catch (error) {
