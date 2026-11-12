@@ -29,5 +29,23 @@
   "durable_objects": {
     "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }]
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+
+  // --- Rate limits for the public reporting endpoints (lib/rate-limit.ts) ---
+  // Counted separately in each Cloudflare location, and approximate. Nothing
+  // to create in the dashboard: the deploy sets these up. namespace_id is any
+  // positive integer that no other rate limiter in the account uses.
+  "ratelimits": [
+    // app/api/internal/client-error: one report per client crash. A visitor
+    // hitting a crash loop is capped at 5 a minute.
+    { "name": "CLIENT_ERROR_IP_LIMITER", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } },
+    { "name": "CLIENT_ERROR_GLOBAL_LIMITER", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
+    // app/api/web-vitals:
+    // A real visitor sends at most one report per page load, so 10 a minute
+    // per IP is generous.
+    { "name": "WEB_VITALS_IP_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+    // Ceiling for all visitors together, so a flood from many IPs still
+    // can't write unlimited rows to Neon.
+    { "name": "WEB_VITALS_GLOBAL_LIMITER", "namespace_id": "1002", "simple": { "limit": 300, "period": 60 } }
+  ]
 }

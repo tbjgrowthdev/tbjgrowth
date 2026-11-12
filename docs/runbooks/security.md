@@ -105,9 +105,14 @@ Already solid, no change needed beyond what's below:
 - `/api/internal/redirects`: intentionally public — it's the public
   redirect map, not sensitive, and middleware (Edge runtime, no direct DB
   driver) calls it internally.
-- `/api/internal/client-error`: intentionally unauthenticated (a crashed
-  client can't carry a session), abuse-bounded by `lib/error-monitor.ts`'s
-  own alert dedup.
+- `/api/internal/client-error` and `/api/web-vitals`: intentionally
+  unauthenticated (a crashed client or an anonymous visitor can't carry a
+  session). Both refuse cross-site browser requests and oversized bodies,
+  and are rate-limited in the Worker by Cloudflare rate-limit bindings
+  (`lib/rate-limit.ts`, `wrangler.jsonc` `ratelimits`): per IP plus an
+  overall ceiling, counted per Cloudflare location. client-error also has
+  `lib/error-monitor.ts`'s alert dedup; the tables they write to are pruned
+  nightly (`lib/retention.ts`).
 - `/api/internal/env-check` (temporary diagnostic route from an earlier
   incident, unauthenticated, reported which secrets existed): **deleted** —
   its own comment said to remove it once resolved, and an unauthenticated

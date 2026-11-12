@@ -73,7 +73,10 @@ export interface ObservabilityData {
     clientErrorCount: number;
     apiFailureCount: number; // server-side ErrorLog rows whose path starts with /api
     recentErrors: ErrorLogRow[];
+    // Web vitals are sampled (lib/web-vitals.ts WEB_VITALS_SAMPLE_RATE), so
+    // the dashboard shows slowRequestCount as a share of ttfbSampleCount.
     slowRequestCount: number; // poor-rated TTFB web-vital samples in window
+    ttfbSampleCount: number; // all TTFB samples (= sampled page loads) in window
     slowQueryCount: number;
     recentSlowQueries: SlowQueryRow[];
   };

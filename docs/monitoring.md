@@ -40,9 +40,10 @@ groups, matching the dashboard's three sections:
   itself can never recursively re-enter the same hook, and the write is
   **awaited**, not fire-and-forget — a Workers invocation isn't guaranteed
   to keep running an un-awaited promise after its response is sent.
-- **Slow requests** — reuses `WebVitalSample` (see below): counts
-  poor-rated `TTFB` samples in the window rather than adding a second,
-  separate "page load time" tracker.
+- **Slow requests** — reuses `WebVitalSample` (see below): the share of
+  sampled page loads whose `TTFB` was rated poor (> 1.8s) in the window,
+  rather than a second, separate "page load time" tracker. Shown as a
+  percentage because web vitals are sampled; warns at 10%.
 
 ## Infrastructure
 
@@ -92,8 +93,50 @@ groups, matching the dashboard's three sections:
 - **Backups** — see `docs/backup-process.md` / `docs/monitoring.md`'s
   sibling doc; surfaced in **Admin → Monitoring → Backups**, a separate,
   older page from the Observability dashboard above.
-- **Web vitals** — the client posts real-user `LCP`/`CLS`/`INP`/`FCP`/`TTFB`
-  samples to `app/api/web-vitals`, stored as `WebVitalSample` rows.
+- **Web vitals** — `components/WebVitalsReporter.tsx` reports real-user
+  `LCP`/`CLS`/`INP`/`FCP`/`TTFB` for a share of page loads set by
+  `WEB_VITALS_SAMPLE_RATE` in `lib/web-vitals.ts` (currently 1, i.e. every
+  page load, while traffic is low). All metrics of a page
+  load go in **one** request, sent when the page is hidden, to
+  `app/api/web-vitals`, which writes them (one `create()` per metric, concurrently — `createMany`
+  doesn't work on the Neon HTTP adapter) as
+  `WebVitalSample` rows. The route is public, so it:
+  - refuses cross-site browser requests and bodies over 1 KB;
+  - is rate-limited by two Cloudflare rate-limit bindings (`wrangler.jsonc`
+    `ratelimits`): 10 reports/min per IP, 300/min overall, per Cloudflare
+    location (approximate). Without the bindings (`next dev`) it doesn't
+    limit;
+  - validates every value against a plausible range and computes the rating
+    itself.
+  The nightly log-retention job (see below) deletes rows older than 30
+  days, the longest dashboard window. The admin home p75 tile
+  is computed in Postgres (`percentile_disc`), not by loading rows.
+
+## Retention (automatic cleanup)
+
+`/api/cron/log-retention` runs nightly from `.github/workflows/app-cron.yml`
+and applies the rules in `lib/retention.ts`. Each rule is one standalone
+`deleteMany` (the only multi-row write the Neon HTTP adapter supports — see
+`docs/known-limitations.md`). A failing table doesn't stop the others, but
+makes the route answer 500 so the Actions job goes red. `?dryRun=1` deletes
+nothing and returns what each rule would delete.
+
+| Table | Kept for |
+|---|---|
+| `SlowQueryLog`, `WebVitalSample` | 30 days |
+| `UptimeCheck` | 30 days (newest check always kept — the alert compares against it) |
+| `ErrorLog`, `EmailLog` | 90 days |
+| `NotFoundLog` | 90 days since the path was last hit |
+| `LinkCheckRun`, `SeoAuditRun` | 90 days (newest run always kept) |
+| `LoginAttempt` | 180 days |
+| `AdminSession` | until revoked for 30 days or unused for 60 days |
+| `AutomationRun` (+ steps, by cascade) | 180 days after finishing; running/awaiting-approval never |
+| `ScheduledJob` | 180 days after completing/failing/cancelling; pending never |
+| `BackupRun` | 365 days |
+
+Not cleaned automatically: `AuditLog` (Super Admin purges by hand) and
+business history (`AiJob`, `ContentVersion`, `ApprovalHistory`,
+`RankCheck`, Search Console / GA4 metrics).
 
 ## Two monitoring surfaces exist — don't confuse them
 

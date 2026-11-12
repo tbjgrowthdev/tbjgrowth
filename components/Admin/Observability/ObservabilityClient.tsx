@@ -78,7 +78,7 @@ export default function ObservabilityClient({ initialData, initialHours }: { ini
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={AlertTriangle} label="Errors & exceptions" value={application.errorCount} warnAbove={0} />
           <StatCard icon={Server} label="API failures" value={application.apiFailureCount} warnAbove={0} detail="Server errors under /api/*" />
-          <StatCard icon={AlertTriangle} label="Slow requests" value={application.slowRequestCount} warnAbove={0} detail="Poor-rated TTFB samples" />
+          <SlowRequestsCard poor={application.slowRequestCount} total={application.ttfbSampleCount} />
           <StatCard icon={Database} label="Slow queries" value={application.slowQueryCount} warnAbove={0} detail="Over the 1000ms threshold" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-caption">
@@ -216,6 +216,29 @@ export default function ObservabilityClient({ initialData, initialHours }: { ini
         />
       </section>
     </div>
+  );
+}
+
+// Web vitals come from a sample of page loads, so a raw count would depend on
+// the sample rate. The share of sampled loads with a poor TTFB (> 1.8s) doesn't.
+// Warns at 10%: Google's "good" bar is that 75% of loads are good, and a tenth
+// of loads being outright poor is well past where that starts to slip.
+const SLOW_REQUEST_WARN_SHARE = 0.1;
+
+function SlowRequestsCard({ poor, total }: { poor: number; total: number }) {
+  if (total === 0) {
+    return <StatCard icon={AlertTriangle} label="Slow requests" value="—" detail="No sampled page loads in this window" />;
+  }
+  const share = poor / total;
+  const pct = share * 100;
+  return (
+    <StatCard
+      icon={AlertTriangle}
+      label="Slow requests"
+      value={`${pct < 10 && pct > 0 ? pct.toFixed(1) : Math.round(pct)}%`}
+      bad={share >= SLOW_REQUEST_WARN_SHARE}
+      detail={`${poor.toLocaleString()} of ${total.toLocaleString()} sampled page loads had TTFB over 1.8s`}
+    />
   );
 }
 

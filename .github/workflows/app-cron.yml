@@ -9,6 +9,7 @@ on:
   schedule:
     - cron: "*/5 * * * *" # scheduled-jobs: publish/unpublish/update at their scheduled time
     - cron: "0 3 * * *" # link-check: nightly broken-link crawl
+    - cron: "30 3 * * *" # log-retention: nightly delete of old log rows (rules in lib/retention.ts)
     - cron: "0 4 * * 1" # content-refresh-scan: weekly (Monday) detection scan
     - cron: "0 5 * * 1" # content-recommendations-scan: weekly (Monday) keyword-gap scan
     - cron: "0 6 * * 1" # content-cannibalization-scan: weekly (Monday) overlapping-content scan
@@ -97,6 +98,18 @@ jobs:
       - name: Trigger orphan page detection scan
         run: |
           curl -fsS -X GET "${PRODUCTION_URL}/api/cron/orphan-pages-scan" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  log-retention:
+    if: github.event.schedule == '30 3 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old log rows
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/log-retention" \
             -H "Authorization: Bearer ${CRON_SECRET}"
         env:
           PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}

@@ -3,53 +3,36 @@
 import prisma from "@/lib/prisma";
 import tls from "tls";
 import { requirePermission } from "@/lib/auth-guard";
+import { WEB_VITAL_METRICS, rateWebVital } from "@/lib/web-vitals";
 
-const THRESHOLDS: Record<string, { good: number; poor: number }> = {
-  LCP: { good: 2500, poor: 4000 },
-  CLS: { good: 0.1, poor: 0.25 },
-  INP: { good: 200, poor: 500 },
-  FCP: { good: 1800, poor: 3000 },
-  TTFB: { good: 800, poor: 1800 },
-};
-
-function percentile(sorted: number[], p: number) {
-  if (sorted.length === 0) return null;
-  const index = Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length));
-  return sorted[index];
-}
-
-function rate(metric: string, value: number) {
-  const t = THRESHOLDS[metric];
-  if (!t) return "unknown";
-  if (value <= t.good) return "good";
-  if (value <= t.poor) return "needs-improvement";
-  return "poor";
-}
-
-/** p75 (Google's official Core Web Vitals threshold basis) per metric over the last 7 days of real visitor samples. */
+/**
+ * p75 (Google's official Core Web Vitals threshold basis) per metric over the
+ * last 7 days of real visitor samples. Computed in Postgres, so only five
+ * rows come back instead of every sample in the window.
+ */
 export async function getWebVitalsSummary() {
   try {
     await requirePermission("SETTINGS_MANAGEMENT");
     const since = new Date();
     since.setDate(since.getDate() - 7);
 
-    const samples = await prisma.webVitalSample.findMany({
-      where: { createdAt: { gte: since } },
-      select: { metric: true, value: true },
+    const rows = await prisma.$queryRaw<{ metric: string; p75: number; count: bigint }[]>`
+      SELECT "metric",
+             percentile_disc(0.75) WITHIN GROUP (ORDER BY "value") AS "p75",
+             COUNT(*) AS "count"
+      FROM "WebVitalSample"
+      WHERE "createdAt" >= ${since}
+      GROUP BY "metric"
+    `;
+
+    const summary = WEB_VITAL_METRICS.flatMap((metric) => {
+      const row = rows.find((r) => r.metric === metric);
+      if (!row) return [];
+      const p75 = Number(row.p75);
+      return [{ metric, p75, rating: rateWebVital(metric, p75), sampleCount: Number(row.count) }];
     });
 
-    const byMetric: Record<string, number[]> = {};
-    for (const s of samples) {
-      (byMetric[s.metric] ||= []).push(s.value);
-    }
-
-    const summary = Object.entries(byMetric).map(([metric, values]) => {
-      const sorted = [...values].sort((a, b) => a - b);
-      const p75 = percentile(sorted, 75)!;
-      return { metric, p75, rating: rate(metric, p75), sampleCount: values.length };
-    });
-
-    return { totalSamples: samples.length, metrics: summary };
+    return { totalSamples: summary.reduce((sum, m) => sum + m.sampleCount, 0), metrics: summary };
   } catch (error) {
     console.error("Failed to compute web vitals summary:", error);
     return { totalSamples: 0, metrics: [] };

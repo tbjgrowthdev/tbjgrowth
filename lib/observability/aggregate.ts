@@ -46,6 +46,7 @@ export async function getObservabilityData(hours: number = 24): Promise<Observab
     apiFailureCount,
     recentErrors,
     slowRequestCount,
+    ttfbSampleCount,
     slowQueryCount,
     recentSlowQueries,
     uptimeChecks,
@@ -64,6 +65,7 @@ export async function getObservabilityData(hours: number = 24): Promise<Observab
     prisma.errorLog.count({ where: { ...where, source: "server", path: { startsWith: "/api" } } }),
     prisma.errorLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.webVitalSample.count({ where: { ...where, metric: "TTFB", rating: "poor" } }),
+    prisma.webVitalSample.count({ where: { ...where, metric: "TTFB" } }),
     prisma.slowQueryLog.count({ where }),
     prisma.slowQueryLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.uptimeCheck.findMany({ where: { checkedAt: { gte: windowStart } }, orderBy: { checkedAt: "asc" } }),
@@ -111,8 +113,9 @@ export async function getObservabilityData(hours: number = 24): Promise<Observab
       apiFailureCount,
       recentErrors: recentErrors.map((e) => ({ id: e.id, message: e.message, path: e.path, source: e.source, createdAt: e.createdAt.toISOString() })),
       slowRequestCount,
+      ttfbSampleCount,
       slowQueryCount,
-      recentSlowQueries: recentSlowQueries.map((q) => ({ id: q.id, model: q.model, action: q.action, durationMs: q.durationMs, createdAt: q.createdAt.toISOString() })),
+      recentSlowQueries:recentSlowQueries.map((q) => ({ id: q.id, model: q.model, action: q.action, durationMs: q.durationMs, createdAt: q.createdAt.toISOString() })),
     },
 
     infrastructure: {
