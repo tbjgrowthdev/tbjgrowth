@@ -285,6 +285,29 @@ pair's status only changes when a human clicks Resolve or Dismiss.
 
 ## Technical SEO tooling
 
+### Sitemaps & robots.txt caching
+
+`/robots.txt` and every `/sitemap*.xml` route are `force-dynamic` (nothing is
+built at deploy time), but the text they return is cached by
+`lib/seo-files-cache.ts` (`unstable_cache`, tag `seo-files`, 1 hour) in the
+same OpenNext incremental cache (R2 + regional cache) as the public pages.
+A crawler hit normally reads that cache instead of Neon.
+
+- **Publish / unpublish / edit:** every admin action that changes public
+  content calls `revalidatePublicSite()` (`lib/revalidate.ts`). That also
+  expires `seo-files` with `{ expire: 0 }`, so the next crawler request
+  rebuilds the file from the database instead of getting the old copy.
+  Scheduled publishing from the cron goes through the same call, and so
+  does saving custom robots.txt rules in Settings.
+- **The 1-hour lifetime** is only a safety net for a change that skips that call.
+- **Failures aren't cached:** a database error inside a cached build throws,
+  so the next request tries again. robots.txt then falls back to the
+  built-in rules.
+- **Why not route-level ISR (`export const revalidate`):** a route handler
+  with no dynamic segment can't avoid being prerendered at build time, which
+  would query whatever database the build machine's `.env` points at and ship
+  that snapshot.
+
 ### Automated SEO Audits
 
 `/admin/seo-audits` — `lib/seo-audits/run.ts`'s `runSeoAudit()`, persisted to

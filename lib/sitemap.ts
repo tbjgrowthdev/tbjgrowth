@@ -6,11 +6,10 @@
  * in Search Console, and a site with thousands of posts never risks hitting
  * a single sitemap's 50,000-URL/50MB limit.
  *
- * Every route built on this is `export const dynamic = "force-dynamic"` and
- * queries the DB live on every request — there is no cache layer sitting in
- * front of them, so "auto-update on publish/update/delete" is inherent, not
- * something extra to wire up: the moment a row's status/slug/isIndexable
- * changes, the very next sitemap request reflects it.
+ * The routes cache the rendered XML for up to an hour (lib/seo-files-cache.ts).
+ * Publishing, unpublishing or editing content refreshes it straight away:
+ * every such admin action calls revalidatePublicSite() (lib/revalidate.ts),
+ * which expires the cache, so the next sitemap request is rebuilt from the DB.
  */
 import prisma from "@/lib/prisma";
 import { LOCALES, PREFIXED_LOCALES } from "@/lib/i18n";

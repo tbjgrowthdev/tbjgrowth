@@ -1,10 +1,9 @@
 import { getCaseStudyEntries, renderUrlsetXml } from "@/lib/sitemap";
+import { cachedSeoFile, xmlResponse } from "@/lib/seo-files-cache";
 
+// Dynamic so nothing is built at deploy time; the XML itself is cached (see lib/seo-files-cache.ts).
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const xml = renderUrlsetXml(await getCaseStudyEntries());
-  return new Response(xml, {
-    headers: { "Content-Type": "application/xml", "Cache-Control": "public, max-age=0, must-revalidate" },
-  });
+  return xmlResponse(await cachedSeoFile("sitemap-case-studies", async () => renderUrlsetXml(await getCaseStudyEntries())));
 }

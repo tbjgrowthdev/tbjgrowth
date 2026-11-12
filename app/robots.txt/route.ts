@@ -1,5 +1,8 @@
 import prisma from "@/lib/prisma";
+import { cachedSeoFile } from "@/lib/seo-files-cache";
 
+// Dynamic so nothing is built at deploy time; the admin-configured rules are
+// cached (see lib/seo-files-cache.ts) and refreshed when settings are saved.
 export const dynamic = "force-dynamic";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
@@ -7,9 +10,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
 export async function GET() {
   let customRules = "";
   try {
-    const settings = await prisma.siteSetting.findFirst();
-    customRules = settings?.robotsTxt?.trim() || "";
+    customRules = await cachedSeoFile("robots-custom-rules", async () => {
+      const settings = await prisma.siteSetting.findFirst({ select: { robotsTxt: true } });
+      return settings?.robotsTxt?.trim() || "";
+    });
   } catch (error) {
+    // Not cached: the next request tries the database again.
     console.error("Failed to load custom robots.txt rules:", error);
   }
 
