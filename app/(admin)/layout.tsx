@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Every admin page is per-user and behind auth, so none of them can be
+// prerendered usefully. Without this, `next build` tried to prerender pages
+// like /admin and ran their database queries at build time, so a build with
+// no database (CI) failed and a deploy build queried the database. Applies to
+// every route under this layout.
+export const dynamic = "force-dynamic";
+
 type NavEntry = { href: string; label: string; icon: React.ComponentType<{ size?: number }>; show?: boolean; sub?: boolean };
 type NavGroup = { title: string; items: NavEntry[] };
 

@@ -17,11 +17,17 @@ import { SEO_FILES_CACHE_TAG } from "@/lib/seo-files-cache";
 // (lib/seo-files-cache.ts): they live outside the [locale] tree, so the
 // layout path above doesn't reach them. `expire: 0` means the next request
 // rebuilds them instead of being served the old copy once more.
+//
+// The landing pages (app/landing-pages/*) are outside that tree too and
+// show site settings and SEO overrides, so they're expired with their own
+// layout path.
 const PUBLIC_SITE_LAYOUT = "/(public)/[locale]";
+const LANDING_PAGES_LAYOUT = "/landing-pages";
 
-/** Marks every cached public page, sitemap and robots.txt stale. Call after any change that public pages can show. */
+/** Marks every cached public page, landing page, sitemap and robots.txt stale. Call after any change that public pages can show. */
 export function revalidatePublicSite() {
   nextRevalidatePath(PUBLIC_SITE_LAYOUT, "layout");
+  nextRevalidatePath(LANDING_PAGES_LAYOUT, "layout");
   revalidateTag(SEO_FILES_CACHE_TAG, { expire: 0 });
 }
 
