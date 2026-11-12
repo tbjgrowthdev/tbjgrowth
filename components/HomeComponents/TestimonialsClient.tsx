@@ -17,6 +17,10 @@ import {
 import { getIcon } from "@/components/ui/IconRenderer";
 import { isDisplayableImageUrl } from "@/lib/image-hosts";
 import { responsiveImgProps } from "@/lib/image-loader";
+import type { Testimonial } from "@/lib/generated/prisma/client";
+
+// Shape of each item in Testimonial.metrics (a JSON string in the database).
+type TestimonialMetric = { label: string; value: string; icon?: string };
 
 // Global metrics
 const globalMetrics = [
@@ -79,10 +83,10 @@ function TestimonialCard({
   testimonial,
   isActive,
 }: {
-  testimonial: any;
+  testimonial: Testimonial;
   isActive: boolean;
 }) {
-  const parsedMetrics = typeof testimonial.metrics === 'string' ? JSON.parse(testimonial.metrics) : testimonial.metrics;
+  const parsedMetrics: TestimonialMetric[] | null = typeof testimonial.metrics === 'string' ? JSON.parse(testimonial.metrics) : testimonial.metrics;
 
   return (
     <motion.div
@@ -130,7 +134,7 @@ function TestimonialCard({
         {/* Metrics */}
         {parsedMetrics && parsedMetrics.length > 0 && (
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {parsedMetrics.map((metric: any, i: number) => {
+            {parsedMetrics.map((metric, i) => {
               const Icon = getIcon(metric.icon || "Activity");
               return (
                 <motion.div
@@ -168,14 +172,14 @@ function TestimonialCard({
             {/* The avatar field holds either initials or an image URL (set from the admin's image field). */}
             {testimonial.avatar && isDisplayableImageUrl(testimonial.avatar) ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img {...responsiveImgProps(testimonial.avatar)} sizes="48px" alt={testimonial.author} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+              <img {...responsiveImgProps(testimonial.avatar)} sizes="48px" alt={testimonial.clientName} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
             ) : (
-              testimonial.avatar || testimonial.author.substring(0, 2).toUpperCase()
+              testimonial.avatar || testimonial.clientName.substring(0, 2).toUpperCase()
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-bold text-foreground truncate">
-              {testimonial.author}
+              {testimonial.clientName}
             </div>
             <div className="text-sm text-caption truncate">
               {testimonial.role}, {testimonial.company}
@@ -220,7 +224,7 @@ function LogoCloud() {
 }
 
 // Main Section
-export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?: any[] }) {
+export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?: Testimonial[] }) {
   const testimonialsList = dbTestimonials || [];
   const hasTestimonials = testimonialsList.length > 0;
   const [activeIndex, setActiveIndex] = useState(0);
@@ -294,7 +298,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
                 </span>
               </h2>
               <p className="text-lg text-muted max-w-2xl mx-auto">
-                Don't just take our word for it. Here's what our clients say about
+                Don&apos;t just take our word for it. Here&apos;s what our clients say about
                 working with TBJ Growth.
               </p>
             </motion.div>

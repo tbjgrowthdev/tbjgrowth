@@ -8,8 +8,12 @@ import { ArrowUpRight, Building2 } from "lucide-react";
 import { isValidImageSrc } from "@/lib/utils";
 import { cloudinaryUrl } from "@/lib/cloudinary-url";
 import { withLocalePrefix } from "@/lib/i18n";
+import type { CaseStudy as CaseStudyRow } from "@/lib/generated/prisma/client";
 
-type CaseStudy = any;
+type CaseStudy = Pick<
+  CaseStudyRow,
+  "id" | "slug" | "title" | "excerpt" | "featuredImage" | "featuredImageAlt" | "industry" | "serviceType" | "results"
+>;
 
 export default function CaseStudiesListClient({ caseStudies, localePrefix = null }: { caseStudies: CaseStudy[]; localePrefix?: string | null }) {
   const [industry, setIndustry] = useState("All");

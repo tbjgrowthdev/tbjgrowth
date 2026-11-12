@@ -176,7 +176,7 @@ export default function CaseStudies({ caseStudies }: { caseStudies: CaseStudy[] 
             <Building2 className="w-10 h-10 text-caption mx-auto mb-4" />
             <h3 className="text-lg font-bold text-foreground mb-2">New Success Stories Coming Soon</h3>
             <p className="text-sm text-caption">
-              We're putting the finishing touches on our latest client results — check back shortly.
+              We&apos;re putting the finishing touches on our latest client results — check back shortly.
             </p>
           </motion.div>
         ) : (

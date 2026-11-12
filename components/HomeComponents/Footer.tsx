@@ -140,7 +140,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
             >
               We help UK businesses grow with design that converts, marketing
               that attracts, and AI that scales. From strategy to automation,
-              we're your complete growth partner.
+              we&apos;re your complete growth partner.
             </motion.p>
 
             {/* Contact Info */}

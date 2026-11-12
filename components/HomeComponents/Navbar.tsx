@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sun, Moon, ArrowRight, Globe, ChevronDown } from "lucide-react";
@@ -67,7 +67,13 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
-  const [mounted, setMounted] = useState(false);
+  // false during SSR and hydration, true once hydrated on the client, so the
+  // theme icon (unknown on the server) never causes a hydration mismatch.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const pathname = usePathname();
   const barePath = pathWithoutLocale(pathname || "/", locale.prefix);
@@ -92,10 +98,6 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
   const toggleDarkMode = () => {
     setTheme(darkMode ? "light" : "dark");
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
