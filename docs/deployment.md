@@ -142,4 +142,14 @@ The GitHub Actions workflows that call these need matching secrets configured in
 
 ## CI
 
-`.github/workflows/`: `app-cron.yml` (scheduled scans), `db-backup.yml` (nightly backup + verify), `uptime-check.yml` (external uptime probe). No separate build/test/deploy-on-push CI workflow was found in this directory — deploys are run manually via `npm run deploy`, not automatically on merge to `main`. Confirm this is still the intended process; if automatic deploy-on-push is wanted, it isn't wired up yet.
+`.github/workflows/`: `checks.yml` (below), `app-cron.yml` (scheduled scans and cleanup), `db-backup.yml` (nightly backup + verify), `uptime-check.yml` (external uptime probe).
+
+**Pushing to `main` auto-deploys to Cloudflare** (Workers Builds). `checks.yml` runs on every pull request and every push to `main`:
+
+1. `pnpm install --frozen-lockfile` (pnpm 11, Node 22 latest — the test runner needs Node 22.18+, newer than `.node-version`'s 22.14.0).
+2. `prisma generate` (placeholder `DIRECT_URL`; it never connects) and `next typegen` — both outputs are gitignored and `tsc` needs them.
+3. Server-action auth check, **lint of the changed JS/TS files only**, `tsc --noEmit`, `pnpm test`, `next build`. Each runs even if an earlier one failed.
+
+- **Lint scope:** the codebase still has ~290 lint errors, so CI lints only files the PR/push adds or modifies. A touched file must be fully clean, pre-existing errors included. Switch the step to `pnpm run lint` once the backlog is gone.
+- **The build has no database, on purpose.** Nothing may query the database at build time: admin pages are `force-dynamic` (`app/(admin)/layout.tsx`) and landing pages render and cache at runtime (`app/landing-pages/layout.tsx`). A CI build failing with `NeonDbError` means a page started prerendering with live data.
+- **These checks don't block a deploy by themselves:** Cloudflare deploys whatever reaches `main`. To make them a gate, protect `main` in GitHub (Settings → Branches): require a pull request and the `checks` status check.

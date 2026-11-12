@@ -1,21 +1,100 @@
 name: Checks
 
-# Fails a push/PR if any "use server" export has no auth check
-# (scripts/check-server-action-auth.mjs; see docs/permission-matrix.md).
+# Runs on every pull request and every push to main (main auto-deploys to
+# Cloudflare via Workers Builds, so this is the last gate before production).
+#
+# One job, one install. Every check after the install runs even if an earlier
+# check failed, so a single run shows all failures at once.
 on:
   push:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  server-action-auth:
+  checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # prisma.config.ts resolves DIRECT_URL even for `prisma generate`, which
+      # never connects. A placeholder is enough for generate.
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so "Lint changed files" can diff against the base commit.
+          fetch-depth: 0
+
+      # The repo is pnpm-only (pnpm-lock.yaml; no package-lock.json), and
+      # pnpm-workspace.yaml uses `allowBuilds`, which needs pnpm 11.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+
+      # Node 22 latest, not .node-version (22.14.0): the test runner imports
+      # .ts files directly, which needs Node 22.18+.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      # --ignore-scripts: the check only needs the typescript package, not prisma generate.
-      - run: npm ci --ignore-scripts
-      - run: npm run check:actions
+          cache: pnpm
+
+      - name: Install dependencies
+        id: install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client and Next route types
+        id: generate
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        # lib/generated and next-env.d.ts are gitignored; tsc needs both.
+        run: |
+          pnpm exec prisma generate
+          pnpm exec next typegen
+
+      # Fails if any "use server" export has no auth check
+      # (scripts/check-server-action-auth.mjs; see docs/permission-matrix.md).
+      - name: Server action auth check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run check:actions
+
+      # Only the JS/TS files this PR (or push) adds or modifies, for now: the
+      # codebase as a whole still has ~290 lint errors. A changed file must be
+      # clean, errors already in it included, so the backlog shrinks as files
+      # are touched. Switch to `pnpm run lint` once the whole codebase is clean.
+      - name: Lint changed files
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A new branch or force-push has no usable "before" commit: fall back
+          # to the files changed by the last commit.
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            BASE_SHA=$(git rev-parse HEAD~1)
+          fi
+          git diff -z --name-only --diff-filter=ACMR "$BASE_SHA"...HEAD -- \
+            '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' '*.cjs' > "$RUNNER_TEMP/changed-files"
+          if [ ! -s "$RUNNER_TEMP/changed-files" ]; then
+            echo "No changed JS/TS files to lint."
+            exit 0
+          fi
+          echo "Linting:"; tr '\0' '\n' < "$RUNNER_TEMP/changed-files"
+          xargs -0 pnpm exec eslint --no-warn-ignored < "$RUNNER_TEMP/changed-files"
+
+      - name: Type check
+        if: ${{ !cancelled() && steps.generate.outcome == 'success' }}
+        run: pnpm exec tsc --noEmit
+
+      - name: Tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm test
+
+      # No database here on purpose: nothing may query the database at build
+      # time (admin pages are force-dynamic; see app/(admin)/layout.tsx). A
+      # build that fails here because of a NeonDbError means a page started
+      # prerendering with live data.
+      - name: Production build
+        if: ${{ !cancelled() && steps.generate.outcome == 'success' }}
+        run: pnpm exec next build
