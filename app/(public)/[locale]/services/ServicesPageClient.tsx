@@ -14,6 +14,8 @@ import { getIcon } from "@/components/ui/IconRenderer";
 import { parseFeatures, parseProcess, parseDeliverables } from "@/lib/service-content";
 import { withLocalePrefix } from "@/lib/i18n";
 
+const MotionLink = motion.create(Link);
+
 type Service = {
   id: string;
   slug?: string | null;
@@ -136,7 +138,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
 
                     {/* CTAs */}
                     <div className="flex flex-wrap items-center gap-4">
-                      <motion.a
+                      <MotionLink
                         href="/contact"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -144,7 +146,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
                       >
                         <span>Get Started with {service.title.split("&")[0].trim()}</span>
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </motion.a>
+                      </MotionLink>
                       <Link
                         href={withLocalePrefix(localePrefix, `/services/${anchor}`)}
                         className="text-sm font-semibold text-muted hover:text-foreground transition-colors"
@@ -224,7 +226,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
             <p className="text-lg text-muted mb-8 max-w-lg mx-auto">
               Book a free strategy call and we&apos;ll create a custom growth plan tailored to your business goals.
             </p>
-            <motion.a
+            <MotionLink
               href="/contact"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -233,7 +235,7 @@ export default function ServicesPageClient({ services, localePrefix = null }: { 
               <Calendar className="w-5 h-5" />
               <span>Book a Free Strategy Call</span>
               <ArrowRight className="w-5 h-5" />
-            </motion.a>
+            </MotionLink>
           </motion.div>
         </div>
       </section>

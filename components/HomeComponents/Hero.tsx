@@ -18,6 +18,9 @@ import {
   Globe
 } from "lucide-react";
 import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
+import Link from "next/link";
+
+const MotionLink = motion.create(Link);
 
 type SiteSettings = {
   facebookUrl?: string | null;
@@ -204,7 +207,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
             >
               {/* Primary CTA */}
-              <motion.a
+              <MotionLink
                 href="/book-a-call"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -214,10 +217,10 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
                 <span className="relative z-10">Book a Free Strategy Call</span>
                 <ArrowRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.a>
+              </MotionLink>
 
               {/* Secondary CTA */}
-              <motion.a
+              <MotionLink
                 href="/services"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -225,7 +228,7 @@ export default function Hero({ settings }: { settings?: SiteSettings } = {}) {
               >
                 <Play className="w-5 h-5" />
                 <span>See Our Services</span>
-              </motion.a>
+              </MotionLink>
             </motion.div>
 
             {/* Social Links */}

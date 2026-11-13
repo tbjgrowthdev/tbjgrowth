@@ -8,6 +8,8 @@ import { getIcon } from "@/components/ui/IconRenderer";
 import { parseFeatures, parseProcess, parseDeliverables } from "@/lib/service-content";
 import { withLocalePrefix } from "@/lib/i18n";
 
+const MotionLink = motion.create(Link);
+
 type Faq = { id: string; question: string; answer: string };
 
 type Service = {
@@ -276,7 +278,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
               <p className="text-white/80 mb-6 max-w-md mx-auto">
                 Book a free strategy call and we&apos;ll show you exactly how we can help.
               </p>
-              <motion.a
+              <MotionLink
                 href={withLocalePrefix(localePrefix, "/book-a-call")}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -285,7 +287,7 @@ export default function ServiceDetailClient({ service, localePrefix = null }: { 
                 <Calendar className="w-5 h-5" />
                 <span>Book a Conversation</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.a>
+              </MotionLink>
             </div>
           </motion.div>
         </div>

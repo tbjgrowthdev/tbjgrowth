@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sun, Moon, ArrowRight, Globe, ChevronDown } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { LOCALES, withLocalePrefix, type LocaleConfig } from "@/lib/i18n";
 
 /** Strips the current locale's prefix off a pathname, e.g. "/bn-bd/about" -> "/about". */
@@ -16,6 +17,11 @@ function pathWithoutLocale(pathname: string, prefix: string | null): string {
   if (pathname.startsWith(`${withSlash}/`)) return pathname.slice(withSlash.length);
   return pathname;
 }
+
+// next/link (not a plain <a>) so navigation goes through the client router:
+// it prefetches, keeps the layout mounted and shows the route's loading.tsx
+// immediately instead of doing a full document reload.
+const MotionLink = motion.create(Link);
 
 const navItems = [
   {
@@ -157,7 +163,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <motion.a
+            <MotionLink
               href={withLocalePrefix(locale.prefix, "/")}
               className="flex items-center group"
               whileHover={{ scale: 1.02 }}
@@ -183,12 +189,12 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                   className="hidden h-8 lg:h-9 w-auto dark:block"
                 />
               </div>
-            </motion.a>
+            </MotionLink>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
               {navItems.map((item, index) => (
-                <motion.a
+                <MotionLink
                   key={item.label}
                   href={localizedHref(item.href)}
                   onClick={(e) => handleNavClick(e, item.href)}
@@ -209,7 +215,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                       : "w-0 opacity-0 group-hover:w-1/2 group-hover:opacity-100"
                       }`}
                   />
-                </motion.a>
+                </MotionLink>
               ))}
             </div>
 
@@ -301,7 +307,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
               </motion.button>
 
               {/* CTA Button */}
-              <motion.a
+              <MotionLink
                 href={ctaHref}
                 onClick={(e) => handleNavClick(e, ctaHref)}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -317,7 +323,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                   className="relative z-10 group-hover:translate-x-1 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-brand-orange to-brand-orange-deep opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </motion.a>
+              </MotionLink>
             </div>
 
             {/* Mobile Menu Button */}
@@ -399,7 +405,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                 {/* Mobile Navigation Links */}
                 <div className="flex flex-col gap-1">
                   {navItems.map((item, index) => (
-                    <motion.a
+                    <MotionLink
                       key={item.label}
                       href={localizedHref(item.href)}
                       onClick={(e) => handleNavClick(e, item.href)}
@@ -413,7 +419,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                         size={16}
                         className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-brand-orange-deep dark:text-brand-orange-light"
                       />
-                    </motion.a>
+                    </MotionLink>
                   ))}
                 </div>
 
@@ -459,7 +465,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                   </button>
 
                   {/* CTA */}
-                  <motion.a
+                  <MotionLink
                     href={ctaHref}
                     onClick={(e) => handleNavClick(e, ctaHref)}
                     whileTap={{ scale: 0.98 }}
@@ -467,7 +473,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                   >
                     <span>Get Started</span>
                     <ArrowRight size={18} />
-                  </motion.a>
+                  </MotionLink>
                 </div>
               </div>
             </motion.div>

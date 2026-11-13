@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { HelpCircle, ChevronDown, Calendar, ArrowRight } from "lucide-react";
+import Link from "next/link";
+
+const MotionLink = motion.create(Link);
 
 interface FaqItem {
   id: string;
@@ -91,7 +94,7 @@ export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
               We&apos;re still building out our FAQ — in the meantime, book a free call and
               we&apos;ll answer whatever you&apos;re wondering about.
             </p>
-            <motion.a
+            <MotionLink
               href="/book-a-call"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -100,7 +103,7 @@ export default function FaqClient({ dbFaqs }: { dbFaqs?: FaqItem[] }) {
               <Calendar className="w-4 h-4" />
               Book a Call
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </motion.a>
+            </MotionLink>
           </motion.div>
         )}
       </div>

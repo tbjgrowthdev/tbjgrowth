@@ -391,6 +391,9 @@ import {
     Sparkles,
     Mail,
 } from "lucide-react";
+import Link from "next/link";
+
+const MotionLink = motion.create(Link);
 
 export default function FinalCTA() {
     const sectionRef = useRef<HTMLDivElement>(null);
@@ -495,7 +498,7 @@ export default function FinalCTA() {
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
                 >
                     {/* Primary CTA - Book a Conversation */}
-                    <motion.a
+                    <MotionLink
                         href="/book-a-call"
                         onMouseEnter={() => setIsHovering(true)}
                         onMouseLeave={() => setIsHovering(false)}
@@ -509,10 +512,10 @@ export default function FinalCTA() {
                         <Calendar className="relative z-10 w-5 h-5" />
                         <span className="relative z-10 text-lg">Book a Conversation</span>
                         <ArrowRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </motion.a>
+                    </MotionLink>
 
                     {/* Secondary CTA - Contact Us */}
-                    <motion.a
+                    <MotionLink
                         href="/contact"
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
@@ -520,7 +523,7 @@ export default function FinalCTA() {
                     >
                         <Mail className="w-5 h-5" />
                         <span className="text-lg">Contact Us</span>
-                    </motion.a>
+                    </MotionLink>
                 </motion.div>
             </motion.div>
 

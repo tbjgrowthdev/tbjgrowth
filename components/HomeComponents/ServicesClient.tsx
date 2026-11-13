@@ -8,6 +8,8 @@ import { getIcon } from "@/components/ui/IconRenderer";
 import { fallbackServices } from "@/lib/fallback-services";
 import { parseFeatures } from "@/lib/service-content";
 
+const MotionLink = motion.create(Link);
+
 // Service Card Component
 function ServiceCard({
     service,
@@ -231,7 +233,7 @@ function PreviewPanel({
                 </div>
 
                 {/* CTA */}
-                <motion.a
+                <MotionLink
                     href={`/services/${service.slug || service.id}`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -239,7 +241,7 @@ function PreviewPanel({
                 >
                     <span>Explore {service.title}</span>
                     <ArrowRight className="w-5 h-5" />
-                </motion.a>
+                </MotionLink>
             </div>
         </motion.div>
     );

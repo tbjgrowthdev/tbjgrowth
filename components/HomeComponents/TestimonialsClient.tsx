@@ -18,6 +18,9 @@ import { getIcon } from "@/components/ui/IconRenderer";
 import { isDisplayableImageUrl } from "@/lib/image-hosts";
 import { responsiveImgProps } from "@/lib/image-loader";
 import type { Testimonial } from "@/lib/generated/prisma/client";
+import Link from "next/link";
+
+const MotionLink = motion.create(Link);
 
 // Shape of each item in Testimonial.metrics (a JSON string in the database).
 type TestimonialMetric = { label: string; value: string; icon?: string };
@@ -465,7 +468,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               We&apos;re a growing agency building our first client success stories —
               book a call and be one of them.
             </p>
-            <motion.a
+            <MotionLink
               href="/book-a-call"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -474,7 +477,7 @@ export default function TestimonialsClient({ dbTestimonials }: { dbTestimonials?
               <Calendar className="w-4 h-4" />
               Book a Call
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </motion.a>
+            </MotionLink>
           </motion.div>
         )}
       </div>

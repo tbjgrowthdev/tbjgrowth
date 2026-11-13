@@ -24,6 +24,9 @@ import { FaYoutube, FaBehance, FaDribbble } from "react-icons/fa";
 // import Navbar from "@/components/homethreecomponents/Navbar";
 // import Footer from "@/components/homethreecomponents/Footer";
 import { submitContactForm } from "@/app/(admin)/actions/forms";
+import Link from "next/link";
+
+const MotionLink = motion.create(Link);
 
 type SiteSettings = {
   email?: string | null;
@@ -385,14 +388,14 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 </h4>
                 <div className="space-y-2">
                   {quickLinks.map((link) => (
-                    <a
+                    <Link
                       key={link}
                       href="/services"
                       className="flex items-center gap-2 text-sm text-muted hover:text-brand-orange-deep dark:hover:text-brand-orange-light transition-colors group"
                     >
                       <ArrowRight className="w-3 h-3 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                       {link}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </motion.div>
@@ -449,7 +452,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
               <p className="text-white/80 mb-6 max-w-md mx-auto">
                 Schedule a 15-minute discovery call. No pressure, just a conversation about your goals.
               </p>
-              <motion.a
+              <MotionLink
                 href="/book-a-call"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -458,7 +461,7 @@ export default function ContactPageClient({ settings }: { settings?: SiteSetting
                 <Calendar className="w-5 h-5" />
                 <span>Book a Discovery Call</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.a>
+              </MotionLink>
             </div>
           </motion.div>
         </div>

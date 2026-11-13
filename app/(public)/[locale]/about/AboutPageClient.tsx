@@ -38,6 +38,9 @@ import {
   UserCheck,
   Cpu,
 } from "lucide-react";
+import Link from "next/link";
+
+const MotionLink = motion.create(Link);
 
 
 // Mission & Values
@@ -387,7 +390,7 @@ export default function AboutPageClient() {
               Ready to grow? Let's talk about your goals and how we can help you achieve them.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <motion.a
+              <MotionLink
                 href="/contact"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -396,8 +399,8 @@ export default function AboutPageClient() {
                 <Calendar className="w-5 h-5" />
                 <span>Book a Free Strategy Call</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </motion.a>
-              <motion.a
+              </MotionLink>
+              <MotionLink
                 href="/services"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -405,7 +408,7 @@ export default function AboutPageClient() {
               >
                 <span>View Our Services</span>
                 <ArrowRight className="w-4 h-4" />
-              </motion.a>
+              </MotionLink>
             </div>
           </motion.div>
         </div>
