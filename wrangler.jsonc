@@ -1,7 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tbj",
+  // Must match the Worker that Cloudflare Workers Builds deploys to (the
+  // dashboard's "tbjgrowth"), or the deploy fails on the self-reference below.
+  "name": "tbjgrowth",
   "main": ".open-next/worker.js",
+  // The live custom domain. Without this entry a deploy detaches it.
+  "routes": [{ "pattern": "tbjgrowthtech.com", "zone_name": "tbjgrowthtech.com", "custom_domain": true }],
   "compatibility_date": "2025-03-25",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
@@ -13,7 +17,7 @@
   // --- ISR cache (see open-next.config.ts and docs/deployment.md) ---
   // The Worker calls itself to re-render a page in the background.
   // "service" must match "name" above.
-  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "tbj" }],
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "tbjgrowth" }],
   // Rendered pages. Create this bucket before deploying.
   "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tbj-next-cache" }],
   // Revalidation timestamps written by revalidatePath(). Create this database
