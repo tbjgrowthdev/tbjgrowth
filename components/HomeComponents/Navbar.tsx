@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sun, Moon, ArrowRight, Globe, ChevronDown } from "lucide-react";
+import { Menu, X, Sun, Moon, ArrowRight, Globe, ChevronDown, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { LOCALES, withLocalePrefix, type LocaleConfig } from "@/lib/i18n";
@@ -72,6 +72,7 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isMobileLangOpen, setIsMobileLangOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   // false during SSR and hydration, true once hydrated on the client, so the
   // theme icon (unknown on the server) never causes a hydration mismatch.
@@ -96,6 +97,10 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
   // dark bar and light logo in dark mode).
   const onHero = forceDark && !isScrolled;
   const barScope = onHero ? "dark" : undefined;
+
+  // The drawer sits on the inline-end edge, so it hides off the right in LTR
+  // and off the left in RTL (Arabic).
+  const drawerOffscreen = locale.dir === "rtl" ? "-100%" : "100%";
 
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -328,7 +333,11 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
 
             {/* Mobile Menu Button */}
             <motion.button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => {
+                // Each time the drawer opens, the language picker starts collapsed.
+                if (!isMobileMenuOpen) setIsMobileLangOpen(false);
+                setIsMobileMenuOpen(!isMobileMenuOpen);
+              }}
               whileTap={{ scale: 0.9 }}
               className={`lg:hidden relative p-2 rounded-xl transition-all duration-300 ${isScrolled
                 ? "bg-card text-muted"
@@ -365,17 +374,21 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
 
-            {/* Menu Panel */}
+            {/* Menu Panel: slides in from the inline-end edge (right in LTR,
+                left in RTL), on the same side as the menu button. */}
             <motion.div
-              initial={{ x: "100%" }}
+              initial={{ x: drawerOffscreen }}
               animate={{ x: 0 }}
-              exit={{ x: "100%" }}
+              exit={{ x: drawerOffscreen }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-80 max-w-[85vw] bg-card shadow-2xl border-l border-border"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              className="absolute end-0 top-0 bottom-0 w-80 max-w-[85vw] bg-card shadow-2xl border-s border-border"
             >
-              <div className="flex flex-col h-full p-6">
-                {/* Mobile Menu Header */}
-                <div className="flex items-center justify-between mb-8">
+              <div className="flex flex-col h-full">
+                {/* Mobile Menu Header: stays put while the rest scrolls */}
+                <div className="shrink-0 flex items-center justify-between px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-4">
                   <div className="flex items-center">
                     <Image
                       src="/primarylogo.png"
@@ -396,12 +409,16 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                   </div>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-label="Close menu"
                     className="p-2 text-muted hover:text-foreground rounded-lg hover:bg-background transition-colors"
                   >
                     <X size={24} />
                   </button>
                 </div>
 
+                {/* Scrollable body. min-h-0 lets it shrink below its content
+                    so overflow-y-auto kicks in on short / landscape screens. */}
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                 {/* Mobile Navigation Links */}
                 <div className="flex flex-col gap-1">
                   {navItems.map((item, index) => (
@@ -417,35 +434,72 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                       <span>{item.label}</span>
                       <ArrowRight
                         size={16}
-                        className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-brand-orange-deep dark:text-brand-orange-light"
+                        className="opacity-0 -translate-x-2 rtl:translate-x-2 rtl:-scale-x-100 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 text-brand-orange-deep dark:text-brand-orange-light"
                       />
                     </MotionLink>
                   ))}
                 </div>
 
-                {/* Mobile Language / Market Switcher */}
+                {/* Mobile Language / Market Switcher: collapsed to the current
+                    choice, expands in place so it never overflows the drawer. */}
                 <div className="mt-6 pt-6 border-t border-border">
-                  <p className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider text-caption">Language / Region</p>
-                  <div className="flex flex-col gap-1">
-                    {LOCALES.map((l) => (
-                      <a
-                        key={l.code}
-                        href={withLocalePrefix(l.prefix, barePath)}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm transition-colors ${l.code === locale.code
-                          ? "text-brand-orange-deep dark:text-brand-orange-light font-semibold bg-tint"
-                          : "text-foreground/85 hover:bg-background"
-                          }`}
+                  <p id="mobile-lang-label" className="px-4 mb-2 text-xs font-semibold uppercase tracking-wider text-caption">Language / Region</p>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileLangOpen((v) => !v)}
+                    aria-expanded={isMobileLangOpen}
+                    aria-controls="mobile-lang-options"
+                    aria-labelledby="mobile-lang-label mobile-lang-current"
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-border bg-background/60 text-foreground hover:bg-background transition-colors font-medium text-start"
+                  >
+                    <Globe size={18} className="shrink-0 text-brand-orange-deep dark:text-brand-orange-light" />
+                    <span id="mobile-lang-current" className="flex-1 min-w-0 truncate">{locale.label}</span>
+                    <ChevronDown
+                      size={18}
+                      className={`shrink-0 text-muted transition-transform duration-200 ${isMobileLangOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {isMobileLangOpen && (
+                      <motion.div
+                        id="mobile-lang-options"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
                       >
-                        <Globe size={14} />
-                        {l.label}
-                      </a>
-                    ))}
-                  </div>
+                        <ul className="mt-2 flex flex-col gap-1 p-1 rounded-xl border border-border bg-background/60">
+                          {LOCALES.map((l) => {
+                            const current = l.code === locale.code;
+                            return (
+                              <li key={l.code}>
+                                <a
+                                  href={withLocalePrefix(l.prefix, barePath)}
+                                  lang={l.code}
+                                  dir={l.dir}
+                                  aria-current={current ? "true" : undefined}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors ${current
+                                    ? "text-brand-orange-deep dark:text-brand-orange-light font-semibold bg-tint"
+                                    : "text-foreground/85 hover:bg-card"
+                                    }`}
+                                >
+                                  <span className="flex-1">{l.label}</span>
+                                  {current && <Check size={16} className="shrink-0" />}
+                                </a>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                {/* Mobile CTA & Dark Mode */}
-                <div className="mt-auto space-y-4">
+                {/* Mobile CTA & Dark Mode: pinned to the bottom on tall screens,
+                    scrolls with the content on short ones. */}
+                <div className="mt-auto pt-6 space-y-4">
                   {/* Dark Mode Toggle */}
                   <button
                     onClick={toggleDarkMode}
@@ -472,8 +526,9 @@ export default function Navbar({ locale, tone }: { locale: LocaleConfig; tone?: 
                     className="flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gradient-to-r from-brand-orange-deep to-brand-orange text-white font-semibold rounded-xl shadow-lg shadow-brand-orange/25 active:scale-95 transition-transform"
                   >
                     <span>Get Started</span>
-                    <ArrowRight size={18} />
+                    <ArrowRight size={18} className="rtl:-scale-x-100" />
                   </MotionLink>
+                </div>
                 </div>
               </div>
             </motion.div>
