@@ -34,6 +34,8 @@ export type BlogStrings = {
   emailLabel: string;
   emailPlaceholder: string;
   subscribed: string;
+  subscribeError: string;
+  subscribeRateLimited: string;
 };
 
 const en: BlogStrings = {
@@ -66,6 +68,8 @@ const en: BlogStrings = {
   emailLabel: "Email address",
   emailPlaceholder: "Enter your email",
   subscribed: "Thanks for subscribing!",
+  subscribeError: "Something went wrong. Please try again.",
+  subscribeRateLimited: "Too many attempts. Please wait a minute and try again.",
 };
 
 const bn: BlogStrings = {
@@ -97,6 +101,8 @@ const bn: BlogStrings = {
   emailLabel: "ইমেইল ঠিকানা",
   emailPlaceholder: "আপনার ইমেইল লিখুন",
   subscribed: "সাবস্ক্রাইব করার জন্য ধন্যবাদ!",
+  subscribeError: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+  subscribeRateLimited: "অনেকবার চেষ্টা করা হয়েছে। এক মিনিট অপেক্ষা করে আবার চেষ্টা করুন।",
 };
 
 const ar: BlogStrings = {
@@ -135,6 +141,8 @@ const ar: BlogStrings = {
   emailLabel: "البريد الإلكتروني",
   emailPlaceholder: "أدخل بريدك الإلكتروني",
   subscribed: "شكرًا لاشتراكك!",
+  subscribeError: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  subscribeRateLimited: "محاولات كثيرة جدًا. يرجى الانتظار دقيقة ثم المحاولة مرة أخرى.",
 };
 
 export function getBlogStrings(locale: LocaleConfig): BlogStrings {

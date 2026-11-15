@@ -248,7 +248,7 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
               your inbox.
             </p>
 
-            <NewsletterForm variant="compact" />
+            <NewsletterForm source="footer" variant="compact" />
           </motion.div>
         </div>
       </div>

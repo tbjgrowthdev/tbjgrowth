@@ -907,6 +907,28 @@ model FormSubmission {
   isRead    Boolean  @default(false)
 }
 
+enum NewsletterStatus {
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+// Newsletter signups from the public site (footer and blog band). One row per
+// address: signing up again reactivates the row instead of adding another.
+model NewsletterSubscriber {
+  id             String           @id @default(cuid())
+  email          String           @unique // lowercased before saving
+  source         String // "footer" | "blog", see lib/newsletter.ts; the latest signup's form
+  path           String? // page the form was submitted from
+  locale         String?
+  status         NewsletterStatus @default(ACTIVE)
+  unsubscribedAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status, createdAt])
+  @@index([source])
+}
+
 // ------------------------------------------------------
 // Technical SEO
 // ------------------------------------------------------

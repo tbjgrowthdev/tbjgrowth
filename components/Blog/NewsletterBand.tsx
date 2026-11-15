@@ -20,12 +20,15 @@ export default function NewsletterBand({ strings }: { strings: BlogStrings }) {
           <p className="mt-3 text-base text-cream/70 sm:text-lg dark:text-brand-100">{strings.newsletterBody}</p>
           <div className="mt-8 text-start">
             <NewsletterForm
+              source="blog"
               variant="band"
               copy={{
                 emailLabel: strings.emailLabel,
                 placeholder: strings.emailPlaceholder,
                 subscribe: strings.subscribe,
                 success: strings.subscribed,
+                error: strings.subscribeError,
+                rateLimited: strings.subscribeRateLimited,
               }}
             />
           </div>

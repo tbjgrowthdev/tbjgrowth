@@ -103,7 +103,7 @@ export default withAuth(
     // every action they'd be denied anyway, for a cleaner UX.
     const role = token.role as string;
     const seoPrefixes = ["/admin/redirects", "/admin/seo", "/admin/keywords", "/admin/link-monitor"];
-    const adminOnlyPrefixes = ["/admin/settings", "/admin/admins", "/admin/leads", "/admin/integrations", "/admin/audit-log"];
+    const adminOnlyPrefixes = ["/admin/settings", "/admin/admins", "/admin/leads", "/admin/subscribers", "/admin/integrations", "/admin/audit-log"];
 
     if (role === "SEO_MANAGER") {
       const allowed = seoPrefixes.some((p) => pathname.startsWith(p)) || pathname === "/admin" || pathname.startsWith("/admin/profile");

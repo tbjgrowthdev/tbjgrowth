@@ -43,6 +43,7 @@ the real `requirePermission(...)` call sites:
   no per-page review. Creating a block needs only `CREATE`.
 - **`USER_MANAGEMENT`** gates more than user CRUD: it also gates
   `app/(admin)/actions/forms.ts`'s lead inbox (`getLeads`/`markLeadAsRead`),
+  `newsletter.ts`'s subscriber list (`/admin/subscribers`),
   `audit.ts`'s audit log, and `security.ts`'s cross-account login history
   (`getAllLoginHistory`) — these were grouped in with user management rather
   than given their own permission.

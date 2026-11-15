@@ -1,7 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 // Helpers for the public, unauthenticated endpoints (app/api/web-vitals,
-// app/api/internal/client-error). The limiters are Cloudflare rate-limit
+// app/api/internal/client-error, the newsletter signup action). The limiters are Cloudflare rate-limit
 // bindings declared under "ratelimits" in wrangler.jsonc: approximate, and
 // counted separately in each Cloudflare location.
 
@@ -11,7 +11,9 @@ export type RateLimiterName =
   | "WEB_VITALS_IP_LIMITER"
   | "WEB_VITALS_GLOBAL_LIMITER"
   | "CLIENT_ERROR_IP_LIMITER"
-  | "CLIENT_ERROR_GLOBAL_LIMITER";
+  | "CLIENT_ERROR_GLOBAL_LIMITER"
+  | "NEWSLETTER_IP_LIMITER"
+  | "NEWSLETTER_GLOBAL_LIMITER";
 
 function getLimiter(name: RateLimiterName): RateLimiter | undefined {
   try {
@@ -39,7 +41,11 @@ export async function withinRateLimit(name: RateLimiterName, key: string): Promi
  * from many IPs is capped too. The overall one is only consulted when the
  * per-IP one allows the request.
  */
-export async function withinIpAndGlobalLimits(req: Request, perIp: RateLimiterName, global: RateLimiterName): Promise<boolean> {
+export async function withinIpAndGlobalLimits(
+  req: Request | { headers: Headers },
+  perIp: RateLimiterName,
+  global: RateLimiterName,
+): Promise<boolean> {
   const ip = req.headers.get("cf-connecting-ip") ?? "unknown";
   return (await withinRateLimit(perIp, ip)) && (await withinRateLimit(global, "all"));
 }

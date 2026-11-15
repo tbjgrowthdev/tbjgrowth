@@ -114,6 +114,7 @@ mutations and a bare array/object (or `[]`/`null` on failure, logged via
 - **`translations.ts`**: `saveTranslationDraft`, `publishTranslation`/`unpublishTranslation`/`deleteTranslation`, plus read helpers for the translation-coverage UI.
 - **`booking.ts`**: public `getAvailableSlots`/`createBooking` (no auth — see `docs/known-limitations.md` for the race-condition handling) + admin `getAllSlots`/`createSlot`/`createSlotsBulk`/`deleteSlot`/`getBookings`/`cancelBooking` (`CREATE`/`DELETE`/`EDIT`).
 - **`forms.ts`**: public `submitContactForm` (rate-limited per email, no auth) + admin `getLeads`/`markLeadAsRead` (`USER_MANAGEMENT` — yes, leads are gated behind the same tier as user management, not `EDIT`; see `docs/permission-matrix.md`).
+- **`newsletter.ts`**: public `subscribeToNewsletter` (no auth; honeypot + Cloudflare per-IP and global rate limits, duplicates answer success) + admin `getSubscribers`/`exportSubscribersCsv`/`setSubscriberStatus`/`deleteSubscriber` (`USER_MANAGEMENT`, same tier as leads).
 
 ### Admin/ops
 

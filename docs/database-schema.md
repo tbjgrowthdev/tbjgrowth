@@ -43,6 +43,7 @@ Source of truth: `prisma/schema.prisma` (2066 lines, ~75 models/enums as of this
 | Model | Purpose |
 |---|---|
 | `FormSubmission` | Contact-form leads. |
+| `NewsletterSubscriber` | Newsletter signups (footer + blog band), one row per lowercased email; `source` records which form, `status` is `ACTIVE`/`UNSUBSCRIBED`. Shown at `/admin/subscribers`. |
 | `Testimonial`, `Faq`, `TrustedPartner`, `TBJSystem`, `AgencyService` (+ `ServiceFaq`), `SiteSetting` | Public-site content/config models, outside the approval-workflow content types. |
 
 ## AI Content Pipeline

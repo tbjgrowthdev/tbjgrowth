@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
-import { LayoutDashboard, Blocks, FileText, FileEdit, LineChart, Settings, Briefcase, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink, Network, Layers, MapPin, FileStack, FlaskConical, GitCompare, Stethoscope, Plug, Zap, BarChart3, Gauge, Wrench, CircleDollarSign, Handshake, Inbox, Star } from "lucide-react";
+import { LayoutDashboard, Blocks, FileText, FileEdit, LineChart, Settings, Briefcase, BrainCircuit, ShieldAlert, UserCircle, Tag, Folder, Route, Target, CalendarClock, HelpCircle, History, Images, Link2Off, Search as SearchIcon, ArrowDownUp, Languages, Activity, BookOpen, Sparkles, RefreshCw, Lightbulb, Copy, HeartPulse, Globe2, Download, TrendingUp, ClipboardCheck, Unlink, Network, Layers, MapPin, FileStack, FlaskConical, GitCompare, Stethoscope, Plug, Zap, BarChart3, Gauge, Wrench, CircleDollarSign, Handshake, Inbox, MailPlus, Star } from "lucide-react";
 import { LogoutButton } from "@/components/Admin/LogoutButton";
 import ThemeToggle from "@/components/Admin/ThemeToggle";
 import VisitSiteMenu from "@/components/Admin/VisitSiteMenu";
@@ -116,6 +116,7 @@ export default async function AdminLayout({
       items: [
         { href: "/admin/booking", label: "Booking", icon: CalendarClock },
         { href: "/admin/leads", label: "Leads", icon: Inbox, show: canManageUsers },
+        { href: "/admin/subscribers", label: "Newsletter Subscribers", icon: MailPlus, show: canManageUsers },
       ],
     },
     { title: "SEO", items: seoItems },
