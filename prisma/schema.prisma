@@ -905,6 +905,26 @@ model FormSubmission {
   source    String? // The page where the form was submitted
   createdAt DateTime @default(now())
   isRead    Boolean  @default(false)
+
+  replies LeadReply[]
+}
+
+// A reply an admin emailed to a lead from /admin/leads. Only successfully
+// sent replies are saved. Sender fields are a snapshot (like AuditLog), so
+// the history still reads correctly after the admin's account changes.
+model LeadReply {
+  id          String         @id @default(cuid())
+  leadId      String
+  lead        FormSubmission @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  toEmail     String
+  subject     String
+  body        String         @db.Text // plain text as the admin typed it
+  sentById    String?
+  sentByName  String?
+  sentByEmail String?
+  createdAt   DateTime       @default(now())
+
+  @@index([leadId, createdAt])
 }
 
 enum NewsletterStatus {

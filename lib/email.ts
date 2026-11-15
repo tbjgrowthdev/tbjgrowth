@@ -26,10 +26,34 @@ async function logEmailAttempt(type: string, to: string, success: boolean, error
 
 type ResendSendResult = { success: boolean; skipped?: true; error?: string };
 
+const DEFAULT_FROM = "TBJ Growth <onboarding@resend.dev>";
+export const BRAND_NAME = "TBJ Growth";
+
+/**
+ * "Name <addr>" (or a bare "addr") with its display name replaced. The name
+ * is quoted, and quotes, angle brackets, backslashes and line breaks are
+ * removed from it, so an admin's name can't break or add header fields.
+ */
+export function withDisplayName(from: string, name: string): string {
+  const address = from.match(/<([^>]+)>/)?.[1]?.trim() ?? from.trim();
+  const safe = name.replace(/[\r\n]+/g, " ").replace(/["<>\\]/g, "").replace(/\s+/g, " ").trim().slice(0, 100);
+  return safe ? `"${safe}" <${address}>` : address;
+}
+
 /** The one place that actually calls Resend — every exported function below builds its subject/html and calls this. */
-async function deliverResendEmail(params: { type: string; to: string; subject: string; html: string; replyTo?: string }): Promise<ResendSendResult> {
+async function deliverResendEmail(params: {
+  type: string;
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  replyTo?: string;
+  /** Overrides the display name of RESEND_FROM_EMAIL; the address stays the same. */
+  fromName?: string;
+}): Promise<ResendSendResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "TBJ Growth <onboarding@resend.dev>";
+  const configuredFrom = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM;
+  const from = params.fromName ? withDisplayName(configuredFrom, params.fromName) : configuredFrom;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -41,6 +65,7 @@ async function deliverResendEmail(params: { type: string; to: string; subject: s
         ...(params.replyTo ? { reply_to: params.replyTo } : {}),
         subject: params.subject,
         html: params.html,
+        ...(params.text ? { text: params.text } : {}),
       }),
     });
 
@@ -107,6 +132,47 @@ export async function sendContactNotification(submission: ContactSubmission, not
   `;
 
   return deliverResendEmail({ type: "contact", to: notifyEmail, replyTo: submission.email, subject: `New lead: ${submission.name}`, html });
+}
+
+export type LeadReplyEmail = {
+  to: string;
+  replyTo: string; // the site's inbox (Site Settings email), so the lead's answer lands there
+  subject: string;
+  body: string; // plain text typed by the admin
+  senderName: string | null; // admin's name; null signs as the team
+  original: { name: string; message: string; createdAt: Date };
+};
+
+/** Builds the reply email: the admin's text, a signature, then the lead's message quoted. Exported for tests. */
+export function buildLeadReplyEmail(reply: LeadReplyEmail) {
+  const signer = reply.senderName?.trim() || null;
+  const signature = signer ? `${signer}\n${BRAND_NAME}` : `The ${BRAND_NAME} team`;
+  const when = reply.original.createdAt.toLocaleString("en-GB", { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }) + " UTC";
+  const attribution = `On ${when}, ${reply.original.name} wrote:`;
+  const nl2br = (s: string) => escapeHtml(s).replace(/\r?\n/g, "<br/>");
+
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1f2937">
+      <p>${nl2br(reply.body)}</p>
+      <p>${nl2br(signature)}</p>
+      <p style="margin-top:24px;color:#6b7280;font-size:13px">${escapeHtml(attribution)}</p>
+      <blockquote style="margin:0;padding-left:12px;border-left:3px solid #d1d5db;color:#6b7280;font-size:13px">${nl2br(reply.original.message)}</blockquote>
+    </div>
+  `;
+  const quoted = reply.original.message.split(/\r?\n/).map((line) => `> ${line}`).join("\n");
+  const text = `${reply.body}\n\n${signature}\n\n${attribution}\n${quoted}\n`;
+  const fromName = signer ? `${signer} at ${BRAND_NAME}` : BRAND_NAME;
+  return { html, text, fromName };
+}
+
+/** Emails an admin's reply to a lead. Never throws; a missing RESEND_API_KEY is reported as skipped. */
+export async function sendLeadReply(reply: LeadReplyEmail): Promise<ResendSendResult> {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("RESEND_API_KEY not set — can't send lead reply to:", reply.to);
+    return { success: false, skipped: true, error: "Email sending isn't configured (RESEND_API_KEY is not set)." };
+  }
+  const { html, text, fromName } = buildLeadReplyEmail(reply);
+  return deliverResendEmail({ type: "lead-reply", to: reply.to, replyTo: reply.replyTo, subject: reply.subject, html, text, fromName });
 }
 
 type BookingNotification = {

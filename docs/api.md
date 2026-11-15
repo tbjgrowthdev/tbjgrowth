@@ -113,7 +113,7 @@ mutations and a bare array/object (or `[]`/`null` on failure, logged via
 - **`media.ts`**: `getMediaAssets`/`getMediaAsset`/`getMediaFolders` (read), `uploadMediaAsset`, `updateMediaMetadata`, `replaceMediaAsset`, `deleteMediaAsset` — all `MEDIA_MANAGEMENT`, backed by Cloudinary (`lib/cloudinary.ts`).
 - **`translations.ts`**: `saveTranslationDraft`, `publishTranslation`/`unpublishTranslation`/`deleteTranslation`, plus read helpers for the translation-coverage UI.
 - **`booking.ts`**: public `getAvailableSlots`/`createBooking` (no auth — see `docs/known-limitations.md` for the race-condition handling) + admin `getAllSlots`/`createSlot`/`createSlotsBulk`/`deleteSlot`/`getBookings`/`cancelBooking` (`CREATE`/`DELETE`/`EDIT`).
-- **`forms.ts`**: public `submitContactForm` (rate-limited per email, no auth) + admin `getLeads`/`markLeadAsRead` (`USER_MANAGEMENT` — yes, leads are gated behind the same tier as user management, not `EDIT`; see `docs/permission-matrix.md`).
+- **`forms.ts`**: public `submitContactForm` (rate-limited per email, no auth) + admin `getLeads`/`markLeadAsRead`/`replyToLead` (`USER_MANAGEMENT` — yes, leads are gated behind the same tier as user management, not `EDIT`; see `docs/permission-matrix.md`). `replyToLead` emails the lead through `lib/email.ts` with Reply-To set to the Site Settings email (refuses if that is empty), then saves a `LeadReply` row; only sent replies are saved.
 - **`newsletter.ts`**: public `subscribeToNewsletter` (no auth; honeypot + Cloudflare per-IP and global rate limits, duplicates answer success) + admin `getSubscribers`/`exportSubscribersCsv`/`setSubscriberStatus`/`deleteSubscriber` (`USER_MANAGEMENT`, same tier as leads).
 
 ### Admin/ops

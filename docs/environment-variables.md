@@ -30,7 +30,7 @@ Source: `.env.example` (copy to `.env` for local `next dev`; `.env*` is gitignor
 
 | Variable | Used by |
 |---|---|
-| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | `lib/email.ts` — every outbound email (booking notifications, contact form, account-locked alerts, scheduled-job/automation failure notices). Every send, success or failure, is logged to `EmailLog`. |
+| `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | `lib/email.ts` — every outbound email (booking notifications, contact form, replies to leads from `/admin/leads`, account-locked alerts, scheduled-job/automation failure notices). Replies to leads go to real customers, so `RESEND_FROM_EMAIL` must be an address on a domain verified in Resend: the `onboarding@resend.dev` fallback only delivers to the Resend account owner. Lead replies keep its address but replace the display name with "<admin name> at TBJ Growth". Every send, success or failure, is logged to `EmailLog`. |
 
 ## Media
 
