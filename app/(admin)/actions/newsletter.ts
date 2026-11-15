@@ -8,6 +8,9 @@ import { logAudit } from "@/lib/audit-log";
 import { withinIpAndGlobalLimits } from "@/lib/rate-limit";
 import { isNewsletterSource, newsletterSignupSchema, subscribersToCsv, SUBSCRIBERS_PAGE_SIZE } from "@/lib/newsletter";
 import type { NewsletterStatus, Prisma } from "@/lib/generated/prisma/client";
+import { buildPostAnnouncementEmail, sendResendBatch, BRAND_NAME } from "@/lib/email";
+import { postAnnouncement } from "@/lib/newsletter-campaigns";
+import { siteBaseUrl } from "@/lib/newsletter-unsubscribe";
 
 const ADMIN_PATH = "/admin/subscribers";
 
@@ -170,5 +173,100 @@ export async function deleteSubscriber(id: string) {
     if (error instanceof AuthError) return { success: false, error: error.message };
     console.error("Failed to delete subscriber:", error);
     return { success: false, error: "Couldn't delete subscriber" };
+  }
+}
+
+// --- New-post emails (lib/newsletter-campaigns.ts) ---------------------------
+
+/** The auto-send switch and the most recent campaigns, for /admin/subscribers. */
+export async function getNewsletterSendInfo() {
+  await requirePermission("USER_MANAGEMENT");
+  const [settings, campaigns] = await Promise.all([
+    prisma.siteSetting.findFirst({ select: { newsletterAutoSend: true } }),
+    prisma.newsletterCampaign.findMany({ orderBy: { createdAt: "desc" }, take: 20 }),
+  ]);
+  return { autoSend: settings?.newsletterAutoSend ?? false, campaigns };
+}
+
+/**
+ * Turns emailing subscribers about new posts on or off. Turning it off also
+ * cancels any campaign still sending, so "off" means nothing more goes out.
+ */
+export async function setNewsletterAutoSend(on: boolean) {
+  try {
+    await requirePermission("USER_MANAGEMENT");
+    if (typeof on !== "boolean") return { success: false, error: "Invalid value" };
+
+    const existing = await prisma.siteSetting.findFirst({ select: { id: true } });
+    if (existing) {
+      await prisma.siteSetting.update({ where: { id: existing.id }, data: { newsletterAutoSend: on } });
+    } else {
+      await prisma.siteSetting.create({ data: { newsletterAutoSend: on } });
+    }
+
+    let cancelled = 0;
+    if (!on) {
+      // One update per row: the Neon HTTP adapter can't run updateMany.
+      const running = await prisma.newsletterCampaign.findMany({ where: { status: "SENDING" }, select: { id: true } });
+      for (const c of running) {
+        await prisma.newsletterCampaign.update({
+          where: { id: c.id },
+          data: { status: "CANCELLED", completedAt: new Date(), lockedUntil: null, lastError: "Cancelled: new-post emails were turned off" },
+        });
+        cancelled++;
+      }
+    }
+
+    await logAudit({
+      action: on ? "enable-newsletter-auto-send" : "disable-newsletter-auto-send",
+      category: "Settings",
+      entityType: "SiteSetting",
+      entityLabel: "Newsletter: email new blog posts",
+      before: { newsletterAutoSend: !on },
+      after: { newsletterAutoSend: on, ...(cancelled ? { cancelledCampaigns: cancelled } : {}) },
+    });
+    revalidatePath(ADMIN_PATH);
+    return { success: true, cancelled };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false, error: error.message };
+    console.error("Failed to change newsletter auto-send:", error);
+    return { success: false, error: "Couldn't change the setting" };
+  }
+}
+
+/**
+ * Sends the newest published post's email to the signed-in admin only, marked
+ * [Test]. Its unsubscribe link points at no subscriber, so it does nothing.
+ * Works whether or not the switch is on, and records no campaign.
+ */
+export async function sendNewsletterTest() {
+  try {
+    const session = await requirePermission("USER_MANAGEMENT");
+    const to = session.user.email;
+    if (!to) return { success: false, error: "Your admin account has no email address." };
+
+    const post = await prisma.post.findFirst({
+      where: { status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      select: { title: true, slug: true, excerpt: true, featuredImage: true },
+    });
+    if (!post) return { success: false, error: "Publish a blog post first: the test uses the newest one." };
+
+    const email = buildPostAnnouncementEmail(postAnnouncement(post), `${siteBaseUrl()}/api/newsletter/unsubscribe?s=test`, { test: true });
+    const result = await sendResendBatch({
+      type: "newsletter-test",
+      fromName: BRAND_NAME,
+      // Unique per click: a repeat test should really send again.
+      idempotencyKey: `newsletter-test-${crypto.randomUUID()}`,
+      emails: [{ to, ...email }],
+    });
+    if (!result.success) {
+      return { success: false, error: result.status === null && result.error.includes("RESEND_API_KEY") ? "Email sending isn't configured (RESEND_API_KEY is not set)." : "The test email couldn't be sent." };
+    }
+    return { success: true, to, postTitle: post.title };
+  } catch (error) {
+    if (error instanceof AuthError) return { success: false, error: error.message };
+    console.error("Failed to send newsletter test:", error);
+    return { success: false, error: "The test email couldn't be sent." };
   }
 }

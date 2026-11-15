@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCronAuth } from "@/lib/cron-auth";
 import { processDueJobs } from "@/lib/scheduled-jobs";
+import { processNewsletterCampaigns } from "@/lib/newsletter-campaigns";
 
 // Hosting-agnostic cron target: protected by CRON_SECRET rather than a
 // session (there is no browser session in a cron context). Works with
@@ -11,5 +12,14 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const results = await processDueJobs();
-  return NextResponse.json({ processed: results.length, results });
+  // Also sends newsletter emails for newly published posts (including any a
+  // job above just published), and resumes any still in progress.
+  let newsletter: unknown;
+  try {
+    newsletter = await processNewsletterCampaigns();
+  } catch (error) {
+    console.error("Newsletter campaign run failed:", error);
+    newsletter = { error: "failed" };
+  }
+  return NextResponse.json({ processed: results.length, results, newsletter });
 }

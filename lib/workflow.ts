@@ -7,6 +7,7 @@ import { logAudit, type AuditCategory } from "@/lib/audit-log";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
 import { fireAutomationEvent } from "@/lib/automation/engine";
+import { queuePostNewsletter } from "@/lib/newsletter-campaigns";
 
 const ENTITY_TYPE: Record<ContentType, string> = {
   POST: "Post",
@@ -173,6 +174,13 @@ export async function transitionContent(
       await fireAutomationEvent("CONTENT_PUBLISHED", contentType, id, { title: updated.title ?? updated.slug, slug: updated.slug });
     }
 
+    // Newsletter: a blog post's first-ever publish only (publishedAt was
+    // still empty), so republishing never emails again. Does nothing while
+    // the switch on /admin/subscribers is off; never throws.
+    if (contentType === "POST" && transition.to === "PUBLISHED" && !current.publishedAt) {
+      await queuePostNewsletter({ id, title: updated.title ?? updated.slug, slug: updated.slug });
+    }
+
     await logAudit({
       action,
       category: (PUBLISHING_ACTIONS.has(action) ? "Publishing" : "Approval") as AuditCategory,
@@ -184,7 +192,7 @@ export async function transitionContent(
     });
 
     return { success: true, data: updated };
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
     }
@@ -263,7 +271,7 @@ export async function assignUser(
     });
 
     return { success: true, data: updated };
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
     }
@@ -308,7 +316,7 @@ export async function setReviewDeadline(contentType: ContentType, id: string, de
     });
 
     return { success: true, data: updated };
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
     }
@@ -361,7 +369,7 @@ export async function recordSeoReview(
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
     }

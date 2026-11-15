@@ -86,6 +86,104 @@ async function deliverResendEmail(params: {
   }
 }
 
+export type BatchEmail = { to: string; subject: string; html: string; text: string; headers?: Record<string, string> };
+export type BatchSendResult =
+  | { success: true }
+  | { success: false; error: string; status: number | null; retryable: boolean; alreadySent: boolean };
+
+/**
+ * Sends up to 100 separate emails in one Resend call (POST /emails/batch);
+ * each recipient gets their own message, so no address sees another. Resend
+ * treats an idempotencyKey it has seen in the last 24h as the same request
+ * and doesn't send again, so retrying a batch after a crash can't double-send.
+ * Logged to EmailLog as one row per batch.
+ */
+export async function sendResendBatch(params: { type: string; emails: BatchEmail[]; idempotencyKey: string; fromName?: string }): Promise<BatchSendResult> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const logTo = `${params.emails.length} recipient(s)`;
+  if (!apiKey) {
+    return { success: false, error: "RESEND_API_KEY is not set", status: null, retryable: true, alreadySent: false };
+  }
+  const configuredFrom = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM;
+  const from = params.fromName ? withDisplayName(configuredFrom, params.fromName) : configuredFrom;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails/batch", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": params.idempotencyKey },
+      body: JSON.stringify(
+        params.emails.map((e) => ({ from, to: [e.to], subject: e.subject, html: e.html, text: e.text, ...(e.headers ? { headers: e.headers } : {}) })),
+      ),
+    });
+    if (res.ok) {
+      await logEmailAttempt(params.type, logTo, true, null);
+      return { success: true };
+    }
+    const errorText = await res.text();
+    console.error("Resend batch failed:", res.status, errorText);
+    await logEmailAttempt(params.type, logTo, false, errorText);
+    // 409 invalid_idempotent_request: this key was already used for a batch
+    // with different content (a subscriber left between attempts). That
+    // batch went out, so it counts as sent.
+    const alreadySent = res.status === 409 && errorText.includes("invalid_idempotent_request");
+    return { success: false, error: errorText, status: res.status, retryable: res.status === 429 || res.status === 409 || res.status >= 500, alreadySent };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Failed to send ${params.type} batch:`, error);
+    await logEmailAttempt(params.type, logTo, false, message);
+    return { success: false, error: message, status: null, retryable: true, alreadySent: false };
+  }
+}
+
+export type PostAnnouncement = {
+  title: string;
+  excerpt: string | null;
+  imageUrl: string | null; // absolute
+  postUrl: string; // absolute
+  siteUrl: string; // absolute
+};
+
+/** The new-post email for one recipient. Exported for tests and the admin test send. */
+export function buildPostAnnouncementEmail(post: PostAnnouncement, unsubscribeUrl: string, opts: { test?: boolean } = {}) {
+  const subject = `${opts.test ? "[Test] " : ""}${post.title}`;
+  const excerpt = post.excerpt?.trim() || null;
+  const testNote = opts.test ? "<p style=\"margin:0 0 16px;padding:8px 12px;background:#fef3c7;color:#92400e;font-size:13px;border-radius:6px\">Test email: only you received it, and the unsubscribe link below doesn't change anything.</p>" : "";
+  const html = `
+    <div style="background:#f5f5f4;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
+      <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden">
+        ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="" width="560" style="display:block;width:100%;height:auto"/>` : ""}
+        <div style="padding:28px 28px 24px;color:#1f2937">
+          ${testNote}
+          <p style="margin:0 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#c2410c;font-weight:bold">New on the ${BRAND_NAME} blog</p>
+          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.3">${escapeHtml(post.title)}</h1>
+          ${excerpt ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563">${escapeHtml(excerpt)}</p>` : ""}
+          <a href="${escapeHtml(post.postUrl)}" style="display:inline-block;padding:12px 22px;background:#c2410c;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:bold;font-size:15px">Read the article</a>
+        </div>
+      </div>
+      <p style="max-width:560px;margin:16px auto 0;font-size:12px;line-height:1.6;color:#78716c;text-align:center">
+        You're getting this because you subscribed to the ${BRAND_NAME} newsletter at <a href="${escapeHtml(post.siteUrl)}" style="color:#78716c">${escapeHtml(post.siteUrl.replace(/^https?:\/\//, ""))}</a>.<br/>
+        <a href="${escapeHtml(unsubscribeUrl)}" style="color:#78716c">Unsubscribe</a>
+      </p>
+    </div>
+  `;
+  const text = [
+    opts.test ? "[Test email: only you received it, and the unsubscribe link doesn't change anything.]\n" : null,
+    `New on the ${BRAND_NAME} blog`,
+    "",
+    post.title,
+    excerpt ? `\n${excerpt}` : null,
+    "",
+    `Read the article: ${post.postUrl}`,
+    "",
+    "--",
+    `You're getting this because you subscribed to the ${BRAND_NAME} newsletter.`,
+    `Unsubscribe: ${unsubscribeUrl}`,
+  ].filter((l) => l !== null).join("\n");
+  // RFC 8058 one-click unsubscribe; Gmail and Yahoo require it for bulk mail.
+  const headers = { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" };
+  return { subject, html, text, headers };
+}
+
 export async function getEmailLogHistory(limit = 50) {
   return prisma.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: limit });
 }

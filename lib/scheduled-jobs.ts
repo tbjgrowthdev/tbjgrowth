@@ -8,6 +8,7 @@ import { sanitizeRichText } from "@/lib/sanitize";
 import { sendScheduledJobFailureNotification } from "@/lib/email";
 import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
+import { queuePostNewsletter } from "@/lib/newsletter-campaigns";
 import { revalidatePath } from "@/lib/revalidate";
 import type { ContentType, ScheduledJobType, PostStatus, Prisma } from "@/lib/generated/prisma/client";
 
@@ -84,7 +85,7 @@ export async function createScheduledJob(
     });
 
     return { success: true, job };
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
     }
@@ -108,12 +109,12 @@ export async function cancelScheduledJob(id: string) {
       entityLabel: `Cancelled ${job.jobType} scheduled for ${job.runAt.toISOString()}`,
     });
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: error.message };
     }
     console.error(`Failed to cancel scheduled job ${id}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to cancel scheduled job" };
   }
 }
 
@@ -155,13 +156,18 @@ export async function processDueJobs() {
 
 async function processJob(id: string) {
   // Atomic claim: only proceeds if the row is still PENDING right now, so
-  // two overlapping cron invocations can't both pick up the same job.
-  const claim = await prisma.scheduledJob.updateMany({
-    where: { id, status: "PENDING" },
-    data: { status: "PROCESSING", attempts: { increment: 1 }, lastAttemptAt: new Date() },
-  });
-  if (claim.count === 0) {
-    return { id, skipped: true };
+  // two overlapping cron invocations can't both pick up the same job. A
+  // single conditional update() (not updateMany, which the Neon HTTP adapter
+  // can't run at all, see docs/known-limitations.md): it throws P2025 when
+  // the row is no longer PENDING.
+  try {
+    await prisma.scheduledJob.update({
+      where: { id, status: "PENDING" },
+      data: { status: "PROCESSING", attempts: { increment: 1 }, lastAttemptAt: new Date() },
+    });
+  } catch (error) {
+    if ((error as { code?: string })?.code === "P2025") return { id, skipped: true };
+    throw error;
   }
 
   const job = await prisma.scheduledJob.findUnique({ where: { id } });
@@ -171,8 +177,8 @@ async function processJob(id: string) {
     await executeJob(job);
     await prisma.scheduledJob.update({ where: { id }, data: { status: "COMPLETED", lastError: null } });
     return { id, success: true };
-  } catch (error: any) {
-    const message = error?.message || "Unknown error";
+  } catch (error) {
+    const message = (error instanceof Error && error.message) || "Unknown error";
     const willRetry = job.attempts < MAX_ATTEMPTS;
     await prisma.scheduledJob.update({
       where: { id },
@@ -232,6 +238,12 @@ async function executeJob(job: Prisma.ScheduledJobGetPayload<object>) {
     // path (lib/workflow.ts) — a scheduled publish is still a publish event.
     if (toStatus === "PUBLISHED" && fromStatus !== "PUBLISHED" && current.isIndexable !== false) {
       await notifySearchEnginesOfUrl(PUBLIC_PATH_BUILDERS[job.contentType](updated.slug));
+    }
+
+    // Newsletter, same rule as the manual publish in lib/workflow.ts: a blog
+    // post's first-ever publish only. The cron route sends it right after.
+    if (job.contentType === "POST" && toStatus === "PUBLISHED" && !current.publishedAt) {
+      await queuePostNewsletter({ id: job.contentId, title: String((updated as AnyRecord).title ?? updated.slug), slug: updated.slug });
     }
 
     await logAudit({

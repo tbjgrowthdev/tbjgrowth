@@ -85,6 +85,8 @@ mock.module("@/lib/auth-guard", {
 });
 mock.module("@/lib/audit-log", { namedExports: { logAudit: async (entry: Record<string, unknown>) => void auditEntries.push(entry) } });
 mock.module("@/lib/rate-limit", { namedExports: { withinIpAndGlobalLimits: async () => allowRateLimit } });
+// actions/newsletter imports lib/newsletter-campaigns, whose lib/sitemap import pulls in next-auth.
+mock.module("@/lib/sitemap", { namedExports: { PUBLIC_PATH_BUILDERS: { POST: (slug: string) => `/blog/${slug}` } } });
 mock.module("next/cache", { namedExports: { revalidatePath: () => {} } });
 mock.module("next/headers", { namedExports: { headers: async () => new Headers({ "cf-connecting-ip": "203.0.113.7" }) } });
 

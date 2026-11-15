@@ -27,7 +27,7 @@ they exist for different reasons — don't reach for one where the other fits.
 | `/api/internal/client-error` | POST | None (a crashed client can't carry a session) | Reports a client-side error into `lib/error-monitor.ts`'s `captureError`. Same-origin only, body ≤ 16 KB, rate-limited per IP (5/min) and overall (60/min) by Cloudflare bindings, plus that module's per-fingerprint alert dedup. |
 | `/api/web-vitals` | POST | None | Stores one page load's Core Web Vitals (`{ path, metrics: { LCP, CLS, INP, FCP, TTFB } }`) as `WebVitalSample` rows (one concurrent `create()` per metric). Same-origin only, body ≤ 1 KB, rate-limited per IP and overall (Cloudflare bindings), values range-checked and rated server-side. Returns 204. See `docs/monitoring.md`. |
 | `/api/cron/log-retention` | GET | `CRON_SECRET` | Deletes old rows from log-type tables (rules in `lib/retention.ts`, summary in `docs/monitoring.md`). `?dryRun=1` only reports counts. 500 if any table failed. Nightly from `app-cron.yml`. |
-| `/api/cron/scheduled-jobs` | GET | Bearer `CRON_SECRET` | Runs `processDueJobs()` — publishes/unpublishes content whose `ScheduledJob` time has arrived. |
+| `/api/cron/scheduled-jobs` | GET | Bearer `CRON_SECRET` | Runs `processDueJobs()` — publishes/unpublishes content whose `ScheduledJob` time has arrived — then `processNewsletterCampaigns()`, which sends (or resumes) new-post newsletter emails. |
 | `/api/cron/link-check` | GET | Bearer `CRON_SECRET` | Runs `runLinkCheck("cron")` — internal/external broken-link + redirect-issue scan. |
 | `/api/cron/seo-audit-scan` | GET | Bearer `CRON_SECRET` | Runs `runSeoAudit("cron")` — the technical SEO audit. |
 | `/api/cron/content-health-scan` | GET | Bearer `CRON_SECRET` | Runs `runHealthScan()` — content health scoring. |
@@ -114,7 +114,8 @@ mutations and a bare array/object (or `[]`/`null` on failure, logged via
 - **`translations.ts`**: `saveTranslationDraft`, `publishTranslation`/`unpublishTranslation`/`deleteTranslation`, plus read helpers for the translation-coverage UI.
 - **`booking.ts`**: public `getAvailableSlots`/`createBooking` (no auth — see `docs/known-limitations.md` for the race-condition handling) + admin `getAllSlots`/`createSlot`/`createSlotsBulk`/`deleteSlot`/`getBookings`/`cancelBooking` (`CREATE`/`DELETE`/`EDIT`).
 - **`forms.ts`**: public `submitContactForm` (rate-limited per email, no auth) + admin `getLeads`/`markLeadAsRead`/`replyToLead` (`USER_MANAGEMENT` — yes, leads are gated behind the same tier as user management, not `EDIT`; see `docs/permission-matrix.md`). `replyToLead` emails the lead through `lib/email.ts` with Reply-To set to the Site Settings email (refuses if that is empty), then saves a `LeadReply` row; only sent replies are saved.
-- **`newsletter.ts`**: public `subscribeToNewsletter` (no auth; honeypot + Cloudflare per-IP and global rate limits, duplicates answer success) + admin `getSubscribers`/`exportSubscribersCsv`/`setSubscriberStatus`/`deleteSubscriber` (`USER_MANAGEMENT`, same tier as leads).
+- **`newsletter.ts`**: public `subscribeToNewsletter` (no auth; honeypot + Cloudflare per-IP and global rate limits, duplicates answer success) + admin `getSubscribers`/`exportSubscribersCsv`/`setSubscriberStatus`/`deleteSubscriber` (`USER_MANAGEMENT`, same tier as leads). Also `getNewsletterSendInfo`/`setNewsletterAutoSend`/`sendNewsletterTest` for the new-post email switch; turning it off cancels any campaign still sending.
+- **`/api/newsletter/unsubscribe`** (route handler, public): `GET` shows a confirm button, `POST` unsubscribes (also the RFC 8058 one-click target). Authorized by the signed `t` token from `lib/newsletter-unsubscribe.ts`, not a session.
 
 ### Admin/ops
 

@@ -87,6 +87,12 @@ Fixed call sites (as of 2026-10-22), each rewritten from `$transaction`/
   silently broken. Fixed with sequential awaits: the status update first
   (the change that matters), then the audit row — so a rare failure
   writing history leaves the real transition intact rather than losing it.
+- `lib/scheduled-jobs.ts` — `processJob`'s "claim only if still PENDING"
+  step was an `updateMany`, so every scheduled publish/unpublish/update
+  failed at the claim. Fixed (2026-11-15) as a single conditional
+  `update({ where: { id, status: "PENDING" } })`, treating `P2025` (row no
+  longer PENDING) as "another run has it". `NewsletterCampaign`'s send lock
+  (`lib/newsletter-campaigns.ts`) uses the same pattern.
 - `app/(admin)/actions/locationFaqs.ts` / `serviceFaqs.ts` — replacing a
   FAQ list: `deleteMany` (safe standalone) followed by `Promise.all` of
   individual `create()` calls instead of a `createMany`/`$transaction`.

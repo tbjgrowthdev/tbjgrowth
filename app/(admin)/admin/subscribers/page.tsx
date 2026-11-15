@@ -1,11 +1,20 @@
 import Link from "next/link";
-import { getSubscribers, type SubscriberFilters } from "../../actions/newsletter";
+import { getNewsletterSendInfo, getSubscribers, type SubscriberFilters } from "../../actions/newsletter";
 import { NEWSLETTER_SOURCES, NEWSLETTER_SOURCE_LABELS, isNewsletterSource } from "@/lib/newsletter";
 import PageTitle from "@/components/Admin/PageTitle";
 import ExportSubscribersButton from "@/components/Admin/Subscribers/ExportSubscribersButton";
 import SubscriberRowActions from "@/components/Admin/Subscribers/SubscriberRowActions";
+import NewsletterAutoSendPanel from "@/components/Admin/Subscribers/NewsletterAutoSendPanel";
 
 type SearchParams = Promise<{ source?: string; status?: string; page?: string }>;
+
+const CAMPAIGN_LABEL = { SENDING: "Sending", SENT: "Sent", FAILED: "Failed", CANCELLED: "Stopped" } as const;
+const CAMPAIGN_BADGE = {
+  SENDING: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  SENT: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  FAILED: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+  CANCELLED: "bg-background text-caption border border-border",
+} as const;
 
 function hrefFor(filters: SubscriberFilters) {
   const params = new URLSearchParams();
@@ -39,7 +48,8 @@ export default async function SubscribersPage({ searchParams }: { searchParams: 
     status: sp.status === "ACTIVE" || sp.status === "UNSUBSCRIBED" ? sp.status : undefined,
     page: Number(sp.page) > 1 ? Math.floor(Number(sp.page)) : 1,
   };
-  const { subscribers, matching, page, pageSize, counts } = await getSubscribers(filters);
+  const [{ subscribers, matching, page, pageSize, counts }, sendInfo] = await Promise.all([getSubscribers(filters), getNewsletterSendInfo()]);
+  const sendingNow = sendInfo.campaigns.filter((c) => c.status === "SENDING").length;
   const pages = Math.max(1, Math.ceil(matching / pageSize));
   const labelFor = (source: string) => (isNewsletterSource(source) ? NEWSLETTER_SOURCE_LABELS[source] : source);
 
@@ -58,6 +68,8 @@ export default async function SubscribersPage({ searchParams }: { searchParams: 
         </div>
         <ExportSubscribersButton source={filters.source} status={filters.status} disabled={matching === 0} />
       </div>
+
+      <NewsletterAutoSendPanel autoSend={sendInfo.autoSend} activeCount={counts.active} sendingNow={sendingNow} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
@@ -151,6 +163,53 @@ export default async function SubscribersPage({ searchParams }: { searchParams: 
           ) : <span />}
         </nav>
       )}
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">New-post emails sent</h2>
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-background border-b border-border">
+                  <th className="px-4 py-3 font-semibold text-foreground">Post</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Status</th>
+                  <th className="px-4 py-3 font-semibold text-foreground text-right">Sent to</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Started</th>
+                  <th className="px-4 py-3 font-semibold text-foreground">Finished</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {sendInfo.campaigns.map((c) => (
+                  <tr key={c.id}>
+                    <td className="px-4 py-3">
+                      <Link href={`/admin/posts/${c.postId}`} className="text-foreground font-medium hover:underline">{c.postTitle}</Link>
+                      <div className="text-caption text-xs">/blog/{c.postSlug}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${CAMPAIGN_BADGE[c.status]}`}>{CAMPAIGN_LABEL[c.status]}</span>
+                      {c.lastError && c.status !== "SENT" && (
+                        <div className="text-caption text-xs mt-1 truncate max-w-[280px]" title={c.lastError}>
+                          {c.status === "SENDING" ? `Retrying (attempt ${c.attempts}): ` : ""}{c.lastError}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-foreground">{c.sentCount.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-caption text-xs whitespace-nowrap">{new Date(c.createdAt).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-caption text-xs whitespace-nowrap">{c.completedAt ? new Date(c.completedAt).toLocaleString() : "—"}</td>
+                  </tr>
+                ))}
+                {sendInfo.campaigns.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-caption">
+                      {sendInfo.autoSend ? "No posts emailed yet. The next post you publish will be." : "No posts emailed yet. Turn on the switch above to email new posts."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

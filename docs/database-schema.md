@@ -45,6 +45,7 @@ Source of truth: `prisma/schema.prisma` (2066 lines, ~75 models/enums as of this
 | `FormSubmission` | Contact-form leads. |
 | `LeadReply` | Replies emailed to a lead from `/admin/leads` (one row per sent reply, sender snapshotted). Deleted with its lead. |
 | `NewsletterSubscriber` | Newsletter signups (footer + blog band), one row per lowercased email; `source` records which form, `status` is `ACTIVE`/`UNSUBSCRIBED`. Shown at `/admin/subscribers`. |
+| `NewsletterCampaign` | One "email the subscribers" run per blog post; `postId` is unique, so a post is never emailed twice. Tracks progress (`cursor`, `sentCount`) and a send lock. Switch: `SiteSetting.newsletterAutoSend`. See `lib/newsletter-campaigns.ts`. |
 | `Testimonial`, `Faq`, `TrustedPartner`, `TBJSystem`, `AgencyService` (+ `ServiceFaq`), `SiteSetting` | Public-site content/config models, outside the approval-workflow content types. |
 
 ## AI Content Pipeline

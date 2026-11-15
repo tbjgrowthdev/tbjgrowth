@@ -927,6 +927,37 @@ model LeadReply {
   @@index([leadId, createdAt])
 }
 
+enum NewsletterCampaignStatus {
+  SENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+// One email-the-subscribers run per blog post (lib/newsletter-campaigns.ts).
+// postId is unique, so a post can never be emailed twice. No foreign key:
+// the row (and that guarantee) outlives the post if it's deleted, and the
+// title/slug are snapshots for the send history.
+model NewsletterCampaign {
+  id          String                   @id @default(cuid())
+  postId      String                   @unique
+  postTitle   String
+  postSlug    String
+  status      NewsletterCampaignStatus @default(SENDING)
+  // Subscribers are sent in id order; cursor is the last id already sent.
+  cursor      String?
+  // Only subscribers who signed up before this moment are included.
+  cutoff      DateTime                 @default(now())
+  sentCount   Int                      @default(0)
+  attempts    Int                      @default(0) // consecutive failed batches
+  lastError   String?                  @db.Text
+  lockedUntil DateTime? // set while a worker is sending, so two can't send the same batch
+  createdAt   DateTime                 @default(now())
+  completedAt DateTime?
+
+  @@index([status, createdAt])
+}
+
 enum NewsletterStatus {
   ACTIVE
   UNSUBSCRIBED
@@ -1356,6 +1387,9 @@ model SiteSetting {
   // Bengali-script fonts, chosen independently of the Latin ones above.
   headingFontBn   String?
   bodyFontBn      String?
+  // Email newsletter subscribers when a blog post is published for the first
+  // time (lib/newsletter-campaigns.ts). Off by default.
+  newsletterAutoSend Boolean @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
