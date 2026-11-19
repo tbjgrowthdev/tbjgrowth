@@ -90,8 +90,8 @@ export async function createBooking(data: unknown) {
           message: input.message || null,
         },
       });
-    } catch (error: any) {
-      if (error.code === "P2002") {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === "P2002") {
         // Lost the race — someone else's create() for this exact slotId won
         // first, so the slot is legitimately booked now. Don't release it.
         return { success: false, error: "This slot was just booked by someone else. Please choose another time." };
@@ -112,9 +112,9 @@ export async function createBooking(data: unknown) {
     revalidatePath("/book-a-call");
     revalidatePath("/admin/booking");
     return { success: true, booking };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to create booking:", error);
-    return { success: false, error: error.message || "Failed to book this slot. Please try again." };
+    return { success: false, error: (error instanceof Error && error.message) || "Failed to book this slot. Please try again." };
   }
 }
 
@@ -147,12 +147,12 @@ export async function createSlot(data: { startsAt: string; duration: number }) {
     revalidatePath("/admin/booking");
     revalidatePath("/book-a-call");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
     }
     console.error("Failed to create slot:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
   }
 }
 
@@ -198,12 +198,12 @@ export async function createSlotsBulk(data: {
     revalidatePath("/admin/booking");
     revalidatePath("/book-a-call");
     return { success: true, count: slots.length };
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
     }
     console.error("Failed to bulk-create slots:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
   }
 }
 
@@ -218,12 +218,12 @@ export async function deleteSlot(id: string) {
     revalidatePath("/admin/booking");
     revalidatePath("/book-a-call");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
     }
     console.error(`Failed to delete slot ${id}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
   }
 }
 
@@ -254,11 +254,11 @@ export async function cancelBooking(id: string) {
     revalidatePath("/admin/booking");
     revalidatePath("/book-a-call");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
     }
     console.error(`Failed to cancel booking ${id}:`, error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Something went wrong" };
   }
 }

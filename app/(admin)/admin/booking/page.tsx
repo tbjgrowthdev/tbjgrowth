@@ -46,7 +46,7 @@ export default async function BookingAdminPage() {
                 </td>
               </tr>
             ) : (
-              upcomingSlots.map((slot: any) => {
+              upcomingSlots.map((slot) => {
                 const { date, time } = formatDateTime(slot.startsAt);
                 return (
                   <tr key={slot.id} className="hover:bg-background transition-colors">
@@ -100,7 +100,7 @@ export default async function BookingAdminPage() {
                 </td>
               </tr>
             ) : (
-              bookings.map((booking: any) => {
+              bookings.map((booking) => {
                 const { date, time } = formatDateTime(booking.slot.startsAt);
                 return (
                   <tr key={booking.id} className="hover:bg-background transition-colors align-top">

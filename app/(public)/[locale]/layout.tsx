@@ -61,6 +61,7 @@ export default async function PublicLayout({
       <Footer settings={settings} locale={locale} />
       <CookieConsentBanner />
       <WebVitalsReporter />
+      <ServiceWorkerRegister />
     </div>
   );
 }

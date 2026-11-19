@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
   Mail,
   Phone,
   MapPin,
@@ -10,9 +9,6 @@ import {
   Twitter,
   Instagram,
   Facebook,
-  Heart,
-  Shield,
-  Zap,
   ChevronRight,
   ArrowUp,
 } from "lucide-react";
