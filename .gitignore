@@ -51,3 +51,4 @@ next-env.d.ts
 tbj_old_backup.dump
 *.dump
 *.stackdump
+.superpowers/
