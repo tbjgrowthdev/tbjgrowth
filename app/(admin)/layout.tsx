@@ -9,6 +9,7 @@ import VisitSiteMenu from "@/components/Admin/VisitSiteMenu";
 import { AdminSidebarProvider, SidebarFrame, SidebarToggle } from "@/components/Admin/AdminSidebar";
 import { NavItem, SidebarCollapseButton, TopSearch } from "@/components/Admin/AdminNav";
 import { Toaster } from "@/components/Admin/Toast";
+import NativeAppBridge from "@/components/Admin/NativeAppBridge";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
 import "../admin.css";
@@ -222,6 +223,7 @@ export default async function AdminLayout({
       </main>
     </div>
     <Toaster />
+    <NativeAppBridge />
     </AdminSidebarProvider>
   );
 }

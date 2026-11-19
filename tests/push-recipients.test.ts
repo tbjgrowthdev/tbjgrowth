@@ -16,10 +16,14 @@ let prefs: Pref[] = [];
 let sessions: Session[] = [];
 let failSessionUpdateMany = false;
 
+// Loose shape of the Prisma where/select objects the fake understands.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Q = any;
+
 const DAY = 24 * 60 * 60 * 1000;
 const ago = (ms: number) => new Date(Date.now() - ms);
 
-function matchDevice(d: Device, where: any): boolean {
+function matchDevice(d: Device, where: Q): boolean {
   if (!where) return true;
   if (where.lastSeenAt?.lt && !(d.lastSeenAt < where.lastSeenAt.lt)) return false;
   if (where.lastSeenAt?.gte && !(d.lastSeenAt >= where.lastSeenAt.gte)) return false;
@@ -39,12 +43,12 @@ function matchDevice(d: Device, where: any): boolean {
 
 const fakePrisma = {
   pushDevice: {
-    async deleteMany({ where }: { where: any }) {
+    async deleteMany({ where }: { where: Q }) {
       const before = devices.length;
       devices = devices.filter((d) => !matchDevice(d, where));
       return { count: before - devices.length };
     },
-    async findMany({ where, select }: { where: any; select: any }) {
+    async findMany({ where, select }: { where: Q; select: Q }) {
       const event = select.user.select.pushPreferences.where.event;
       return devices
         .filter((d) => matchDevice(d, where))
@@ -63,7 +67,7 @@ const fakePrisma = {
       Object.assign(s, data);
       return s;
     },
-    async updateMany({ where, data }: { where: any; data: Partial<Session> }) {
+    async updateMany({ where, data }: { where: Q; data: Partial<Session> }) {
       if (failSessionUpdateMany) throw new Error("updateMany is not supported by the Neon HTTP adapter");
       let count = 0;
       for (const s of sessions) {

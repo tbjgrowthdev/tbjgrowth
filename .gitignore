@@ -52,3 +52,18 @@ tbj_old_backup.dump
 *.dump
 *.stackdump
 .superpowers/
+
+# Android app shell (mobile/) — never commit builds, keys or Firebase config
+/mobile/node_modules/
+/mobile/android/.gradle/
+/mobile/android/build/
+/mobile/android/app/build/
+/mobile/android/local.properties
+/mobile/android/.idea/
+/mobile/android/capacitor-cordova-android-plugins/build/
+google-services.json
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties

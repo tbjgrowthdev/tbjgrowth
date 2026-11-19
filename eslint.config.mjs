@@ -25,6 +25,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Android app shell: its own project (mobile/package.json), not part of the site.
+    "mobile/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

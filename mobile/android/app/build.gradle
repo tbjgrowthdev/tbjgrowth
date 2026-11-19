@@ -1,0 +1,97 @@
+apply plugin: 'com.android.application'
+
+// Release signing. ONE keystore signs both apps, forever: Google Play only
+// accepts updates signed with the same key. It lives OUTSIDE the repo:
+//   <TBJ-works>/tbj-signing/tbj-release.jks + keystore.properties
+// or set TBJ_KEYSTORE_PATH / TBJ_KEYSTORE_PASSWORD / TBJ_KEY_ALIAS / TBJ_KEY_PASSWORD.
+// See mobile/README.md (back the keystore up!).
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file("../../../tbj-signing/keystore.properties")
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def signingValue = { String prop, String env -> keystoreProps.getProperty(prop) ?: System.getenv(env) }
+def releaseStoreFile = signingValue("storeFile", "TBJ_KEYSTORE_PATH")
+
+android {
+    namespace = "com.tbjgrowthtech.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.tbjgrowthtech.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Bump both for every APK you publish (mobile/README.md).
+        versionCode 1
+        versionName "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (releaseStoreFile) {
+                storeFile file(releaseStoreFile)
+                storePassword signingValue("storePassword", "TBJ_KEYSTORE_PASSWORD")
+                keyAlias signingValue("keyAlias", "TBJ_KEY_ALIAS")
+                keyPassword signingValue("keyPassword", "TBJ_KEY_PASSWORD")
+            }
+        }
+    }
+
+    // Two apps from one project. Names, icons and start URLs live in
+    // src/<flavor>/ (res + assets/capacitor.config.json from
+    // scripts/flavor-configs.mjs). Application IDs are permanent.
+    flavorDimensions = ["app"]
+    productFlavors {
+        admin {
+            dimension "app"
+            applicationId "com.tbjgrowthtech.admin"
+        }
+        client {
+            dimension "app"
+            applicationId "com.tbjgrowthtech.app"
+        }
+    }
+
+    buildTypes {
+        release {
+            if (releaseStoreFile) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
