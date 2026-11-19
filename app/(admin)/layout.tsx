@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCurrentAdmin } from "@/app/(admin)/actions/profile";
@@ -10,6 +10,7 @@ import { AdminSidebarProvider, SidebarFrame, SidebarToggle } from "@/components/
 import { NavItem, SidebarCollapseButton, TopSearch } from "@/components/Admin/AdminNav";
 import { Toaster } from "@/components/Admin/Toast";
 import NativeAppBridge from "@/components/Admin/NativeAppBridge";
+import { LOCK_INIT_SCRIPT } from "@/lib/native-lock";
 import { isValidImageSrc } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
 import "../admin.css";
@@ -18,6 +19,14 @@ import "../admin.css";
 // dashboard is behind auth and must never appear in search results.
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
+};
+
+// Admin pages draw under the status bar/notch in the TBJ Admin app and pad
+// for it themselves (header and lock screen use env(safe-area-inset-*),
+// app/admin.css). The root layout deliberately doesn't set this.
+export const viewport: Viewport = {
+  themeColor: "#E2571F",
+  viewportFit: "cover",
 };
 
 // Every admin page is per-user and behind auth, so none of them can be
@@ -147,6 +156,8 @@ export default async function AdminLayout({
   return (
     <AdminSidebarProvider>
     <script dangerouslySetInnerHTML={{ __html: SIDEBAR_INIT }} />
+    {/* TBJ Admin app only: hide admin pages before paint until the biometric unlock (lib/native-lock.ts). */}
+    <script dangerouslySetInnerHTML={{ __html: LOCK_INIT_SCRIPT }} />
     {/* `relative` makes this the containing block for anything position:absolute inside the admin (sr-only inputs,
         dropdown panels, ...). Without it such elements resolve against the page itself, escape this overflow-hidden clip
         and stretch the document, which shows up as an extra scrollbar and the whole layout scrolling up with a blank

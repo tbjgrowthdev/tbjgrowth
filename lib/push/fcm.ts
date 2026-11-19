@@ -25,8 +25,11 @@ const TOKEN_LIFETIME_S = 3600;
 const REFRESH_MARGIN_MS = 60_000;
 const MAX_CONCURRENT = 20;
 
-// FCM error statuses that mean the token will never work again.
-const DEAD_TOKEN_STATUSES = new Set(["UNREGISTERED", "NOT_FOUND", "INVALID_ARGUMENT", "SENDER_ID_MISMATCH"]);
+// Only UNREGISTERED means "this token will never work again" (app
+// uninstalled / token rotated). INVALID_ARGUMENT can be our own malformed
+// message and SENDER_ID_MISMATCH a wrong service account: treating those as
+// dead would wipe every registered device on one misconfiguration.
+const DEAD_TOKEN_CODE = "UNREGISTERED";
 
 function base64url(data: ArrayBuffer | Uint8Array | string): string {
   const bytes = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
@@ -54,12 +57,10 @@ function parseServiceAccount(json: string | undefined): ServiceAccount | null {
   }
 }
 
-function isDeadToken(status: number, body: unknown): boolean {
-  if (status === 404) return true;
+function isDeadToken(body: unknown): boolean {
   const error = (body as { error?: { status?: string; details?: Array<{ errorCode?: string }> } })?.error;
   if (!error) return false;
-  if (error.details?.some((d) => d.errorCode && DEAD_TOKEN_STATUSES.has(d.errorCode))) return true;
-  return !!error.status && DEAD_TOKEN_STATUSES.has(error.status);
+  return error.status === DEAD_TOKEN_CODE || !!error.details?.some((d) => d.errorCode === DEAD_TOKEN_CODE);
 }
 
 export function createFcmSender(deps: SenderDeps) {
@@ -105,7 +106,7 @@ export function createFcmSender(deps: SenderDeps) {
     });
     if (response.ok) return "sent";
     const body = await response.json().catch(() => null);
-    if (isDeadToken(response.status, body)) return "dead";
+    if (isDeadToken(body)) return "dead";
     console.error(`FCM send failed: HTTP ${response.status}`, body);
     return "failed";
   }

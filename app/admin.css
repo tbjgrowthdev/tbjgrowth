@@ -878,3 +878,9 @@ html:has(.admin-shell) .tbj-swal-cancel {
     justify-content: center;
   }
 }
+
+/* TBJ Admin app biometric lock (lib/native-lock.ts): the admin shell stays hidden
+   until unlock. The lock screen itself (NativeAppBridge) is outside .admin-shell. */
+html[data-tbj-lock] .admin-shell {
+  visibility: hidden;
+}

@@ -55,11 +55,11 @@ export const metadata: Metadata = {
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
-// viewportFit "cover" lets the installed app and the Android app draw under
-// notches; pages pad with env(safe-area-inset-*) where it matters.
+// No viewportFit "cover" here: public pages (fixed navbar) and /login don't
+// pad for the status bar, so the Android apps must keep them below it. Only
+// the admin layout opts in, because its header pads with env(safe-area-inset-top).
 export const viewport: Viewport = {
   themeColor: "#E2571F",
-  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -8,13 +8,16 @@ const MAIN = "android/app/src/main/assets/capacitor.config.json";
 const ORIGIN = "https://tbjgrowthtech.com";
 
 export const FLAVORS = {
-  admin: { appId: "com.tbjgrowthtech.admin", appName: "TBJ Admin", url: `${ORIGIN}/admin` },
+  // appendUserAgent lets the site recognise TBJ Admin before any script runs
+  // (biometric lock, lib/native-lock.ts ADMIN_UA_MARK). Keep them in sync.
+  admin: { appId: "com.tbjgrowthtech.admin", appName: "TBJ Admin", url: `${ORIGIN}/admin`, appendUserAgent: "TBJAdminApp" },
   client: { appId: "com.tbjgrowthtech.app", appName: "TBJ Growth Tech", url: `${ORIGIN}/` },
 };
 
 const base = JSON.parse(readFileSync(MAIN, "utf8"));
 for (const [flavor, f] of Object.entries(FLAVORS)) {
   const config = { ...base, appId: f.appId, appName: f.appName, server: { ...base.server, url: f.url } };
+  if (f.appendUserAgent) config.appendUserAgent = f.appendUserAgent;
   const dir = `android/app/src/${flavor}/assets`;
   mkdirSync(dir, { recursive: true });
   writeFileSync(`${dir}/capacitor.config.json`, JSON.stringify(config, null, "\t") + "\n");

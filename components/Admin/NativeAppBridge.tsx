@@ -5,36 +5,37 @@ import { signOut } from "next-auth/react";
 import { Lock } from "lucide-react";
 import { registerPushDevice } from "@/app/(admin)/actions/push";
 import { isAdminApp, nativePlugin, safeAdminPath, PUSH_TOKEN_STORAGE_KEY } from "@/lib/native";
+import { LOCK_ATTR, UNLOCKED_KEY, backAction } from "@/lib/native-lock";
 
 // Native features of the TBJ Admin Android app, wired from the live admin
 // pages (see lib/native.ts for why this runs on the site, not in the APK).
 // Renders nothing on the web and in the client app (com.tbjgrowthtech.app).
 //
+//  - Biometric lock: on a fresh app start, and after 5+ minutes in the
+//    background, admin pages are hidden until fingerprint/face/device PIN
+//    succeeds. It holds across reloads (notification taps, Back) and covers
+//    the page before first paint; see lib/native-lock.ts. Failing never logs
+//    out or revokes anything; "Sign in with password" signs out instead.
 //  - Push: asks permission, registers the FCM token for this user/session,
 //    and opens the notification's /admin page when it is tapped.
-//  - Hardware back button: browser history, else leave the app.
-//  - Biometric lock: on a fresh app start, and after 5+ minutes in the background, the screen is
-//    covered until fingerprint/face/device PIN succeeds. Failing never logs
-//    out or revokes anything; "Sign in with password" signs out instead.
+//  - Hardware back button: browser history, else leave the app. Ignored while locked.
 
 const LOCK_AFTER_MS = 5 * 60 * 1000;
-// sessionStorage dies with the app process, so a cold start always asks again.
-const UNLOCKED_KEY = "tbj-unlocked";
 
-function markUnlocked() {
+function setUnlockedFlag(on: boolean) {
   try {
-    sessionStorage.setItem(UNLOCKED_KEY, "1");
+    if (on) sessionStorage.setItem(UNLOCKED_KEY, "1");
+    else sessionStorage.removeItem(UNLOCKED_KEY);
   } catch {
-    /* storage unavailable */
+    /* storage unavailable: the in-page lock still holds until unlock */
   }
 }
 
-function wasUnlockedThisRun(): boolean {
-  try {
-    return sessionStorage.getItem(UNLOCKED_KEY) === "1";
-  } catch {
-    return false;
-  }
+/** Hides or shows the admin shell (app/admin.css) and records the state for reloads. */
+function setPageLocked(on: boolean) {
+  if (on) document.documentElement.setAttribute(LOCK_ATTR, "1");
+  else document.documentElement.removeAttribute(LOCK_ATTR);
+  setUnlockedFlag(!on);
 }
 
 type Listener = { remove: () => Promise<void> | void };
@@ -56,15 +57,19 @@ type BiometricPlugin = {
 export default function NativeAppBridge() {
   const [locked, setLocked] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
+  const lockedRef = useRef(false);
   const backgroundedAt = useRef<number | null>(null);
   const canLock = useRef(false);
 
+  const showLock = (on: boolean) => {
+    lockedRef.current = on;
+    setLocked(on);
+    setPageLocked(on);
+  };
+
   const unlock = async () => {
     const bio = nativePlugin<BiometricPlugin>("BiometricAuthNative");
-    if (!bio) {
-      markUnlocked();
-      return setLocked(false);
-    }
+    if (!bio) return showLock(false);
     setUnlocking(true);
     try {
       await bio.internalAuthenticate({
@@ -74,8 +79,7 @@ export default function NativeAppBridge() {
         cancelTitle: "Cancel",
         allowDeviceCredential: true,
       });
-      markUnlocked();
-      setLocked(false);
+      showLock(false);
     } catch {
       // Cancelled or failed: stay locked. The person can retry or sign in with a password.
     } finally {
@@ -83,63 +87,58 @@ export default function NativeAppBridge() {
     }
   };
 
-  // Cover the screen and prompt straight away.
+  // Hide the page and prompt straight away.
   const lock = () => {
-    setLocked(true);
+    showLock(true);
     void unlock();
+  };
+
+  const signInWithPassword = () => {
+    // Signing in again with password + 2FA proves more than the biometric
+    // check, so don't ask for both. The page stays hidden until sign-out navigates.
+    setUnlockedFlag(true);
+    void signOut({ callbackUrl: "/login" });
   };
 
   useEffect(() => {
     let cancelled = false;
     const listeners: Listener[] = [];
+    const keep = (l: Listener) => {
+      if (cancelled) void l.remove();
+      else listeners.push(l);
+    };
 
     (async () => {
-      if (!(await isAdminApp()) || cancelled) return;
+      if (!(await isAdminApp())) {
+        // Never leave a page hidden if the shell turned out not to be TBJ Admin.
+        if (document.documentElement.hasAttribute(LOCK_ATTR)) setPageLocked(false);
+        return;
+      }
+      if (cancelled) return;
       const push = nativePlugin<PushPlugin>("PushNotifications");
       const app = nativePlugin<AppPlugin>("App");
       const bio = nativePlugin<BiometricPlugin>("BiometricAuthNative");
 
-      if (push) {
-        listeners.push(
-          await push.addListener("registration", async ({ value }: { value: string }) => {
-            try {
-              localStorage.setItem(PUSH_TOKEN_STORAGE_KEY, value);
-            } catch {
-              /* storage unavailable */
-            }
-            await registerPushDevice({ token: value, platform: "android" });
-          }),
-          await push.addListener("registrationError", (error: unknown) => console.error("Push registration failed:", error)),
-          await push.addListener("pushNotificationActionPerformed", ({ notification }: { notification?: { data?: { url?: unknown } } }) => {
-            window.location.assign(safeAdminPath(notification?.data?.url));
-          })
-        );
-        try {
-          let { receive } = await push.checkPermissions();
-          if (receive === "prompt" || receive === "prompt-with-rationale") receive = (await push.requestPermissions()).receive;
-          // Registering on every app start also refreshes the device's lastSeenAt.
-          if (receive === "granted") await push.register();
-        } catch (error) {
-          console.error("Push setup failed:", error);
-        }
+      // Lock first, before anything that waits on the person (permission dialogs).
+      try {
+        const status = bio ? await bio.checkBiometry() : null;
+        canLock.current = !!status && (status.isAvailable || status.deviceIsSecure === true);
+      } catch {
+        canLock.current = false;
       }
-
-      if (bio) {
-        try {
-          const status = await bio.checkBiometry();
-          canLock.current = status.isAvailable || status.deviceIsSecure === true;
-        } catch {
-          canLock.current = false;
-        }
-        if (!cancelled && canLock.current && !wasUnlockedThisRun()) lock();
-      }
+      if (cancelled) return;
+      if (!canLock.current) showLock(false);
+      else if (document.documentElement.hasAttribute(LOCK_ATTR)) lock();
 
       if (app) {
-        listeners.push(
+        keep(
           await app.addListener("backButton", ({ canGoBack }: { canGoBack: boolean }) => {
-            if (canGoBack) window.history.back();
-            else void app.exitApp();
-          }),
+            const action = backAction(lockedRef.current, canGoBack);
+            if (action === "back") window.history.back();
+            else if (action === "exit") void app.exitApp();
+          })
+        );
+        keep(
           await app.addListener("appStateChange", ({ isActive }: { isActive: boolean }) => {
             if (!isActive) {
               backgroundedAt.current = Date.now();
@@ -151,14 +150,43 @@ export default function NativeAppBridge() {
           })
         );
       }
+
+      if (push) {
+        keep(
+          await push.addListener("registration", async ({ value }: { value: string }) => {
+            try {
+              localStorage.setItem(PUSH_TOKEN_STORAGE_KEY, value);
+            } catch {
+              /* storage unavailable */
+            }
+            await registerPushDevice({ token: value, platform: "android" });
+          })
+        );
+        keep(await push.addListener("registrationError", (error: unknown) => console.error("Push registration failed:", error)));
+        keep(
+          // Navigating reloads the page. If the app is locked it stays locked
+          // (lock() cleared the unlocked flag), so a notification tap can't skip it.
+          await push.addListener("pushNotificationActionPerformed", ({ notification }: { notification?: { data?: { url?: unknown } } }) => {
+            window.location.assign(safeAdminPath(notification?.data?.url));
+          })
+        );
+        try {
+          let { receive } = await push.checkPermissions();
+          if (receive === "prompt" || receive === "prompt-with-rationale") receive = (await push.requestPermissions()).receive;
+          // Registering on every app start also refreshes the device's lastSeenAt.
+          if (receive === "granted" && !cancelled) await push.register();
+        } catch (error) {
+          console.error("Push setup failed:", error);
+        }
+      }
     })();
 
     return () => {
       cancelled = true;
       for (const l of listeners) void l.remove();
     };
-    // Native listeners are registered once per mount on purpose; lock() only
-    // uses state setters, so the first render's copy stays correct.
+    // Native listeners are registered once per mount on purpose; lock() and
+    // unlock() only use refs and state setters, so the first render's copies stay correct.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -186,11 +214,7 @@ export default function NativeAppBridge() {
         >
           Unlock
         </button>
-        <button
-          type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="min-h-12 rounded-lg border border-border px-4 text-sm"
-        >
+        <button type="button" onClick={signInWithPassword} className="min-h-12 rounded-lg border border-border px-4 text-sm">
           Sign in with password
         </button>
       </div>

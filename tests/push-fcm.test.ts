@@ -95,8 +95,23 @@ test("unregistered token is reported for deletion", async () => {
   const sender = createFcmSender({ serviceAccountJson, fetch: f.fn, now: () => 1_700_000_000_000 });
   const result = await sender.send(["ok", "gone", "bad", "flaky"], msg);
   assert.equal(result.sent, 1);
-  // A temporary server error (503) is not a dead token.
-  assert.deepEqual(result.invalidTokens.sort(), ["bad", "gone"]);
+  // Only UNREGISTERED means the token is dead. INVALID_ARGUMENT can be our own
+  // malformed message, and a 503 is temporary.
+  assert.deepEqual(result.invalidTokens, ["gone"]);
+});
+
+test("a sender misconfiguration never deletes devices", async () => {
+  // Wrong Firebase project / service account: every send fails the same way.
+  const f = fakeFetch(() => ({ status: 403, body: { error: { status: "PERMISSION_DENIED", details: [{ errorCode: "SENDER_ID_MISMATCH" }] } } }));
+  const sender = createFcmSender({ serviceAccountJson, fetch: f.fn, now: () => 1_700_000_000_000 });
+  const result = await sender.send(["a", "b"], msg);
+  assert.deepEqual(result, { sent: 0, invalidTokens: [] });
+});
+
+test("a bare 404 without UNREGISTERED detail is not treated as dead", async () => {
+  const f = fakeFetch(() => ({ status: 404, body: { error: { status: "NOT_FOUND" } } }));
+  const sender = createFcmSender({ serviceAccountJson, fetch: f.fn, now: () => 1_700_000_000_000 });
+  assert.deepEqual((await sender.send(["a"], msg)).invalidTokens, []);
 });
 
 test("missing FCM_SERVICE_ACCOUNT_JSON returns {sent:0} without fetching", async () => {
