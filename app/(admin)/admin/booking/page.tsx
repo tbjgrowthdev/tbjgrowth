@@ -25,10 +25,10 @@ export default async function BookingAdminPage() {
 
       {/* Available / Upcoming Slots */}
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div className="px-6 py-4 border-b border-border">
+        <div className="px-4 sm:px-6 py-4 border-b border-border">
           <h2 className="font-bold text-foreground">Upcoming Slots</h2>
         </div>
-        <table className="w-full text-left border-collapse">
+        <table className="admin-stack w-full text-left border-collapse">
           <thead>
             <tr className="bg-background border-b border-border">
               <th className="px-6 py-4 font-medium text-caption">Date</th>
@@ -50,10 +50,10 @@ export default async function BookingAdminPage() {
                 const { date, time } = formatDateTime(slot.startsAt);
                 return (
                   <tr key={slot.id} className="hover:bg-background transition-colors">
-                    <td className="px-6 py-4 font-medium text-foreground">{date}</td>
-                    <td className="px-6 py-4 text-muted">{time}</td>
-                    <td className="px-6 py-4 text-muted">{slot.duration} min</td>
-                    <td className="px-6 py-4">
+                    <td data-label="Date" className="px-6 py-4 font-medium text-foreground">{date}</td>
+                    <td data-label="Time" className="px-6 py-4 text-muted">{time}</td>
+                    <td data-label="Duration" className="px-6 py-4 text-muted">{slot.duration} min</td>
+                    <td data-label="Status" className="px-6 py-4">
                       {slot.isBooked ? (
                         <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-background text-muted">
                           Booked{slot.booking ? ` — ${slot.booking.name}` : ""}
@@ -79,10 +79,10 @@ export default async function BookingAdminPage() {
 
       {/* Bookings */}
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div className="px-6 py-4 border-b border-border">
+        <div className="px-4 sm:px-6 py-4 border-b border-border">
           <h2 className="font-bold text-foreground">Bookings</h2>
         </div>
-        <table className="w-full text-left border-collapse">
+        <table className="admin-stack w-full text-left border-collapse">
           <thead>
             <tr className="bg-background border-b border-border">
               <th className="px-6 py-4 font-medium text-caption">When</th>
@@ -104,17 +104,21 @@ export default async function BookingAdminPage() {
                 const { date, time } = formatDateTime(booking.slot.startsAt);
                 return (
                   <tr key={booking.id} className="hover:bg-background transition-colors align-top">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">{date}</div>
-                      <div className="text-sm text-muted">{time} · {booking.slot.duration} min</div>
+                    <td data-label="When" className="px-6 py-4">
+                      <div>
+                        <div className="font-medium text-foreground">{date}</div>
+                        <div className="text-sm text-muted">{time} · {booking.slot.duration} min</div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">{booking.name}</div>
-                      <div className="text-sm text-muted">{booking.email}</div>
-                      {booking.phone && <div className="text-sm text-muted">{booking.phone}</div>}
+                    <td data-label="Contact" className="px-6 py-4">
+                      <div>
+                        <div className="font-medium text-foreground">{booking.name}</div>
+                        <a href={`mailto:${booking.email}`} className="block text-sm text-muted break-all hover:text-foreground">{booking.email}</a>
+                        {booking.phone && <a href={`tel:${booking.phone}`} className="block text-sm text-muted hover:text-foreground">{booking.phone}</a>}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-muted">{booking.company || "—"}</td>
-                    <td className="px-6 py-4">
+                    <td data-label="Company" className="px-6 py-4 text-muted">{booking.company || "—"}</td>
+                    <td data-label="Status" className="px-6 py-4">
                       {booking.status === "CANCELLED" ? (
                         <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400">
                           Cancelled

@@ -760,3 +760,121 @@ html:has(.admin-shell) .tbj-swal-cancel {
   border-radius: 9999px;
   border-color: var(--admin-input-border);
 }
+
+/* ───────────────────────── Phones (and the TBJ Admin Android app) ─────────────────────────
+   Applies below md (768px). Checked against a 360px-wide screen. */
+
+/* Notches / system bars: the root viewport uses viewport-fit=cover (app/layout.tsx).
+   env() is 0 on devices without insets, so these are no-ops there. */
+.admin-shell main > header {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+.admin-shell .admin-sidebar {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (max-width: 767px) {
+  .admin-shell .admin-canvas {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+
+  /* Long emails, URLs and slugs wrap instead of pushing the page sideways. */
+  .admin-shell .admin-canvas {
+    overflow-wrap: anywhere;
+  }
+  .admin-shell .admin-canvas table:not(.admin-stack) {
+    overflow-wrap: normal;
+  }
+
+  /* Roomy legacy card padding is too much on a phone. */
+  .admin-shell main [class~="bg-card"][class~="border"]:is([class~="p-6"], [class~="p-8"]):not([role="dialog"]) {
+    padding: 1rem;
+  }
+
+  /* Any card that clips a table scrolls it sideways instead of cutting it off
+     (sections that haven't been given .admin-stack yet). */
+  .admin-shell main [class~="bg-card"][class~="overflow-hidden"]:has(> table:not(.admin-stack)) {
+    overflow-x: auto;
+  }
+
+  /* 16px inputs: smaller text makes iOS Safari zoom the page on focus. */
+  .admin-shell :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]), select, textarea) {
+    font-size: 16px;
+  }
+
+  /* Stacked tables: add class "admin-stack" to a <table> and data-label="Column" to
+     its cells. Each row becomes a card of "LABEL  value" lines; a cell with
+     data-primary is the card's heading. */
+  .admin-shell table.admin-stack,
+  .admin-shell .admin-stack tbody,
+  .admin-shell .admin-stack tr,
+  .admin-shell .admin-stack td {
+    display: block;
+    width: 100%;
+  }
+  .admin-shell .admin-stack thead {
+    display: none;
+  }
+  .admin-shell .admin-stack tr {
+    padding: 0.75rem 1rem;
+  }
+  .admin-shell .admin-stack td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.3rem 0 !important;
+    text-align: right;
+  }
+  .admin-shell .admin-stack td > * {
+    min-width: 0;
+  }
+  .admin-shell .admin-stack td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--admin-thead-fg);
+  }
+  .admin-shell .admin-stack td[data-primary] {
+    display: block;
+    text-align: left;
+    font-size: 1rem;
+  }
+  /* Unlabelled cells: row actions sit right, a leading checkbox sits left. */
+  .admin-shell .admin-stack td:not([data-label]):not([data-primary]) {
+    justify-content: flex-end;
+  }
+  .admin-shell .admin-stack td:first-child:not([data-label]):not([data-primary]) {
+    justify-content: flex-start;
+  }
+  .admin-shell .admin-stack td[colspan] {
+    display: block;
+    text-align: center;
+  }
+  .admin-shell .admin-stack td:empty {
+    display: none;
+  }
+}
+
+/* Touch screens: at least 44px tap targets for buttons, pills and nav. */
+@media (pointer: coarse) {
+  .admin-shell main :is(button, a)[class*="px-"][class*="py-"]:not([role="menuitem"]),
+  .admin-shell .admin-nav-item {
+    min-height: 2.75rem;
+  }
+  .admin-shell main a[class*="px-"][class*="py-"]:not([class*="flex"]) {
+    display: inline-flex;
+    align-items: center;
+  }
+  .admin-shell .admin-tap {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

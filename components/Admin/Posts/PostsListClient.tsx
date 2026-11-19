@@ -81,7 +81,7 @@ export default function PostsListClient({
       />
 
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <table className="admin-stack w-full text-left border-collapse">
           <thead>
             <tr className="bg-background border-b border-border">
               <th className="px-4 py-4 w-10">
@@ -112,10 +112,12 @@ export default function PostsListClient({
                   <td className="px-4 py-4">
                     <input type="checkbox" checked={selected.has(post.id)} onChange={() => toggle(post.id)} aria-label={`Select ${post.title}`} />
                   </td>
-                  <td className="px-6 py-4 font-medium text-foreground">{post.title}</td>
-                  <td className="px-6 py-4 text-caption">/blog/{post.slug}</td>
-                  <td className="px-6 py-4 text-caption">{post.author?.name || "Unassigned"}</td>
-                  <td className="px-6 py-4">
+                  <td data-primary="" className="px-6 py-4 font-medium text-foreground">
+                    <Link href={`/admin/posts/${post.id}`} className="hover:text-brand-orange-deep">{post.title}</Link>
+                  </td>
+                  <td data-label="Slug" className="px-6 py-4 text-caption">/blog/{post.slug}</td>
+                  <td data-label="Author" className="px-6 py-4 text-caption">{post.author?.name || "Unassigned"}</td>
+                  <td data-label="Status" className="px-6 py-4">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
                         post.status === "PUBLISHED"
@@ -127,7 +129,7 @@ export default function PostsListClient({
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
-                    <Link href={`/admin/posts/${post.id}`} className="text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
+                    <Link href={`/admin/posts/${post.id}`} aria-label={`Edit ${post.title}`} className="admin-tap text-brand-orange-deep hover:text-brand-orange dark:text-brand-orange-light dark:hover:text-brand-orange">
                       <Edit size={18} />
                     </Link>
                     <ContentDeleteButton id={post.id} kind="POST" onDelete={deletePost} entityName="post" />

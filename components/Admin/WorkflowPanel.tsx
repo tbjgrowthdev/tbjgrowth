@@ -185,7 +185,7 @@ export default function WorkflowPanel({ contentType, contentId, status, onTransi
 
   return (
     <div className="bg-card p-6 rounded-lg shadow-sm border border-border space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-semibold text-foreground">Status &amp; Workflow</h2>
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${currentStatus.className}`}>
           {currentStatus.label}
