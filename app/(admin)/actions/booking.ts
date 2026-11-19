@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "@/lib/revalidate";
 import { sendBookingNotification } from "@/lib/email";
 import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
+import { scheduleAdminPush } from "@/lib/push/notify";
 
 // ------------------------------------------------------
 // Public
@@ -106,6 +107,7 @@ export async function createBooking(data: unknown) {
       { ...input, startsAt: slot.startsAt, duration: slot.duration },
       settings?.email
     );
+    scheduleAdminPush("NEW_BOOKING");
 
     revalidatePath("/book-a-call");
     revalidatePath("/admin/booking");

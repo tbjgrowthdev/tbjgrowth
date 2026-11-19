@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { BRAND_NAME, sendContactNotification, sendLeadReply } from "@/lib/email";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
+import { scheduleAdminPush } from "@/lib/push/notify";
 
 const contactFormSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -55,6 +56,7 @@ export async function submitContactForm(data: unknown) {
 
     const settings = await prisma.siteSetting.findFirst();
     await sendContactNotification(submission, settings?.email);
+    scheduleAdminPush("NEW_LEAD");
 
     revalidatePath("/admin/leads");
     return { success: true };

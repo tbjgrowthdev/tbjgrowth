@@ -8,6 +8,7 @@ import { notifySearchEnginesOfUrl } from "@/lib/search-engine-ping";
 import { PUBLIC_PATH_BUILDERS } from "@/lib/sitemap";
 import { fireAutomationEvent } from "@/lib/automation/engine";
 import { queuePostNewsletter } from "@/lib/newsletter-campaigns";
+import { scheduleAdminPush } from "@/lib/push/notify";
 
 const ENTITY_TYPE: Record<ContentType, string> = {
   POST: "Post",
@@ -84,6 +85,13 @@ const MODEL: Record<ContentType, WorkflowDelegate> = {
   POST: prisma.post as unknown as WorkflowDelegate,
   PAGE: prisma.page as unknown as WorkflowDelegate,
   CASE_STUDY: prisma.caseStudy as unknown as WorkflowDelegate,
+};
+
+// Admin edit page for one item — where an "awaiting approval" push opens.
+const ADMIN_EDIT_PATH: Record<ContentType, (id: string) => string> = {
+  POST: (id) => `/admin/posts/${id}`,
+  PAGE: (id) => `/admin/pages/${id}`,
+  CASE_STUDY: (id) => `/admin/cases/${id}`,
 };
 
 const REVALIDATE_PATHS: Record<ContentType, (slug: string, id: string) => string[]> = {
@@ -179,6 +187,12 @@ export async function transitionContent(
     // the switch on /admin/subscribers is off; never throws.
     if (contentType === "POST" && transition.to === "PUBLISHED" && !current.publishedAt) {
       await queuePostNewsletter({ id, title: updated.title ?? updated.slug, slug: updated.slug });
+    }
+
+    // Submitted (or resubmitted) for review: tell the approvers. Runs after
+    // the response and never throws (lib/push/notify.ts).
+    if (transition.to === "REVIEW") {
+      scheduleAdminPush("CONTENT_AWAITING_APPROVAL", { url: ADMIN_EDIT_PATH[contentType](id) });
     }
 
     await logAudit({

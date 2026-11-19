@@ -18,7 +18,7 @@ export const PUSH_MESSAGES: Record<PushEvent, PushMessage> = {
   },
   CONTENT_AWAITING_APPROVAL: {
     title: "Content awaiting approval",
-    body: "A post was submitted for review.",
+    body: "New content was submitted for review.",
     url: "/admin/posts",
   },
 };
