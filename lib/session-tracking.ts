@@ -71,11 +71,21 @@ export async function listAdminSessions(userId: string) {
 export async function revokeAdminSession(sessionId: string, userId: string): Promise<boolean> {
   const session = await prisma.adminSession.findUnique({ where: { id: sessionId } });
   if (!session || session.userId !== userId) return false;
+  // A revoked device must stop getting push notifications straight away.
+  await deletePushDevicesForSession(sessionId);
   await prisma.adminSession.update({ where: { id: sessionId }, data: { revokedAt: new Date() } });
   return true;
 }
 
+/** Called on revoke and on logout (lib/auth.ts events.signOut). */
+export async function deletePushDevicesForSession(sessionId: string): Promise<void> {
+  await prisma.pushDevice.deleteMany({ where: { adminSessionId: sessionId } });
+}
+
 export async function revokeAllOtherAdminSessions(userId: string, keepSessionId: string | undefined | null): Promise<number> {
+  // Push devices first (deleteMany works on the Neon HTTP adapter), so the
+  // other devices stop getting notifications even if the update below fails.
+  await prisma.pushDevice.deleteMany({ where: { userId, adminSessionId: { not: keepSessionId ?? "" } } });
   const result = await prisma.adminSession.updateMany({
     where: { userId, revokedAt: null, id: { not: keepSessionId ?? "" } },
     data: { revokedAt: new Date() },

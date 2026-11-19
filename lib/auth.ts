@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { ALL_ROLES } from "@/lib/permissions";
 import { verifyTotpCode, verifyAndConsumeBackupCode } from "@/lib/totp";
-import { createAdminSession } from "@/lib/session-tracking";
+import { createAdminSession, deletePushDevicesForSession } from "@/lib/session-tracking";
 import { sendAccountLockedNotification } from "@/lib/email";
 
 async function logAttempt(email: string, success: boolean, ip: string | null) {
@@ -202,6 +202,20 @@ export const authOptions: NextAuthOptions = {
         token.sessionId = (user as { sessionId?: string }).sessionId;
       }
       return token;
+    },
+  },
+  events: {
+    // Logging out on a phone must stop that phone getting push notifications.
+    // The TBJ Admin app also unregisters its token itself before signing out
+    // (components/Admin/LogoutButton.tsx); this covers every other sign-out.
+    async signOut({ token }) {
+      const sessionId = (token as { sessionId?: string } | null)?.sessionId;
+      if (!sessionId) return;
+      try {
+        await deletePushDevicesForSession(sessionId);
+      } catch (error) {
+        console.error("Failed to remove push devices on sign-out:", error);
+      }
     },
   },
   session: {
