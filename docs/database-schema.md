@@ -13,6 +13,7 @@ Source of truth: `prisma/schema.prisma` (2066 lines, ~75 models/enums as of this
 | `User` | The admin account. `role` (enum `Role`: `SUPER_ADMIN`/`ADMIN`/`EDITOR`/`SEO_MANAGER`/`CONTRIBUTOR`) drives all permission checks (`lib/permissions.ts`). `password` is nullable — reserved for a future SSO-only account. TOTP fields (`twoFactorSecret`/`twoFactorEnabled`/`twoFactorBackupCodes`) live here too. |
 | `Account`, `Session`, `VerificationToken` | NextAuth's standard adapter shape. **Currently unused** — this app is Credentials+JWT only — reserved for adding an OIDC/SSO provider later without a schema migration. |
 | `AdminSession` | The *actual* session-list/device-revocation table this app uses instead of `Session` above. One row per sign-in (ip, user-agent, `revokedAt`). The JWT carries this row's id; see `docs/architecture.md`'s Auth section. |
+| `PushDevice`, `PushPreference` (enum `PushEvent`) | Push notifications for the TBJ Admin Android app. `PushDevice` = one FCM token per app install, tied to the `AdminSession` it registered under, so logout/revoke deletes it; rows unseen for 30 days are pruned on send. `PushPreference` = per-user on/off per event; no row = the role default (`lib/push/recipients.ts`). |
 | `LoginAttempt` | Every login attempt (email, success, ip) — backs both the brute-force lockout and the Monitoring → Logins admin view. |
 
 ## Content (Posts, Pages, Case Studies, taxonomy, workflow)

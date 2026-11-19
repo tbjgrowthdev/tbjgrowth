@@ -32,6 +32,12 @@ Source: `.env.example` (copy to `.env` for local `next dev`; `.env*` is gitignor
 |---|---|
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | `lib/email.ts` — every outbound email (booking notifications, contact form, replies to leads from `/admin/leads`, account-locked alerts, scheduled-job/automation failure notices). Replies to leads go to real customers, so `RESEND_FROM_EMAIL` must be an address on a domain verified in Resend: the `onboarding@resend.dev` fallback only delivers to the Resend account owner. Lead replies keep its address but replace the display name with "<admin name> at TBJ Growth". New-post newsletter emails (`lib/newsletter-campaigns.ts`) also go out from it, via Resend's batch API. `NEXTAUTH_SECRET` additionally signs newsletter unsubscribe links: rotating it breaks the links in emails already sent. `NEXT_PUBLIC_BASE_URL` is the site URL used in those emails' links. Every send, success or failure, is logged to `EmailLog`. |
 
+## Push notifications (TBJ Admin app)
+
+| Variable | Used by |
+|---|---|
+| `FCM_SERVICE_ACCOUNT_JSON` | `lib/push/fcm.ts` — the whole Firebase service-account key file (Firebase console → Project settings → Service accounts → Generate new private key) as one JSON string. Runtime Worker **secret**, never a build variable, never committed. Unset = push is a logged no-op (forms, bookings and approvals keep working). Setup: `mobile/README.md`. |
+
 ## Media
 
 | Variable | Used by |

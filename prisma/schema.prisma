@@ -30,6 +30,8 @@ model User {
   caseStudies     CaseStudy[]
   approvalHistory ApprovalHistory[]
   pipelineRuns    ContentPipelineRun[]
+  pushDevices     PushDevice[]
+  pushPreferences PushPreference[]
 
   // TOTP two-factor auth. twoFactorSecret is written as soon as setup
   // begins but twoFactorEnabled stays false until the user proves they can
@@ -105,8 +107,50 @@ model AdminSession {
   createdAt  DateTime  @default(now())
   lastSeenAt DateTime  @default(now())
   revokedAt  DateTime?
+  pushDevices PushDevice[]
 
   @@index([userId])
+}
+
+// ------------------------------------------------------
+// Push notifications (TBJ Admin Android app)
+// ------------------------------------------------------
+
+// Admin events that can send a push. Push text never carries personal data
+// (lib/push/messages.ts); tapping it opens an /admin page behind login.
+enum PushEvent {
+  NEW_LEAD
+  NEW_BOOKING
+  CONTENT_AWAITING_APPROVAL
+}
+
+// One row per app install that registered for push. Tied to the AdminSession
+// it registered under, so logout or "Revoke" deletes it (lib/session-tracking.ts,
+// lib/auth.ts events.signOut). Rows unseen for 30 days are pruned when a push
+// is sent (lib/push/recipients.ts).
+model PushDevice {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminSessionId String?
+  adminSession   AdminSession? @relation(fields: [adminSessionId], references: [id], onDelete: Cascade)
+  platform       String // "android" | "web"
+  token          String        @unique
+  createdAt      DateTime      @default(now())
+  lastSeenAt     DateTime      @default(now())
+
+  @@index([userId])
+  @@index([adminSessionId])
+}
+
+// Per-user on/off per event. No row = the role default (lib/push/recipients.ts).
+model PushPreference {
+  userId  String
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event   PushEvent
+  enabled Boolean
+
+  @@id([userId, event])
 }
 
 // ------------------------------------------------------
