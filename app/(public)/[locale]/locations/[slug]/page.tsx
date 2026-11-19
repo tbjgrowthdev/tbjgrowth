@@ -8,7 +8,7 @@ import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { resolveRouteLocale, withLocalePrefix } from "@/lib/i18n";
 import { parseServiceAreas } from "@/lib/locations";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 export const revalidate = 3600;
 

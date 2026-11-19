@@ -5,7 +5,7 @@ import { cachedSeoFile } from "@/lib/seo-files-cache";
 // cached (see lib/seo-files-cache.ts) and refreshed when settings are saved.
 export const dynamic = "force-dynamic";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 export async function GET() {
   let customRules = "";

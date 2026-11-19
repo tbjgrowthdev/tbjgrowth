@@ -21,7 +21,7 @@ import { randomBytes } from "crypto";
 import prisma from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-log";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 export async function ensureIndexNowKey(regenerate = false): Promise<string> {
   let settings = await prisma.siteSetting.findFirst();

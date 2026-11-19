@@ -15,7 +15,7 @@ import prisma from "@/lib/prisma";
 import { LOCALES, PREFIXED_LOCALES } from "@/lib/i18n";
 import { buildHreflangAlternates, type TranslatableKind } from "@/lib/translation";
 
-export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 export type ChangeFrequency = "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 

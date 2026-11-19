@@ -12,7 +12,7 @@ import { getNextAuthSecret } from "@/lib/env";
 const PURPOSE = "newsletter-unsubscribe:v1:";
 
 export function siteBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com").replace(/\/+$/, "");
+  return (process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com").replace(/\/+$/, "");
 }
 
 export function unsubscribeToken(subscriberId: string): string {

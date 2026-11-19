@@ -8,7 +8,7 @@ import { isSameOriginUrl } from "@/lib/canonical-validation";
 
 export type TranslatableKind = "POST" | "PAGE" | "CASE_STUDY" | "SERVICE" | "CATEGORY" | "TAG";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 // Maps each ContentTranslation column to the base record's field of the
 // same meaning — not always the same name. Service's card blurb is

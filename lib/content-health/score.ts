@@ -51,7 +51,7 @@ async function getScorableContent(): Promise<ScorableItem[]> {
 /** Inbound internal link count per path — same regex/content-gathering as lib/link-monitor.ts's internal-link graph, duplicated here in miniature (counts only, no source attribution) rather than reshaping that module's return type for one extra caller. */
 async function buildInboundLinkCounts(): Promise<Map<string, number>> {
   const items = await getAllContent();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
   const baseHost = new URL(baseUrl).host;
   const internalPattern = /href="(\/[^"#]*)"/g;
   const absolutePattern = /href="(https?:\/\/[^"]*)"/g;
@@ -166,7 +166,7 @@ export async function computeHealthScores(): Promise<ContentHealthResult[]> {
   const inboundLinks = await buildInboundLinkCounts();
 
   const traffic = await mapWithConcurrency(items, CONCURRENCY, (item) => fetchPageTrafficTrend(item.path));
-  const search = await mapWithConcurrency(items, CONCURRENCY, (item) => fetchPageSearchTrend(`${process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com"}${item.path}`));
+  const search = await mapWithConcurrency(items, CONCURRENCY, (item) => fetchPageSearchTrend(`${process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com"}${item.path}`));
   const conversions = await mapWithConcurrency(items, CONCURRENCY, (item) => fetchPageConversions(item.path));
 
   const trafficValues = traffic.map((t) => t?.recentSessions).filter((v): v is number => v != null);

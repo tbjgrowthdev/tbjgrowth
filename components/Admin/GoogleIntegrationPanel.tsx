@@ -117,7 +117,7 @@ export default function GoogleIntegrationPanel({
             type="text"
             value={gscSiteUrl}
             onChange={(e) => setGscSiteUrl(e.target.value)}
-            placeholder="https://tbjgrowth.com/"
+            placeholder="https://tbjgrowthtech.com/"
             className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-background text-foreground"
           />
         </div>

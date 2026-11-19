@@ -25,7 +25,7 @@ const full = {
   metaDescription: "desc",
   focusKeyword: "social media growth",
   secondaryKeywords: ["reach", "engagement", "reach"],
-  canonicalUrl: "https://tbjgrowth.com/case-studies/acme",
+  canonicalUrl: "https://tbjgrowthtech.com/case-studies/acme",
   isIndexable: true,
   allowFollow: false,
   maxSnippet: 160,

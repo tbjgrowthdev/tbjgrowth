@@ -31,7 +31,7 @@ function resolveLocationName(country: string): string {
 export const fetchKeywordRankings = async (keyword: string, country: string = "GB", language: string = "en"): Promise<RankResult | null> => {
   const login = process.env.DATAFORSEO_LOGIN;
   const password = process.env.DATAFORSEO_PASSWORD;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
   if (!login || !password) {
     console.error("DataForSEO credentials not configured");

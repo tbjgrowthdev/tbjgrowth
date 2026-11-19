@@ -89,7 +89,7 @@ async function sharedQueryPairs(items: ContentItem[]): Promise<Map<string, Share
 }
 
 async function pagePerformanceScore(item: ContentItem): Promise<number> {
-  const [traffic, search] = await Promise.all([fetchPageTrafficTrend(item.path), fetchPageSearchTrend(`${process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com"}${item.path}`)]);
+  const [traffic, search] = await Promise.all([fetchPageTrafficTrend(item.path), fetchPageSearchTrend(`${process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com"}${item.path}`)]);
   return (traffic?.recentSessions ?? 0) + (search?.recentClicks ?? 0);
 }
 

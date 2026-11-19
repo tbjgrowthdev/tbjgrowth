@@ -23,7 +23,7 @@ function fail(error: string): ActionResult {
   return { success: false, error };
 }
 
-const baseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 // GENERATE_SCHEMA, GENERATE_SOCIAL_DRAFT, and CREATE_REFRESH_DRAFT only
 // make sense for Post/CaseStudy — the same scope as the AI Content

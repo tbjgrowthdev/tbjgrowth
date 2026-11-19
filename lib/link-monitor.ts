@@ -79,7 +79,7 @@ const INTERNAL_TIMEOUT_MS = 5000;
 
 export async function runLinkCheck(triggeredBy: "cron" | "manual" = "manual") {
   const startedAt = new Date();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
   const baseHost = new URL(baseUrl).host;
 
   const items = await getAllContent();

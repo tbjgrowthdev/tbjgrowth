@@ -840,7 +840,7 @@ export async function runSchemaStage(runId: string): Promise<StageResult> {
     if (job.alreadyCompleted) return { success: true, data: run };
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
       const schemaType = run.contentType === "POST" ? "BlogPosting" : "Article";
       const prompt = await buildSchemaPrompt({
         schemaType,

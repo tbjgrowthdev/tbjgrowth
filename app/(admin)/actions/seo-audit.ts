@@ -127,7 +127,7 @@ export async function getNapConsistency() {
 export async function checkBrokenLinks() {
   await requirePermission("SEO_MANAGEMENT");
   const items = await getAllContent();
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
   const linkPattern = /href="(\/[^"#]*)"/g;
   const foundPaths = new Set<string>();

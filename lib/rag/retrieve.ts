@@ -51,7 +51,7 @@ export async function retrieveApprovedSources(query: string, limit = 6): Promise
   const queryTerms = [...new Set(query.toLowerCase().split(/\W+/).filter((w) => w.length > 2))];
   if (queryTerms.length === 0) return [];
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
   const statusFilter = { in: [...APPROVED_STATUSES] };
 
   const [pages, services, caseStudies, faqs, brandSections, posts] = await Promise.all([

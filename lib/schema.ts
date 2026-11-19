@@ -9,7 +9,7 @@
  * function's callers for the exact "only render when non-empty" guards.
  */
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 type SiteSettings = {
   phone?: string | null;

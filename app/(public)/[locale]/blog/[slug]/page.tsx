@@ -20,7 +20,7 @@ import { resolveLocalizedContent, findContentIdBySlugInLocale, buildHreflangAlte
 import { prepareArticle } from "@/lib/blog-content";
 import { getPostStrings } from "@/lib/blog-strings";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 export const revalidate = 3600;
 

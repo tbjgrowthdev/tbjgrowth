@@ -16,7 +16,7 @@ const CTR_DECLINE_MIN_PRIOR_CLICKS = 5;
 const CONVERSION_DECLINE_RATIO = 0.7; // recent conversion rate below 70% of the prior window's
 const CONVERSION_DECLINE_MIN_PRIOR_CONVERSIONS = 3; // ignore near-zero-conversion pages — noise, not a real decline
 
-const baseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = () => process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 function checkOldContent(publishedAt: Date | null, updatedAt: Date): DetectedSignal | null {
   const reference = publishedAt ?? updatedAt;

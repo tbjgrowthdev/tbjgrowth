@@ -5,7 +5,7 @@
  * (lib/canonical-hreflang.ts, lib/translation.ts).
  */
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 export function isAbsoluteHttpUrl(value: string): boolean {
   try {

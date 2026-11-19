@@ -6,7 +6,7 @@ import SchemaBuilder from "./SchemaBuilder";
 import SocialSeoFields, { type SocialSeoData } from "./SocialSeoFields";
 import { validateCanonicalInput } from "@/lib/canonical-validation";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowth.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com";
 
 const CANONICAL_STATUS_STYLE: Record<string, string> = {
   valid: "text-green-600 dark:text-green-400",

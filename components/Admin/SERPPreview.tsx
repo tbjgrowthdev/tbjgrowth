@@ -40,7 +40,7 @@ export default function SERPPreview({ title, description, slug }: SERPPreviewPro
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
 
   const displayTitle = title || "Your Page Title - TBJ Growth";
-  const displayUrl = `https://tbjgrowth.com/${slug || "your-page-slug"}`;
+  const displayUrl = `https://tbjgrowthtech.com/${slug || "your-page-slug"}`;
   const displayDesc = description || "This is a placeholder meta description. Write a compelling description to improve your click-through rate in search results.";
 
   const titleStatus = lengthStatus(title.length, TITLE_MIN, TITLE_MAX);
