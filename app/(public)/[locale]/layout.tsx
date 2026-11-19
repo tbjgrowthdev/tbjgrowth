@@ -3,6 +3,7 @@ import Footer from "@/components/HomeComponents/Footer";
 import Navbar from "@/components/HomeComponents/Navbar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import WebVitalsReporter from "@/components/WebVitalsReporter";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import JsonLd from "@/components/JsonLd";
 import { getSiteSettings } from "@/app/(admin)/actions/settings";
 import { organizationSchema, webSiteSchema, localBusinessSchema } from "@/lib/schema";

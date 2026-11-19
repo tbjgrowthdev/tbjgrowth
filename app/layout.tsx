@@ -1,6 +1,6 @@
 
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 // Self-hosted (app/fonts/, Google Fonts files under the SIL Open Font License)
 // instead of the Google font loader, whose build-time download intermittently
 // breaks Turbopack builds — see app/(public)/[locale]/layout.tsx.
@@ -49,6 +49,17 @@ export const metadata: Metadata = {
   verification: {
     google: "JOr0NxVw6eA8AXIKlo9_xiOVn-pkbgzn51iI2Fni6Ao",
   },
+  // Installed-app look on iPhone ("Add to Home Screen"). The manifest itself
+  // comes from app/manifest.ts, which Next links automatically.
+  appleWebApp: { capable: true, title: "TBJ Growth Tech", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+};
+
+// viewportFit "cover" lets the installed app and the Android app draw under
+// notches; pages pad with env(safe-area-inset-*) where it matters.
+export const viewport: Viewport = {
+  themeColor: "#E2571F",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

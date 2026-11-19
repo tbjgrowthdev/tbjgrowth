@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>You're offline · TBJ Growth Tech</title>
+<style>
+  :root { --bg: #FDFBFA; --fg: #1B1512; --muted: #6b5f58; --brand: #E2571F; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1B1512; --fg: #F4EEE9; --muted: #b9aca4; } }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+    background: var(--bg); color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; text-align: center;
+  }
+  main { max-width: 360px; }
+  img { width: 72px; height: 72px; border-radius: 16px; }
+  h1 { font-size: 1.4rem; margin: 20px 0 8px; }
+  p { color: var(--muted); line-height: 1.5; margin: 0 0 24px; }
+  button {
+    font: inherit; font-weight: 600; color: #fff; background: var(--brand);
+    border: 0; border-radius: 999px; padding: 14px 28px; min-height: 48px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<main>
+  <img src="/icons/icon-192.png" alt="">
+  <h1>You're offline</h1>
+  <p>Check your internet connection, then try again.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>
