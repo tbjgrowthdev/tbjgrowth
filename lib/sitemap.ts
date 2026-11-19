@@ -45,6 +45,8 @@ const STATIC_ROUTES: [string, number, ChangeFrequency][] = [
   ["/case-studies", 0.8, "weekly"],
   ["/pricing", 0.8, "weekly"],
   ["/book-a-call", 0.8, "weekly"],
+  ["/app", 0.5, "monthly"],
+  ["/privacy-policy", 0.3, "yearly"],
 ];
 
 // Static marketing routes (home/about/services list/etc.) always render in

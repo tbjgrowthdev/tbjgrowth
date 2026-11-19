@@ -7,7 +7,7 @@ import type { PushEvent, Role } from "@/lib/generated/prisma/client";
 // Eligibility follows the permission that already guards the page the push
 // opens, so a push never points someone at a page they can't load:
 //   NEW_LEAD                  -> /admin/leads (USER_MANAGEMENT, leads hold client PII)
-//   NEW_BOOKING               -> /admin/booking (any signed-in role)
+//   NEW_BOOKING               -> /admin/booking (every role middleware.ts lets in: not SEO_MANAGER)
 //   CONTENT_AWAITING_APPROVAL -> /admin/posts review (APPROVE)
 // Default on for SUPER_ADMIN, ADMIN, EDITOR; off for SEO_MANAGER and
 // CONTRIBUTOR (spec §9ক). A PushPreference row overrides the default.
@@ -21,7 +21,8 @@ export function eligibleEvents(role: Role | string): PushEvent[] {
   return PUSH_EVENTS.filter((event) => {
     if (event === "NEW_LEAD") return hasPermission(role, "USER_MANAGEMENT");
     if (event === "CONTENT_AWAITING_APPROVAL") return hasPermission(role, "APPROVE");
-    return true;
+    // NEW_BOOKING: middleware.ts restricts SEO_MANAGER to the SEO tools.
+    return role !== "SEO_MANAGER";
   });
 }
 

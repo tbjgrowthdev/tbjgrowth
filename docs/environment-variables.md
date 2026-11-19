@@ -37,6 +37,7 @@ Source: `.env.example` (copy to `.env` for local `next dev`; `.env*` is gitignor
 | Variable | Used by |
 |---|---|
 | `FCM_SERVICE_ACCOUNT_JSON` | `lib/push/fcm.ts` — the whole Firebase service-account key file (Firebase console → Project settings → Service accounts → Generate new private key) as one JSON string. Runtime Worker **secret**, never a build variable, never committed. Unset = push is a logged no-op (forms, bookings and approvals keep working). Setup: `mobile/README.md`. |
+| `NEXT_PUBLIC_ANDROID_APK_URL` / `NEXT_PUBLIC_ANDROID_APP_VERSION` | `lib/mobile-app.ts` — the public client-app APK link and version shown on `/app`. Default URL `https://downloads.tbjgrowthtech.com/tbj-growth-tech.apk`; a non-https value is ignored. `NEXT_PUBLIC_` = inlined at **build** time, so set them as Cloudflare **build** variables and redeploy after changing. The admin APK needs no variable: it is the `tbj-admin.apk` object in the private R2 bucket bound as `APP_BUILDS` (`wrangler.jsonc`). |
 
 ## Media
 

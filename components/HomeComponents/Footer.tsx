@@ -55,6 +55,7 @@ const footerLinks = {
       // { label: "Webinars", href: "#" },
       { label: "FAQ", href: "#faq" },
       { label: "Support", href: "/book-a-call" },
+      { label: "Get the App", href: "/app" },
     ],
   },
 };
@@ -269,12 +270,12 @@ export default function Footer({ settings, locale }: { settings?: SiteSettings; 
 
             {/* Legal Links */}
             <div className="flex items-center gap-6">
-              <a
-                href="#"
+              <Link
+                href={localizedHref("/privacy-policy")}
                 className="text-sm text-caption hover:text-foreground transition-colors"
               >
                 Privacy Policy
-              </a>
+              </Link>
               <a
                 href="#"
                 className="text-sm text-caption hover:text-foreground transition-colors"

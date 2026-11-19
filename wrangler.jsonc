@@ -19,7 +19,14 @@
   // "service" must match "name" above.
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "tbjgrowth" }],
   // Rendered pages. Create this bucket before deploying.
-  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tbj-next-cache" }],
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tbj-next-cache" },
+    // TBJ Admin Android APK. PRIVATE bucket (no public access, no custom
+    // domain): only app/api/admin/app-download streams it, to signed-in
+    // admins. CREATE IT BEFORE DEPLOYING (npx wrangler r2 bucket create
+    // tbj-app-builds), or the deploy fails. See docs/deployment.md.
+    { "binding": "APP_BUILDS", "bucket_name": "tbj-app-builds" }
+  ],
   // Revalidation timestamps written by revalidatePath(). Create this database
   // before deploying and paste its ID here. The deploy command creates the table.
   "d1_databases": [

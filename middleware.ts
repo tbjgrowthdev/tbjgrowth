@@ -106,7 +106,12 @@ export default withAuth(
     const adminOnlyPrefixes = ["/admin/settings", "/admin/admins", "/admin/leads", "/admin/subscribers", "/admin/integrations", "/admin/audit-log"];
 
     if (role === "SEO_MANAGER") {
-      const allowed = seoPrefixes.some((p) => pathname.startsWith(p)) || pathname === "/admin" || pathname.startsWith("/admin/profile");
+      const allowed =
+        seoPrefixes.some((p) => pathname.startsWith(p)) ||
+        pathname === "/admin" ||
+        pathname.startsWith("/admin/profile") ||
+        // The TBJ Admin app download page is for every role.
+        pathname === "/admin/app";
       if (!allowed) {
         return NextResponse.redirect(new URL("/admin?error=AccessDenied", req.url));
       }

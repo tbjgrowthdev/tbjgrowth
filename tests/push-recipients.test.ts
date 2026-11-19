@@ -103,7 +103,8 @@ test("eligibleEvents follows the permissions that guard each admin page", () => 
   assert.deepEqual(eligibleEvents("SUPER_ADMIN"), ["NEW_LEAD", "NEW_BOOKING", "CONTENT_AWAITING_APPROVAL"]);
   assert.deepEqual(eligibleEvents("ADMIN"), ["NEW_LEAD", "NEW_BOOKING", "CONTENT_AWAITING_APPROVAL"]);
   assert.deepEqual(eligibleEvents("EDITOR"), ["NEW_BOOKING", "CONTENT_AWAITING_APPROVAL"]);
-  assert.deepEqual(eligibleEvents("SEO_MANAGER"), ["NEW_BOOKING"]);
+  // middleware.ts keeps SEO_MANAGER out of /admin/booking, so no booking push either.
+  assert.deepEqual(eligibleEvents("SEO_MANAGER"), []);
   assert.deepEqual(eligibleEvents("CONTRIBUTOR"), ["NEW_BOOKING"]);
 });
 
@@ -127,11 +128,17 @@ test("EDITOR gets NEW_BOOKING and CONTENT_AWAITING_APPROVAL by default but not N
   assert.deepEqual(await recipientTokens("NEW_LEAD"), []);
 });
 
-test("SEO_MANAGER NEW_BOOKING defaults off, on with an enabled preference", async () => {
-  addUser("s", "SEO_MANAGER");
+test("CONTRIBUTOR NEW_BOOKING defaults off, on with an enabled preference", async () => {
+  addUser("c", "CONTRIBUTOR");
   assert.deepEqual(await recipientTokens("NEW_BOOKING"), []);
+  prefs.push({ userId: "c", event: "NEW_BOOKING", enabled: true });
+  assert.deepEqual(await recipientTokens("NEW_BOOKING"), ["tok_c"]);
+});
+
+test("SEO_MANAGER never gets NEW_BOOKING, even when opted in", async () => {
+  addUser("s", "SEO_MANAGER");
   prefs.push({ userId: "s", event: "NEW_BOOKING", enabled: true });
-  assert.deepEqual(await recipientTokens("NEW_BOOKING"), ["tok_s"]);
+  assert.deepEqual(await recipientTokens("NEW_BOOKING"), []);
 });
 
 test("an ADMIN who turned NEW_LEAD off gets nothing", async () => {
