@@ -71,6 +71,10 @@ Set directly in **Cloudflare dashboard → Workers & Pages → the Worker → Se
 
 Never run `prisma migrate dev` or `prisma db push` against production. `migrate dev` targets whatever `DIRECT_URL` points at — in this repo's `.env`, that's production.
 
+### `20261119000000_add_push_devices` (TBJ Admin app push notifications)
+
+Additive: new enum `PushEvent` and tables `PushDevice` and `PushPreference`. **Run `npx prisma migrate deploy` before deploying the mobile-app branch.** If the code ships first, the contact form, bookings and approvals still work (push sending catches its own errors), but the Profile page's Notifications card and device registration fail until the tables exist.
+
 ### `20261031000000_add_ai_provider_keys` (AI provider keys in Settings)
 
 Adds six values to the `IntegrationProvider` enum (`ANTHROPIC`, `OPENAI`, `GEMINI`, `XAI`, `OPENROUTER`, `CEREBRAS`). Additive and idempotent (`ADD VALUE IF NOT EXISTS`), no table changes. **Run `npx prisma migrate deploy` before deploying the code that adds the API keys panel.** If the code ships first nothing breaks (AI calls keep using the `*_API_KEY` env vars and Settings says keys can't be stored yet), but no key can be saved until the migration is applied. `INTEGRATION_ENCRYPTION_KEY` must be set on the Worker for keys to be saved.
@@ -153,3 +157,74 @@ The GitHub Actions workflows that call these need matching secrets configured in
 - **Lint scope:** the codebase still has ~290 lint errors, so CI lints only files the PR/push adds or modifies. A touched file must be fully clean, pre-existing errors included. Switch the step to `pnpm run lint` once the backlog is gone.
 - **The build has no database, on purpose.** Nothing may query the database at build time: admin pages are `force-dynamic` (`app/(admin)/layout.tsx`) and landing pages render and cache at runtime (`app/landing-pages/layout.tsx`). A CI build failing with `NeonDbError` means a page started prerendering with live data.
 - **These checks don't block a deploy by themselves:** Cloudflare deploys whatever reaches `main`. To make them a gate, protect `main` in GitHub (Settings → Branches): require a pull request and the `checks` status check.
+
+## Android apps (TBJ Admin + TBJ Growth Tech)
+
+The Capacitor project is in `mobile/`. Build steps, the signing key and versioning are in `mobile/README.md`. This section covers the one-time cloud setup and releasing an APK.
+
+**Before the first deploy of the mobile-app branch, do these in this order:**
+1. Run the migration `20261119000000_add_push_devices` (above).
+2. Create the private R2 bucket `tbj-app-builds` (step 2 below). **The deploy fails without it**, because `wrangler.jsonc` binds it.
+3. Set the Worker secret `FCM_SERVICE_ACCOUNT_JSON` (step 1 below). This one is optional: until it's set, push is simply off.
+
+### 1. Firebase setup (push notifications)
+
+1. In the [Firebase console](https://console.firebase.google.com), create a project, e.g. "TBJ Growth Tech". Analytics is not needed.
+2. **Add two Android apps** to that one project:
+   - `com.tbjgrowthtech.admin` (nickname "TBJ Admin")
+   - `com.tbjgrowthtech.app` (nickname "TBJ Growth Tech")
+
+   For both, add the release key's SHA-1 and SHA-256 from `mobile/README.md`.
+3. Download `google-services.json` after adding the second app, so it lists both. Put it at `mobile/android/app/google-services.json`. It is gitignored: keep a copy with the keystore backup.
+4. Go to Project settings → Service accounts → **Generate new private key**. A JSON file downloads.
+5. Store that JSON as the Worker **secret** `FCM_SERVICE_ACCOUNT_JSON`, as one line. Either:
+   - `npx wrangler secret put FCM_SERVICE_ACCOUNT_JSON` (paste the file contents), or
+   - Cloudflare dashboard → Workers & Pages → `tbjgrowth` → Settings → Variables and Secrets → Add → type *Secret*.
+
+   For local testing, put it in `.env.local` too. Never commit it.
+6. Rebuild both APKs (`mobile/README.md`); they pick up `google-services.json` automatically.
+
+Only TBJ Admin registers for push. The client app has Firebase compiled in but never asks for notification permission.
+
+### 2. Hosting the APKs on R2 (two files)
+
+| File | Bucket | Access | Linked from |
+|---|---|---|---|
+| `tbj-admin.apk` | `tbj-app-builds` | **private**: no public access, no custom domain. The Worker reads it through the `APP_BUILDS` binding (`wrangler.jsonc`). | `/admin/app`, via `/api/admin/app-download` (signed-in only) |
+| `tbj-growth-tech.apk` | `tbj-downloads` | public, on the custom domain `downloads.tbjgrowthtech.com` | `/app` and the footer's "Get the App" |
+
+One-time:
+
+```bash
+npx wrangler r2 bucket create tbj-app-builds     # private: leave public access OFF
+npx wrangler r2 bucket create tbj-downloads
+```
+
+Then in Cloudflare → R2 → `tbj-downloads` → Settings → Custom Domains → connect `downloads.tbjgrowthtech.com`.
+
+Each release (after building as in `mobile/README.md`):
+
+```bash
+cd mobile/android/app/build/outputs/apk
+npx wrangler r2 object put tbj-app-builds/tbj-admin.apk --remote --file admin/release/app-admin-release.apk \
+  --content-type application/vnd.android.package-archive --custom-metadata version=1.0.0
+npx wrangler r2 object put tbj-downloads/tbj-growth-tech.apk --remote --file client/release/app-client-release.apk \
+  --content-type application/vnd.android.package-archive
+```
+
+- `/admin/app` reads the version from the object's `version` metadata.
+- For `/app`, set the Cloudflare **build** variable `NEXT_PUBLIC_ANDROID_APP_VERSION` and redeploy (it is inlined at build time).
+- Phones that already have an app update by downloading the new APK and tapping Install. It must be the same package and the same key.
+
+### 3. Check on a real phone after each release
+
+- **TBJ Admin:**
+  1. Sign in on the website from the phone and open `/admin/app`. Download, install (allow "from this source" once) and open it.
+  2. Sign in with your password and 2FA. Allow notifications.
+  3. From another device, send the contact form. A "New lead received" notification arrives with no client details, and tapping it opens `/admin/leads`.
+  4. Log out in the app, then send the form again. No notification arrives.
+- **TBJ Growth Tech:**
+  1. Install it from `/app`. It installs alongside TBJ Admin.
+  2. Browsing works, including `/bn-bd` and `/ar-ae` (right-to-left), and booking a call works.
+  3. It never asks for notification permission.
+- **Cloudflare build watch paths:** exclude `mobile/**` and `docs/**` so app-only commits don't redeploy the site. This is under Workers & Pages → `tbjgrowth` → Settings → Builds.

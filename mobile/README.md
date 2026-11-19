@@ -67,7 +67,7 @@ The client APK must not list `POST_NOTIFICATIONS` or `USE_BIOMETRIC`
 
 1. In `android/app/build.gradle`, bump `versionCode` (+1, integer) and `versionName` (e.g. `1.0.1`).
 2. Build both flavors (above).
-3. Upload to R2 (see "Hosting the APKs") and update the version shown on the download pages.
+3. Upload to R2 (see "Hosting the APKs" below) and update the version shown on the download pages.
 
 ## Icons and splash
 
@@ -78,12 +78,12 @@ listings), and every launcher icon and splash screen under
 
 ## Push notifications (Firebase)
 
-See "Firebase setup" in `docs/deployment.md`. Until `android/app/google-services.json`
+See "Android apps → 1. Firebase setup" in `docs/deployment.md`. Until `android/app/google-services.json`
 exists, the apps build without Firebase and push simply doesn't register.
 
 ## Hosting the APKs
 
-See "Android app releases" in `docs/deployment.md`. In short:
+See "Android apps → 2. Hosting the APKs on R2" in `docs/deployment.md`. In short:
 - Admin APK goes to the **private** R2 bucket `tbj-app-builds`. The site serves it only to signed-in admins at `/api/admin/app-download`.
 - Client APK goes to the **public** R2 bucket `tbj-downloads` on `downloads.tbjgrowthtech.com`, linked from `/app`.
 
