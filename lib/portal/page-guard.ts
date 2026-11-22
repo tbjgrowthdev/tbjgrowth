@@ -10,7 +10,10 @@ export async function requireClientPage(): Promise<ClientContext> {
   try {
     return await requireClient();
   } catch (error) {
-    if (error instanceof ClientAuthError) redirect("/portal/login");
+    // Not straight to /portal/login: the cookie may still carry a valid
+    // signature (revoked session, disabled user). /portal/signout clears it,
+    // which a Server Component can't do itself.
+    if (error instanceof ClientAuthError) redirect("/portal/signout");
     throw error;
   }
 }

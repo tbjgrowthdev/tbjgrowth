@@ -1,8 +1,9 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
+import { after } from "next/server";
 import { z } from "zod";
-import { issueLoginCode, verifyLoginCode as verifyCode, requireClient, revokeClientSession, ClientAuthError } from "@/lib/portal/auth";
+import { issueLoginCode, normalizeEmail, verifyLoginCode as verifyCode, requireClient, revokeClientSession, ClientAuthError } from "@/lib/portal/auth";
 import { CLIENT_SESSION_COOKIE, clientSessionCookieOptions } from "@/lib/portal/session-cookie";
 
 // Client Hub sign-in (/portal/login). Both sign-in steps are public by
@@ -18,12 +19,20 @@ const CODE_REQUESTED = { success: true as const };
 const SIGN_IN_FAILED = { success: false as const, error: "That code didn't work. Check it, or ask for a new one." };
 
 // auth-check: public — step 1 of client sign-in; never reveals whether the email exists.
+// Everything that depends on whether the email is a client's (lookup, rate
+// limit, insert, Resend call) runs after the response (Next's after(), which
+// Cloudflare maps to waitUntil), so response time can't reveal it either.
 export async function requestLoginCode(data: { email: string }) {
-  try {
-    const parsed = emailSchema.safeParse(data);
-    if (parsed.success) await issueLoginCode(parsed.data.email);
-  } catch (error) {
-    console.error("[portal] requestLoginCode failed:", error);
+  const parsed = emailSchema.safeParse(data);
+  const email = parsed.success ? normalizeEmail(parsed.data.email) : null;
+  if (email) {
+    after(async () => {
+      try {
+        await issueLoginCode(email);
+      } catch (error) {
+        console.error("[portal] issueLoginCode failed:", error);
+      }
+    });
   }
   return CODE_REQUESTED;
 }

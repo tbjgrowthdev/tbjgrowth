@@ -29,11 +29,18 @@ class P2025 extends Error {
 
 function matches<T extends Record<string, unknown>>(row: T, where: Q): boolean {
   for (const [k, v] of Object.entries(where ?? {}) as Array<[string, Q]>) {
+    if (k === "OR") {
+      if (!(v as Q[]).some((w) => matches(row, w))) return false;
+      continue;
+    }
     const value = row[k];
     if (v !== null && typeof v === "object" && !(v instanceof Date)) {
       if ("gte" in v && !((value as Date) >= v.gte)) return false;
       if ("lt" in v && !((value as number) < v.lt)) return false;
+      if ("lte" in v && !((value as number) <= v.lte)) return false;
       if ("gt" in v && !((value as Date) > v.gt)) return false;
+    } else if (v instanceof Date) {
+      if (!(value instanceof Date) || value.getTime() !== v.getTime()) return false;
     } else if (value !== v) return false;
   }
   return true;
@@ -77,6 +84,11 @@ const fakePrisma = {
       if (!c) throw new P2025();
       return applyData(c, data);
     },
+    async delete({ where }: Q) {
+      const i = codes.findIndex((c) => c.id === where.id);
+      if (i < 0) throw new P2025();
+      return codes.splice(i, 1)[0];
+    },
     async deleteMany({ where }: Q) {
       const before = codes.length;
       codes = codes.filter((c) => !(where.createdAt?.lt && c.createdAt < where.createdAt.lt));
@@ -116,6 +128,14 @@ mock.module("@/lib/email", {
     sendClientInvite: async () => ({ success: true }),
   },
 });
+let scheduled: Array<() => unknown> = [];
+mock.module("next/server", { namedExports: { after: (fn: () => unknown) => void scheduled.push(fn) } });
+async function flushScheduled() {
+  const jobs = scheduled;
+  scheduled = [];
+  for (const job of jobs) await job();
+}
+
 mock.module("next/headers", {
   namedExports: {
     cookies: async () => ({
@@ -154,6 +174,7 @@ beforeEach(() => {
   sessions = [];
   sent = [];
   cookieJar = new Map();
+  scheduled = [];
 });
 
 test("issues a 6-digit code, stores only its hash, expires in 10 minutes", async () => {
@@ -203,6 +224,7 @@ test("unknown email gets the same response and sends nothing", async () => {
   addUser();
   const known = await actions.requestLoginCode({ email: "owner@acme.test" });
   const unknown = await actions.requestLoginCode({ email: "nobody@else.test" });
+  await flushScheduled();
   assert.deepEqual(unknown, known);
   assert.deepEqual(sent.map((s) => s.to), ["owner@acme.test"]);
   assert.equal(codes.filter((c) => c.email === "nobody@else.test").length, 0);
@@ -212,6 +234,7 @@ test("more than 5 codes per email per hour are refused without revealing why", a
   addUser();
   const responses = [];
   for (let i = 0; i < 6; i++) responses.push(await actions.requestLoginCode({ email: "owner@acme.test" }));
+  await flushScheduled();
   assert.equal(sent.length, 5);
   assert.deepEqual(responses[5], responses[0]);
 });
@@ -301,6 +324,7 @@ test("a JWT signed with another secret is not accepted even with a real session 
 test("verifyLoginCode action sets the session cookie; signOutClient revokes and clears it", async () => {
   addUser();
   await actions.requestLoginCode({ email: "owner@acme.test" });
+  await flushScheduled();
   const result = await actions.verifyLoginCode({ email: "owner@acme.test", code: sent[0].code });
   assert.deepEqual(result, { success: true });
   assert.ok(cookieJar.get(CLIENT_SESSION_COOKIE));
@@ -318,4 +342,36 @@ test("verifyLoginCode action gives one generic error for every failure", async (
   assert.equal(bad.success, false);
   assert.deepEqual(unknown, bad);
   assert.deepEqual(malformed, bad);
+});
+
+test("requestLoginCode answers before any lookup or email (no timing difference between known and unknown emails)", async () => {
+  addUser();
+  let lookups = 0;
+  const original = fakePrisma.clientUser.findUnique;
+  fakePrisma.clientUser.findUnique = async (args: Q) => {
+    lookups++;
+    return original(args);
+  };
+  try {
+    await actions.requestLoginCode({ email: "owner@acme.test" });
+    assert.equal(lookups, 0, "no database lookup before the response");
+    assert.equal(sent.length, 0, "no email before the response");
+    assert.equal(scheduled.length, 1);
+    await flushScheduled();
+    assert.equal(sent.length, 1, "the code is sent after the response");
+  } finally {
+    fakePrisma.clientUser.findUnique = original;
+  }
+});
+
+test("a malformed email schedules nothing", async () => {
+  await actions.requestLoginCode({ email: "not-an-email" });
+  assert.equal(scheduled.length, 0);
+});
+
+test("the hourly limit holds under parallel requests", async () => {
+  addUser();
+  await Promise.all(Array.from({ length: 8 }, () => auth.issueLoginCode("owner@acme.test", NOW)));
+  assert.equal(sent.length, 5);
+  assert.equal(codes.length, 5, "over-limit rows are removed again");
 });

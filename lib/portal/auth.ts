@@ -86,13 +86,26 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date()): 
   const user = await prisma.clientUser.findUnique({ where: { email } });
   if (!user || user.status === "DISABLED") return;
 
-  const recent = await prisma.clientLoginCode.count({ where: { email, createdAt: { gte: new Date(now.getTime() - HOUR_MS) } } });
-  if (recent >= MAX_CODES_PER_HOUR) return;
-
+  // Insert first, then count the rows that come before or with ours, and
+  // back out if that's over the limit. A check-then-insert would let
+  // parallel requests all pass; this fails closed under a race (Neon HTTP
+  // has no transactions to lock with).
   const code = generateLoginCode();
-  await prisma.clientLoginCode.create({
+  const mine = await prisma.clientLoginCode.create({
     data: { email, codeHash: await hashLoginCode(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), createdAt: now },
+    select: { id: true, createdAt: true },
   });
+  const atOrBeforeMine = await prisma.clientLoginCode.count({
+    where: {
+      email,
+      createdAt: { gte: new Date(now.getTime() - HOUR_MS) },
+      OR: [{ createdAt: { lt: mine.createdAt } }, { createdAt: mine.createdAt, id: { lte: mine.id } }],
+    },
+  });
+  if (atOrBeforeMine > MAX_CODES_PER_HOUR) {
+    await prisma.clientLoginCode.delete({ where: { id: mine.id } });
+    return;
+  }
   // Housekeeping; a failure here must not stop the sign-in.
   try {
     await prisma.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - CODE_RETENTION_MS) } } });

@@ -49,7 +49,11 @@ const ADMIN_ONLY_PREFIXES = ["/admin/settings", "/admin/admins", "/admin/leads",
 export function decideGate({ pathname, search = "", staffToken, hasClientSession }: GateInput): GateDecision {
   // Client Hub. A staff token is ignored here on purpose.
   if (isPortalPath(pathname)) {
-    if (isUnder(pathname, "/portal/login")) return hasClientSession ? redirect("/portal") : NEXT;
+    // Always open: middleware only knows the signature, and a revoked session
+    // still has a valid one. Sending it to /portal would bounce it straight
+    // back here (redirect loop). The login page checks the database itself;
+    // /portal/signout clears a dead cookie.
+    if (isUnder(pathname, "/portal/login") || isUnder(pathname, "/portal/signout")) return NEXT;
     return hasClientSession ? NEXT : redirect("/portal/login");
   }
 

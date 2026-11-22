@@ -65,8 +65,16 @@ test("/portal/login is open without a session", () => {
   assert.deepEqual(decideGate({ pathname: "/portal/login", staffToken: staff(), hasClientSession: false }), { kind: "next" });
 });
 
-test("a signed-in client at /portal/login goes to /portal", () => {
-  assert.deepEqual(decideGate({ pathname: "/portal/login", staffToken: null, hasClientSession: true }), { kind: "redirect", to: "/portal" });
+test("/portal/login never redirects in middleware, even with a signed cookie (it may be revoked: no loop)", () => {
+  // Middleware can only check the signature. A revoked or disabled session has
+  // a valid signature for up to 90 days; bouncing it to /portal (which sends it
+  // back here) would loop. The login page checks the database itself.
+  assert.deepEqual(decideGate({ pathname: "/portal/login", staffToken: null, hasClientSession: true }), { kind: "next" });
+});
+
+test("/portal/signout is reachable with or without a session", () => {
+  assert.deepEqual(decideGate({ pathname: "/portal/signout", staffToken: null, hasClientSession: false }), { kind: "next" });
+  assert.deepEqual(decideGate({ pathname: "/portal/signout", staffToken: null, hasClientSession: true }), { kind: "next" });
 });
 
 test("/portal is never locale-rewritten", () => {
