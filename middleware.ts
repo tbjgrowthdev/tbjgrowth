@@ -1,13 +1,10 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { getRedirectMap } from "@/lib/redirect-cache";
-import { ALL_ROLES } from "@/lib/permissions";
 import { isKnownLocalePrefix } from "@/lib/i18n";
 import { getNextAuthSecret } from "@/lib/env";
-
-// Paths that live outside the app/(public)/[locale] tree entirely (standalone
-// campaign landing pages, metadata routes) — never locale-rewritten/redirected.
-const LOCALE_EXEMPT_PREFIXES = ["/landing-pages", "/robots.txt", "/sitemap.xml"];
+import { decideGate, isLocaleExempt, isPortalPath } from "@/lib/route-gate";
+import { CLIENT_SESSION_COOKIE, verifyClientSession } from "@/lib/portal/session-cookie";
 
 /** Splits a known locale prefix ("en-bd", "bn-bd", "en-ae", "ar-ae") off the front of a path, if present. */
 function stripLocalePrefix(pathname: string): { prefix: string | null; rest: string } {
@@ -22,6 +19,15 @@ function stripLocalePrefix(pathname: string): { prefix: string | null; rest: str
 export default withAuth(
   async function middleware(req) {
     const pathname = req.nextUrl.pathname;
+
+    // 0. Client Hub (/portal): its own session cookie, never the staff token,
+    //    never DB redirects or locale handling. See lib/route-gate.ts.
+    if (isPortalPath(pathname)) {
+      const hasClientSession = (await verifyClientSession(req.cookies.get(CLIENT_SESSION_COOKIE)?.value)) !== null;
+      const decision = decideGate({ pathname, staffToken: null, hasClientSession });
+      if (decision.kind === "redirect") return NextResponse.redirect(new URL(decision.to, req.url));
+      return NextResponse.next();
+    }
 
     // 1. DB-driven redirects apply to any path (checked before the admin auth
     //    gate), resolved against the de-prefixed path so a redirect set up
@@ -57,8 +63,7 @@ export default withAuth(
       // app/(public)/[locale]/... with locale="en-gb" — see
       // lib/i18n.ts's resolveRouteLocale for why "en-gb" is the literal
       // internal param value for the default locale.
-      const isExempt = LOCALE_EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-      if (isExempt) {
+      if (isLocaleExempt(pathname)) {
         return NextResponse.next();
       }
       const firstSegment = pathname.split("/")[1];
@@ -72,66 +77,10 @@ export default withAuth(
       return NextResponse.rewrite(new URL(`/en-gb${pathname === "/" ? "" : pathname}`, req.url));
     }
 
-    const token = req.nextauth.token;
-    const isAuth = !!token;
-
-    if (isAuthPage) {
-      if (isAuth) {
-        return NextResponse.redirect(new URL("/admin", req.url));
-      }
-      return NextResponse.next();
-    }
-
-    if (!isAuth) {
-      let from = pathname;
-      if (req.nextUrl.search) {
-        from += req.nextUrl.search;
-      }
-
-      return NextResponse.redirect(
-        new URL(`/login?from=${encodeURIComponent(from)}`, req.url)
-      );
-    }
-
-    if (!token?.role || !(ALL_ROLES as string[]).includes(token.role)) {
-      return NextResponse.redirect(new URL("/login?error=AccessDenied", req.url));
-    }
-
-    // Coarse, route-prefix-level gating for navigation only. The real
-    // authorization is the per-permission check inside each server action
-    // (lib/auth-guard.ts) — this just keeps roles from loading pages whose
-    // every action they'd be denied anyway, for a cleaner UX.
-    const role = token.role as string;
-    const seoPrefixes = ["/admin/redirects", "/admin/seo", "/admin/keywords", "/admin/link-monitor"];
-    const adminOnlyPrefixes = ["/admin/settings", "/admin/admins", "/admin/leads", "/admin/subscribers", "/admin/integrations", "/admin/audit-log"];
-
-    if (role === "SEO_MANAGER") {
-      const allowed =
-        seoPrefixes.some((p) => pathname.startsWith(p)) ||
-        pathname === "/admin" ||
-        pathname.startsWith("/admin/profile") ||
-        // The TBJ Admin app download page is for every role.
-        pathname === "/admin/app";
-      if (!allowed) {
-        return NextResponse.redirect(new URL("/admin?error=AccessDenied", req.url));
-      }
-    } else if (role === "CONTRIBUTOR") {
-      const blocked = [...seoPrefixes, ...adminOnlyPrefixes].some((p) => pathname.startsWith(p));
-      if (blocked) {
-        return NextResponse.redirect(new URL("/admin?error=AccessDenied", req.url));
-      }
-    } else if (role === "EDITOR") {
-      const blocked = [...seoPrefixes, ...adminOnlyPrefixes].some((p) => pathname.startsWith(p));
-      if (blocked) {
-        return NextResponse.redirect(new URL("/admin?error=AdminOnly", req.url));
-      }
-    } else if (role === "ADMIN") {
-      if (pathname.startsWith("/admin/integrations")) {
-        return NextResponse.redirect(new URL("/admin?error=SuperAdminOnly", req.url));
-      }
-    }
-    // SUPER_ADMIN: unrestricted.
-
+    // 3. Staff area (/admin, /login): the NextAuth token only; a client
+    //    session cookie never counts here. Rules in lib/route-gate.ts.
+    const decision = decideGate({ pathname, search: req.nextUrl.search, staffToken: req.nextauth.token, hasClientSession: false });
+    if (decision.kind === "redirect") return NextResponse.redirect(new URL(decision.to, req.url));
     return NextResponse.next();
   },
   {

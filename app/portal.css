@@ -1,0 +1,83 @@
+/*
+ * TBJ Client Hub (/portal). Loaded after app/admin.css, whose `.admin-shell`
+ * tokens (colours, fonts, dark mode, inputs) the portal reuses. Only
+ * app-mode layout lives here: a fixed bottom tab bar and safe-area padding,
+ * because the client Android app draws under the status and navigation bars.
+ */
+
+.portal-shell {
+  min-height: 100dvh;
+  background-color: var(--bg);
+}
+
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: env(safe-area-inset-top);
+  background-color: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-c);
+}
+
+.portal-main {
+  /* Room for the tab bar (64px) plus the gesture area. */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom) + 1.5rem);
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.portal-tabbar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--border-c);
+  box-shadow: 0 -8px 24px -16px rgb(27 21 18 / 0.25);
+}
+
+.portal-tab {
+  display: flex;
+  min-height: 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--caption-fg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.portal-tab[aria-current="page"] {
+  color: var(--admin-orange-text);
+}
+
+.portal-tab[aria-current="page"] .portal-tab-icon {
+  background-color: var(--tint-bg);
+}
+
+.portal-tab-icon {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 1.875rem;
+  border-radius: 9999px;
+  transition: background-color 150ms;
+}
+
+/* Inputs never below 16px, so mobile browsers don't zoom on focus. */
+.portal-shell :is(input, select, textarea) {
+  font-size: max(1rem, 16px);
+}
+
+/* Minimum tap target for buttons and links inside portal content. */
+.portal-shell :is(button, a.portal-tap) {
+  min-height: 44px;
+}

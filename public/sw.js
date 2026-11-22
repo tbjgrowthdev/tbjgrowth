@@ -1,6 +1,6 @@
 /* TBJ Growth Tech service worker.
  *
- * Hard rule: /admin, /login and /api are never cached or intercepted, and
+ * Hard rule: /admin, /login, /api and /portal are never cached or intercepted, and
  * neither is any non-GET or cross-origin request. Admin pages must never be
  * readable from Cache Storage after logout. Everything else:
  *   - "static" (build assets, images, fonts): cache-first
@@ -9,10 +9,10 @@
  * Bump CACHE_VERSION to drop every old cache on the next activation.
  * tests/sw-cache-policy.test.ts loads this file directly.
  */
-const CACHE_VERSION = "tbj-v1";
+const CACHE_VERSION = "tbj-v2";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png"];
-const PRIVATE_PREFIXES = ["/admin", "/login", "/api"];
+const PRIVATE_PREFIXES = ["/admin", "/login", "/api", "/portal"];
 const STATIC_EXT = /\.(?:js|css|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf)$/i;
 
 function isUnder(pathname, prefix) {

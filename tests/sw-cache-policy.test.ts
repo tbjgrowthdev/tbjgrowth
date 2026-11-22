@@ -55,3 +55,11 @@ test('cachePolicy returns "page" for public pages under every locale', () => {
     assert.equal(policy(at(path), "GET", ORIGIN), "page", path);
   }
 });
+
+test('cachePolicy returns "bypass" for every Client Hub page and its private files', () => {
+  const policy = loadPolicy();
+  for (const path of ["/portal", "/portal/login", "/portal/billing", "/portal/projects/abc", "/api/portal/files/x"]) {
+    assert.equal(policy(at(path), "GET", ORIGIN), "bypass", path);
+  }
+  assert.equal(policy(at("/portalx"), "GET", ORIGIN), "page", "lookalike public slug");
+});

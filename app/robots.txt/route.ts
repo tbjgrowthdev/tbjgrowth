@@ -25,6 +25,7 @@ export async function GET() {
     "Disallow: /admin/",
     "Disallow: /api/",
     "Disallow: /login",
+    "Disallow: /portal",
   ];
 
   if (customRules) {
