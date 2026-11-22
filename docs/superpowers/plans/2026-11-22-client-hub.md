@@ -26,6 +26,8 @@
 - Nothing in `mobile/` enters the web build (already excluded). Do not touch TBJ Admin behaviour.
 - Migration order (from `docs/deployment.md`): the migration is applied to production **before** the code that uses it is deployed. Never run `migrate dev` or `db push` against production.
 
+- `20261122000000_add_client_hub` is already applied to the Neon database (2026-11-22, kept by decision). Never edit it: any further schema change goes in a new migration.
+
 ## Review Focus
 
 1. **Tenancy:** client A can never read or change anything of client B. Test per resource: Task 4, `tenancy: <resource> is scoped to the session client`.
@@ -132,6 +134,10 @@ Actions (all `requirePermission`, all audit-logged): create/update client, assig
 
 - [ ] **Step 1: Failing tests:** permission checks per role, invite sends exactly one email, disable revokes the user's sessions and push devices, audit entries written.
 - [ ] **Step 2:** fail. **Step 3:** implement pages and actions (mobile-friendly like the existing admin pages). **Step 4:** pass; `npm run check:actions` passes.
+Review notes carried from checkpoint 1:
+- Resend invite and sign-in both issue codes, and verify only checks the newest one, so a client typing the code from the first email fails. Either say "use the newest email" in the invite copy or let verify accept any live unconsumed code for that email (each with its own attempt counter).
+- `tests/helpers/fake-prisma.ts` treats `undefined` and `null` differently from Prisma (Prisma ignores `undefined` in `where`/`data`). Normalise or document it before the admin tests rely on it.
+
 - [ ] **Step 5: Commit:** `feat(admin): Clients section with users and invites`
 
 ### Task 6: Admin: projects, milestones, updates, approval requests
@@ -166,6 +172,8 @@ Monthly report form: period, title, short summary, up to 4 headline numbers (lab
 
 - [ ] **Step 1: Failing tests:** `report metrics accept at most 4 items and reject non-text labels`, `client A cannot download client B's file (404, not 403)`, `no session gets 401`, `staff without CLIENT_MANAGEMENT cannot download`, `rejects non-allowed content types and oversize files`, `draft (unpublished) reports are not visible to the client`.
 - [ ] **Step 2:** fail. **Step 3:** implement. **Step 4:** pass; `npm run build:cloudflare` bundles the new routes for workerd.
+Review note carried from checkpoint 1: `Report.projectId` isn't constrained to the report's client by the schema. The admin report action must reject a project of another client, and `lib/portal/data.ts` must not expose a mismatched project (test: `a report can't link another client's project`).
+
 - [ ] **Step 5: Commit:** `feat(clients): reports, invoices and authenticated private file serving`
 
 **CHECKPOINT: stop for review (admin side complete).**
@@ -180,6 +188,10 @@ Home shows active projects with status chip and progress, a "Waiting on you" blo
 
 - [ ] **Step 1: Failing tests:** `approve sets APPROVED, stamps respondedBy and time`, `cannot respond twice`, `request changes requires a comment`, `responding is scoped to the session client`, `audit log entry is written`.
 - [ ] **Step 2:** fail. **Step 3:** implement with the app-mode design (cards, large chips). **Step 4:** pass; screenshot every screen at 360px (en and bn).
+Review notes carried from checkpoint 1:
+- `respondToApproval` must reject any decision other than `APPROVED`/`CHANGES_REQUESTED` at runtime (Zod), not only by type.
+- Make its "only while PENDING" write one atomic statement (raw `UPDATE … WHERE status = 'PENDING' RETURNING`), like the login-code claim, so two parallel responses can't both win.
+
 - [ ] **Step 5: Commit:** `feat(portal): home, projects, updates and approvals`
 
 ### Task 9: Portal: Reports, Billing, More (meetings, contact, requests, profile)
@@ -207,6 +219,12 @@ Copy (exact): "Project update" / "There is a new update on your project." → `/
 
 - [ ] **Step 1: Failing tests:** `payloads contain no names, amounts, titles or invoice numbers`, `only the target client's devices are notified`, `sign-out and disable delete that client's devices`, `reminder cron is idempotent (no double reminders)`, `overdue transition notifies once`, `stale-project nudge goes to the account manager only, once per interval, never to the client, and respects a changed interval`, `safePortalPath rejects /admin and external urls`, `push failure never breaks posting an update`.
 - [ ] **Step 2:** fail. **Step 3:** implement. **Step 4:** pass; `npm run check:actions` passes; `npm run build:cloudflare` passes.
+Review notes carried from checkpoint 1:
+- `PushDevice` has a CHECK that exactly one of `userId`/`clientUserId` is set. The staff `registerPushDevice` upsert must set `clientUserId: null` on update, and `registerClientPushDevice` must set `userId: null` and `adminSessionId: null`, or a token moving between apps fails the constraint.
+- A push tap opens a `/portal/...` path; if the session has expired, middleware sends the client to `/portal/login` without `?from=`, so they land on Home. Pass `from` (validated by `safePortalPath`) through the redirect.
+- `check:actions`: accept `requireClient` only in `app/(portal)/actions/**` and `requireSession`/`requirePermission` only outside it.
+- Never use `x-forwarded-for` for any IP-based limit (client-controlled); only `cf-connecting-ip`.
+
 - [ ] **Step 5: Commit:** `feat(push): client notifications and meeting/invoice reminder cron`
 
 ### Task 11: Client app flavor to app mode
