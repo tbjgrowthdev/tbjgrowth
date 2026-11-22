@@ -45,6 +45,8 @@ const redirect = (to: string): GateDecision => ({ kind: "redirect", to });
 
 const SEO_PREFIXES = ["/admin/redirects", "/admin/seo", "/admin/keywords", "/admin/link-monitor"];
 const ADMIN_ONLY_PREFIXES = ["/admin/settings", "/admin/admins", "/admin/leads", "/admin/subscribers", "/admin/integrations", "/admin/audit-log"];
+// Client Hub admin: CLIENT_MANAGEMENT / CLIENT_UPDATES (admins and editors).
+const CLIENT_HUB_PREFIXES = ["/admin/clients"];
 
 export function decideGate({ pathname, search = "", staffToken, hasClientSession }: GateInput): GateDecision {
   // Client Hub. A staff token is ignored here on purpose.
@@ -85,7 +87,7 @@ export function decideGate({ pathname, search = "", staffToken, hasClientSession
       pathname === "/admin/app";
     if (!allowed) return redirect("/admin?error=AccessDenied");
   } else if (role === "CONTRIBUTOR") {
-    if ([...SEO_PREFIXES, ...ADMIN_ONLY_PREFIXES].some((p) => pathname.startsWith(p))) return redirect("/admin?error=AccessDenied");
+    if ([...SEO_PREFIXES, ...ADMIN_ONLY_PREFIXES, ...CLIENT_HUB_PREFIXES].some((p) => pathname.startsWith(p))) return redirect("/admin?error=AccessDenied");
   } else if (role === "EDITOR") {
     if ([...SEO_PREFIXES, ...ADMIN_ONLY_PREFIXES].some((p) => pathname.startsWith(p))) return redirect("/admin?error=AdminOnly");
   } else if (role === "ADMIN") {

@@ -574,13 +574,13 @@ const CLIENT_CODE_COPY: Record<ClientLang, { subject: string; heading: string; b
   en: {
     subject: "Your TBJ Growth Tech sign-in code",
     heading: "Your sign-in code",
-    body: "Enter this code in the TBJ Growth Tech app or at the client portal. It works once and expires in 10 minutes.",
+    body: "Enter this code in the TBJ Growth Tech app or at the client portal. It works once and expires in 10 minutes. If you got more than one code, use the newest.",
     footer: "If you didn't ask for this code, you can ignore this email.",
   },
   bn: {
     subject: "আপনার TBJ Growth Tech সাইন-ইন কোড",
     heading: "আপনার সাইন-ইন কোড",
-    body: "কোডটি TBJ Growth Tech অ্যাপে বা ক্লায়েন্ট পোর্টালে লিখুন। এটা একবারই কাজ করবে, মেয়াদ ১০ মিনিট।",
+    body: "কোডটি TBJ Growth Tech অ্যাপে বা ক্লায়েন্ট পোর্টালে লিখুন। এটা একবারই কাজ করবে, মেয়াদ ১০ মিনিট। একাধিক কোড পেলে সবচেয়ে নতুনটি ব্যবহার করুন।",
     footer: "আপনি এই কোড না চেয়ে থাকলে ইমেইলটি উপেক্ষা করুন।",
   },
 };
@@ -621,7 +621,7 @@ export async function sendClientInvite(params: { to: string; name: string; code:
       : `Hi ${name}, you can now follow your project, reports and invoices in one place.`;
   const plainName = params.name.replace(/[\r\n]+/g, " ").slice(0, 100);
   const step = bn ? "পোর্টাল খুলে আপনার ইমেইল দিন, তারপর এই কোডটি লিখুন (মেয়াদ ১০ মিনিট):" : "Open the portal, enter your email, then this code (valid for 10 minutes):";
-  const later = bn ? "পরে আবার ঢুকতে চাইলে পোর্টাল থেকেই নতুন কোড চাইতে পারবেন।" : "Next time, just ask for a new code from the portal.";
+  const later = bn ? "একাধিক কোড পেলে সবচেয়ে নতুনটি ব্যবহার করুন। পরে আবার ঢুকতে চাইলে পোর্টাল থেকেই নতুন কোড চাইতে পারবেন।" : "If you get more than one code, use the newest. Next time, just ask for a new code from the portal.";
   const html = `
     <h2>${subject}</h2>
     <p>${escapeHtml(introFor(plainName))}</p>

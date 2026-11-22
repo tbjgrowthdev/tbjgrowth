@@ -221,7 +221,9 @@ export function createFakePrisma(schema: Schema, opts: { unique?: Record<string,
             throw new Error("fake-prisma: nested writes are not supported (Neon HTTP can't run them)");
           }
         }
-        const row: Row = { id: args.data.id ?? `${model}_${++seq}`, createdAt: new Date(), ...args.data };
+        // Like Prisma, an undefined field is ignored, not stored.
+        const data = Object.fromEntries(Object.entries(args.data).filter(([, v]) => v !== undefined));
+        const row: Row = { id: data.id ?? `${model}_${++seq}`, createdAt: new Date(), ...data };
         checkUnique(model, row);
         tables[model].push(row);
         return project(model, row, args.select, args.include);
@@ -231,6 +233,7 @@ export function createFakePrisma(schema: Schema, opts: { unique?: Record<string,
         if (!r) throw new FakeP2025(`No ${model} found for update`);
         const next = { ...r };
         for (const [k, v] of Object.entries(args.data)) {
+          if (v === undefined) continue; // Prisma ignores undefined fields
           if (v && typeof v === "object" && !(v instanceof Date) && "increment" in (v as Q)) next[k] = (r[k] ?? 0) + (v as Q).increment;
           else next[k] = v;
         }

@@ -91,10 +91,22 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date(), i
   const user = await prisma.clientUser.findUnique({ where: { email } });
   if (!user || user.status === "DISABLED") return;
 
-  // Insert first, then count the rows that come before or with ours, and
-  // back out if that's over the limit. A check-then-insert would let
-  // parallel requests all pass; this fails closed under a race (Neon HTTP
-  // has no transactions to lock with).
+  const code = await createCodeWithinLimits(email, ip, now);
+  if (!code) return;
+  await sendClientLoginCode({ to: email, code, name: user.name, language: user.language });
+}
+
+/**
+ * Stores a new code for `email` and returns it, or null if the hourly limits
+ * are reached. Used by sign-in and by staff invites (ip null), so invites
+ * count toward the same limits.
+ *
+ * Insert first, then count the rows that come before or with ours, and back
+ * out if that's over the limit. A check-then-insert would let parallel
+ * requests all pass; this fails closed under a race (Neon HTTP has no
+ * transactions to lock with).
+ */
+export async function createCodeWithinLimits(email: string, ip: string | null, now: Date): Promise<string | null> {
   const code = generateLoginCode();
   const mine = await prisma.clientLoginCode.create({
     data: { email, ip: ip?.slice(0, 100) ?? null, codeHash: await hashLoginCode(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), createdAt: now },
@@ -109,7 +121,7 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date(), i
   const overall = fromThisIp > MAX_CODES_PER_HOUR ? 0 : await prisma.clientLoginCode.count({ where: inWindowUpToMine });
   if (fromThisIp > MAX_CODES_PER_HOUR || overall > MAX_CODES_PER_EMAIL_PER_HOUR) {
     await prisma.clientLoginCode.delete({ where: { id: mine.id } });
-    return;
+    return null;
   }
   // Housekeeping; a failure here must not stop the sign-in.
   try {
@@ -117,7 +129,7 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date(), i
   } catch (error) {
     console.error("[portal] login code cleanup failed:", error);
   }
-  await sendClientLoginCode({ to: email, code, name: user.name, language: user.language });
+  return code;
 }
 
 /** Uses one of the code's guesses. False when the code is consumed or out of guesses. One statement, so parallel guesses can't exceed the limit. */

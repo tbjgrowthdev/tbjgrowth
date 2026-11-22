@@ -104,3 +104,11 @@ test("staff admin gate is unchanged: no token -> /login?from=, unknown role -> A
 test("public pages pass through to the locale logic", () => {
   assert.deepEqual(decideGate({ pathname: "/services", staffToken: null, hasClientSession: false }), { kind: "public" });
 });
+
+test("/admin/clients: admins and editors may open it; contributors and SEO managers are turned away", () => {
+  for (const role of ["SUPER_ADMIN", "ADMIN", "EDITOR"]) {
+    assert.deepEqual(decideGate({ pathname: "/admin/clients/abc", staffToken: staff(role), hasClientSession: false }), { kind: "next" }, role);
+  }
+  assert.deepEqual(decideGate({ pathname: "/admin/clients", staffToken: staff("CONTRIBUTOR"), hasClientSession: false }), { kind: "redirect", to: "/admin?error=AccessDenied" });
+  assert.deepEqual(decideGate({ pathname: "/admin/clients", staffToken: staff("SEO_MANAGER"), hasClientSession: false }), { kind: "redirect", to: "/admin?error=AccessDenied" });
+});

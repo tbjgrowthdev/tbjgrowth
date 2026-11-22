@@ -29,7 +29,7 @@ it was built that way, not because the code enforces it structurally.)
 | `CLIENT_MANAGEMENT` | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `CLIENT_UPDATES` | ✅ | ✅ | ✅ | ❌ | ❌ |
 
-Client Hub (`/admin/clients`): `CLIENT_MANAGEMENT` covers clients, client users, invites, projects, milestones, approval requests, invoices and client files. `CLIENT_UPDATES` is the narrower right to post project updates and reports, which EDITOR also has. Clients themselves are never a `Role`: they are `ClientUser` rows with a separate session (`lib/portal/auth.ts`) and can never reach `/admin`.
+Client Hub (`/admin/clients`): `CLIENT_MANAGEMENT` covers clients, client users, invites, projects, milestones, approval requests, invoices and client files. `CLIENT_UPDATES` is the narrower right to post project updates and reports, which EDITOR also has. Clients themselves are never a `Role`: they are `ClientUser` rows with a separate session (`lib/portal/auth.ts`) and can never reach `/admin`. Route gate (`lib/route-gate.ts`): SEO_MANAGER and CONTRIBUTOR are turned away from `/admin/clients`; EDITOR can open it to post updates, and its management buttons and actions need `CLIENT_MANAGEMENT`.
 
 Checked with `hasPermission(role, permission)`, called by every
 `requirePermission(permission)` in `app/(admin)/actions/*.ts` (full call-site
