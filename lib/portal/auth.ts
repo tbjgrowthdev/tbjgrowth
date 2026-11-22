@@ -9,9 +9,11 @@
 // - Sessions last 90 days and are rows in ClientSession; requireClient()
 //   checks the row (revoked, disabled user) on every call.
 //
-// Neon HTTP (docs/known-limitations.md): no transactions and no updateMany,
-// so the "claim" steps are single conditional update() calls that throw
-// P2025 when the condition no longer holds.
+// Neon HTTP (docs/known-limitations.md): no transactions and no updateMany.
+// The two "claim" steps on a login code (use one guess, consume the code) are
+// raw UPDATE … WHERE … RETURNING statements: one SQL statement is atomic in
+// Postgres, whereas Prisma's update() with extra where conditions may read
+// and then write without a transaction around them.
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { sendClientLoginCode } from "@/lib/email";
@@ -118,13 +120,31 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date(), i
   await sendClientLoginCode({ to: email, code, name: user.name, language: user.language });
 }
 
+/** Uses one of the code's guesses. False when the code is consumed or out of guesses. One statement, so parallel guesses can't exceed the limit. */
+async function claimAttempt(id: string): Promise<boolean> {
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    UPDATE "ClientLoginCode" SET "attempts" = "attempts" + 1
+    WHERE "id" = ${id} AND "consumedAt" IS NULL AND "attempts" < ${MAX_CODE_ATTEMPTS}
+    RETURNING "id"`;
+  return rows.length === 1;
+}
+
+/** Marks the code used. False when another request consumed it first. */
+async function consumeCode(id: string, now: Date): Promise<boolean> {
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    UPDATE "ClientLoginCode" SET "consumedAt" = ${now}
+    WHERE "id" = ${id} AND "consumedAt" IS NULL
+    RETURNING "id"`;
+  return rows.length === 1;
+}
+
 export type VerifyResult = { ok: true; token: string; sessionId: string } | { ok: false };
 
 /**
  * Checks `code` against the newest unconsumed, unexpired code for `email`.
- * Every guess first claims one of the 5 attempts with a conditional update,
+ * Every guess first claims one of the 5 attempts with one atomic UPDATE,
  * so even concurrent guesses can't exceed the limit. On success the code is
- * consumed (also conditionally, so it can't be used twice) and a session is
+ * consumed (also one atomic UPDATE, so it can't be used twice) and a session is
  * created.
  */
 export async function verifyLoginCode(
@@ -143,27 +163,14 @@ export async function verifyLoginCode(
   });
   if (!row) return { ok: false };
 
-  try {
-    await prisma.clientLoginCode.update({
-      where: { id: row.id, consumedAt: null, attempts: { lt: MAX_CODE_ATTEMPTS } },
-      data: { attempts: { increment: 1 } },
-    });
-  } catch (error) {
-    if (isP2025(error)) return { ok: false };
-    throw error;
-  }
+  if (!(await claimAttempt(row.id))) return { ok: false };
 
   if (!constantTimeEqual(row.codeHash, await hashLoginCode(email, code))) return { ok: false };
 
   const user = await prisma.clientUser.findUnique({ where: { email } });
   if (!user || user.status === "DISABLED") return { ok: false };
 
-  try {
-    await prisma.clientLoginCode.update({ where: { id: row.id, consumedAt: null }, data: { consumedAt: now } });
-  } catch (error) {
-    if (isP2025(error)) return { ok: false };
-    throw error;
-  }
+  if (!(await consumeCode(row.id, now))) return { ok: false };
 
   const session = await prisma.clientSession.create({
     data: {

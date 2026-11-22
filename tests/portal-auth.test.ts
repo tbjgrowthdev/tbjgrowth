@@ -54,7 +54,35 @@ function applyData<T extends Record<string, unknown>>(row: T, data: Q): T {
   return row;
 }
 
+// The only raw statements lib/portal/auth.ts may send, whitespace-normalised,
+// with $n for each bound value. Anything else (or a value spliced into the
+// text instead of bound) fails the test.
+const CLAIM_SQL = 'UPDATE "ClientLoginCode" SET "attempts" = "attempts" + 1 WHERE "id" = $1 AND "consumedAt" IS NULL AND "attempts" < $2 RETURNING "id"';
+const CONSUME_SQL = 'UPDATE "ClientLoginCode" SET "consumedAt" = $1 WHERE "id" = $2 AND "consumedAt" IS NULL RETURNING "id"';
+let rawCalls: string[] = [];
+
+async function queryRaw(strings: TemplateStringsArray, ...values: unknown[]) {
+  const sql = strings.reduce((acc, part, i) => acc + part + (i < values.length ? `$${i + 1}` : ""), "").replace(/\s+/g, " ").trim();
+  rawCalls.push(sql);
+  if (sql === CLAIM_SQL) {
+    const [id, max] = values as [string, number];
+    const c = codes.find((x) => x.id === id && x.consumedAt === null && x.attempts < max);
+    if (!c) return [];
+    c.attempts += 1;
+    return [{ id: c.id }];
+  }
+  if (sql === CONSUME_SQL) {
+    const [at, id] = values as [Date, string];
+    const c = codes.find((x) => x.id === id && x.consumedAt === null);
+    if (!c) return [];
+    c.consumedAt = at;
+    return [{ id: c.id }];
+  }
+  throw new Error(`unexpected raw SQL: ${sql}`);
+}
+
 const fakePrisma = {
+  $queryRaw: queryRaw,
   clientUser: {
     async findUnique({ where }: Q) {
       return users.find((u) => (where.email ? u.email === where.email : u.id === where.id)) ?? null;
@@ -79,10 +107,11 @@ const fakePrisma = {
       if (orderBy?.createdAt === "desc") rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id));
       return rows[0] ?? null;
     },
-    async update({ where, data }: Q) {
-      const c = codes.find((x) => matches(x, where));
-      if (!c) throw new P2025();
-      return applyData(c, data);
+    // Prisma's update() with extra where conditions isn't one statement on
+    // Neon HTTP (no transaction around its read and write), so claiming a
+    // guess or consuming a code must use the raw statements in $queryRaw.
+    async update() {
+      throw new Error("clientLoginCode.update is not atomic on Neon HTTP; use the raw UPDATE … RETURNING");
     },
     async delete({ where }: Q) {
       const i = codes.findIndex((c) => c.id === where.id);
@@ -175,6 +204,7 @@ beforeEach(() => {
   sent = [];
   cookieJar = new Map();
   scheduled = [];
+  rawCalls = [];
 });
 
 test("issues a 6-digit code, stores only its hash, expires in 10 minutes", async () => {
@@ -209,6 +239,23 @@ test("wrong code 5 times locks the code", async () => {
   }
   assert.equal((await auth.verifyLoginCode("owner@acme.test", right, {}, NOW)).ok, false);
   assert.equal(sessions.length, 0);
+});
+
+test("a guess is claimed and the code consumed with one atomic statement each", async () => {
+  addUser();
+  await auth.issueLoginCode("owner@acme.test", NOW);
+  assert.equal((await auth.verifyLoginCode("owner@acme.test", sent[0].code, {}, NOW)).ok, true);
+  assert.deepEqual(rawCalls, [CLAIM_SQL, CONSUME_SQL]);
+});
+
+test("ten parallel wrong guesses use exactly the 5 allowed attempts", async () => {
+  addUser();
+  await auth.issueLoginCode("owner@acme.test", NOW);
+  const wrong = sent[0].code === "000000" ? "111111" : "000000";
+  const results = await Promise.all(Array.from({ length: 10 }, () => auth.verifyLoginCode("owner@acme.test", wrong, {}, NOW)));
+  assert.ok(results.every((r) => !r.ok));
+  assert.equal(codes[0].attempts, 5);
+  assert.equal((await auth.verifyLoginCode("owner@acme.test", sent[0].code, {}, NOW)).ok, false);
 });
 
 test("a consumed code cannot be reused", async () => {
