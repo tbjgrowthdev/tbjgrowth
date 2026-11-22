@@ -19,7 +19,8 @@ const SCAN_DIRS = ["app", "lib", "components"];
 const SKIP_DIRS = new Set(["node_modules", ".next", ".open-next", "generated"]);
 
 // Calls that count as an auth check.
-const AUTH_CALLS = new Set(["requireSession", "requirePermission", "guardMutation", "guardRead"]);
+// requireClient (lib/portal/auth.ts) is the Client Hub equivalent of requireSession.
+const AUTH_CALLS = new Set(["requireSession", "requirePermission", "guardMutation", "guardRead", "requireClient"]);
 const OPT_OUT = /\/\/\s*auth-check:\s*public\b/;
 
 function* walk(dir) {

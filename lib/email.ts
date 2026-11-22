@@ -563,3 +563,73 @@ export async function sendAutomationNotification(subject: string, message: strin
   const result = await deliverResendEmail({ type: "automation", to: notifyEmail, subject, html });
   if (!result.success) throw new Error(`Resend email failed: ${result.error}`);
 }
+
+// ---------------------------------------------------------------------------
+// Client Hub (/portal). Never throw: a mail problem must not change what the
+// sign-in form shows (lib/portal/auth.ts relies on identical responses).
+
+type ClientLang = "en" | "bn";
+
+const CLIENT_CODE_COPY: Record<ClientLang, { subject: string; heading: string; body: string; footer: string }> = {
+  en: {
+    subject: "Your TBJ Growth Tech sign-in code",
+    heading: "Your sign-in code",
+    body: "Enter this code in the TBJ Growth Tech app or at the client portal. It works once and expires in 10 minutes.",
+    footer: "If you didn't ask for this code, you can ignore this email.",
+  },
+  bn: {
+    subject: "আপনার TBJ Growth Tech সাইন-ইন কোড",
+    heading: "আপনার সাইন-ইন কোড",
+    body: "কোডটি TBJ Growth Tech অ্যাপে বা ক্লায়েন্ট পোর্টালে লিখুন। এটা একবারই কাজ করবে, মেয়াদ ১০ মিনিট।",
+    footer: "আপনি এই কোড না চেয়ে থাকলে ইমেইলটি উপেক্ষা করুন।",
+  },
+};
+
+function clientCodeBlock(code: string) {
+  return `<p style="font-size:32px;letter-spacing:8px;font-weight:700;font-family:monospace;margin:16px 0">${escapeHtml(code)}</p>`;
+}
+
+/** The 6-digit sign-in code. The code is the only secret in the email. */
+export async function sendClientLoginCode(params: { to: string; code: string; name?: string | null; language?: ClientLang }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("RESEND_API_KEY not set — skipping client sign-in code email.");
+    return { success: false, skipped: true };
+  }
+  const copy = CLIENT_CODE_COPY[params.language === "bn" ? "bn" : "en"];
+  const html = `
+    <h2>${copy.heading}</h2>
+    <p>${copy.body}</p>
+    ${clientCodeBlock(params.code)}
+    <p style="color:#6b7280;font-size:13px">${copy.footer}</p>
+  `;
+  const text = `${copy.heading}: ${params.code}\n\n${copy.body}\n\n${copy.footer}\n`;
+  return deliverResendEmail({ type: "client-login-code", to: params.to, subject: copy.subject, html, text, fromName: BRAND_NAME });
+}
+
+/** Staff invited a client user: link to the portal plus a first sign-in code. */
+export async function sendClientInvite(params: { to: string; name: string; code: string; portalUrl: string; language?: ClientLang }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("RESEND_API_KEY not set — skipping client invite email.");
+    return { success: false, skipped: true };
+  }
+  const bn = params.language === "bn";
+  const url = escapeHtml(params.portalUrl);
+  const subject = bn ? "TBJ Growth Tech ক্লায়েন্ট পোর্টালে আমন্ত্রণ" : "You're invited to the TBJ Growth Tech client portal";
+  const introFor = (name: string) =>
+    bn
+      ? `${name}, আপনার প্রজেক্টের অগ্রগতি, রিপোর্ট ও ইনভয়েস এখন এক জায়গায় দেখতে পারবেন।`
+      : `Hi ${name}, you can now follow your project, reports and invoices in one place.`;
+  const plainName = params.name.replace(/[\r\n]+/g, " ").slice(0, 100);
+  const step = bn ? "পোর্টাল খুলে আপনার ইমেইল দিন, তারপর এই কোডটি লিখুন (মেয়াদ ১০ মিনিট):" : "Open the portal, enter your email, then this code (valid for 10 minutes):";
+  const later = bn ? "পরে আবার ঢুকতে চাইলে পোর্টাল থেকেই নতুন কোড চাইতে পারবেন।" : "Next time, just ask for a new code from the portal.";
+  const html = `
+    <h2>${subject}</h2>
+    <p>${escapeHtml(introFor(plainName))}</p>
+    <p><a href="${url}">${url}</a></p>
+    <p>${step}</p>
+    ${clientCodeBlock(params.code)}
+    <p style="color:#6b7280;font-size:13px">${later}</p>
+  `;
+  const text = `${subject}\n\n${introFor(plainName)}\n\n${params.portalUrl}\n\n${step} ${params.code}\n\n${later}\n`;
+  return deliverResendEmail({ type: "client-invite", to: params.to, subject, html, text, fromName: BRAND_NAME });
+}
