@@ -29,7 +29,10 @@ export class ClientAuthError extends Error {}
 
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_CODE_ATTEMPTS = 5;
+// Per (email, requesting IP), and an overall ceiling per email, so someone who
+// knows a client's address can't use up that client's codes from one place.
 export const MAX_CODES_PER_HOUR = 5;
+export const MAX_CODES_PER_EMAIL_PER_HOUR = 15;
 const HOUR_MS = 60 * 60 * 1000;
 const CODE_RETENTION_MS = 24 * HOUR_MS;
 // lastSeenAt is a "recently active" hint, not an audit trail: write it at most this often.
@@ -79,7 +82,7 @@ export function generateLoginCode(): string {
  * and the hourly limit isn't reached. Returns nothing either way, so callers
  * can't tell the cases apart.
  */
-export async function issueLoginCode(rawEmail: string, now: Date = new Date()): Promise<void> {
+export async function issueLoginCode(rawEmail: string, now: Date = new Date(), ip: string | null = null): Promise<void> {
   const email = normalizeEmail(rawEmail);
   if (!email) return;
 
@@ -92,17 +95,17 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date()): 
   // has no transactions to lock with).
   const code = generateLoginCode();
   const mine = await prisma.clientLoginCode.create({
-    data: { email, codeHash: await hashLoginCode(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), createdAt: now },
-    select: { id: true, createdAt: true },
+    data: { email, ip: ip?.slice(0, 100) ?? null, codeHash: await hashLoginCode(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), createdAt: now },
+    select: { id: true, createdAt: true, ip: true },
   });
-  const atOrBeforeMine = await prisma.clientLoginCode.count({
-    where: {
-      email,
-      createdAt: { gte: new Date(now.getTime() - HOUR_MS) },
-      OR: [{ createdAt: { lt: mine.createdAt } }, { createdAt: mine.createdAt, id: { lte: mine.id } }],
-    },
-  });
-  if (atOrBeforeMine > MAX_CODES_PER_HOUR) {
+  const inWindowUpToMine = {
+    email,
+    createdAt: { gte: new Date(now.getTime() - HOUR_MS) },
+    OR: [{ createdAt: { lt: mine.createdAt } }, { createdAt: mine.createdAt, id: { lte: mine.id } }],
+  };
+  const fromThisIp = await prisma.clientLoginCode.count({ where: { ...inWindowUpToMine, ip: mine.ip } });
+  const overall = fromThisIp > MAX_CODES_PER_HOUR ? 0 : await prisma.clientLoginCode.count({ where: inWindowUpToMine });
+  if (fromThisIp > MAX_CODES_PER_HOUR || overall > MAX_CODES_PER_EMAIL_PER_HOUR) {
     await prisma.clientLoginCode.delete({ where: { id: mine.id } });
     return;
   }

@@ -13,7 +13,7 @@ process.env.NEXTAUTH_SECRET = "test-nextauth-secret-0123456789abcdef012345678";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Q = any;
 type ClientUser = { id: string; clientId: string; email: string; name: string; language: "en" | "bn"; status: "INVITED" | "ACTIVE" | "DISABLED"; lastLoginAt: Date | null };
-type Code = { id: string; email: string; codeHash: string; expiresAt: Date; attempts: number; consumedAt: Date | null; createdAt: Date };
+type Code = { id: string; email: string; ip?: string | null; codeHash: string; expiresAt: Date; attempts: number; consumedAt: Date | null; createdAt: Date };
 type Session = { id: string; clientUserId: string; userAgent: string | null; ip: string | null; createdAt: Date; lastSeenAt: Date; revokedAt: Date | null };
 
 let users: ClientUser[] = [];
@@ -374,4 +374,25 @@ test("the hourly limit holds under parallel requests", async () => {
   await Promise.all(Array.from({ length: 8 }, () => auth.issueLoginCode("owner@acme.test", NOW)));
   assert.equal(sent.length, 5);
   assert.equal(codes.length, 5, "over-limit rows are removed again");
+});
+
+test("a stranger on another IP can't use up the client's codes", async () => {
+  addUser();
+  for (let i = 0; i < 6; i++) await auth.issueLoginCode("owner@acme.test", NOW, "198.51.100.66");
+  assert.equal(sent.length, 5, "the stranger's IP is capped at 5");
+  await auth.issueLoginCode("owner@acme.test", NOW, "203.0.113.9");
+  assert.equal(sent.length, 6, "the client's own IP still gets a code");
+});
+
+test("an email gets at most 15 codes an hour across all IPs", async () => {
+  addUser();
+  for (let i = 0; i < 20; i++) await auth.issueLoginCode("owner@acme.test", NOW, `198.51.100.${i}`);
+  assert.equal(sent.length, 15);
+});
+
+test("requestLoginCode records the Cloudflare client IP, never x-forwarded-for", async () => {
+  addUser();
+  await actions.requestLoginCode({ email: "owner@acme.test" });
+  await flushScheduled();
+  assert.equal(codes[0].ip, "203.0.113.9");
 });

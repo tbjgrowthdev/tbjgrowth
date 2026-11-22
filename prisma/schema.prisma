@@ -2493,6 +2493,9 @@ model ClientSession {
 model ClientLoginCode {
   id         String    @id @default(cuid())
   email      String
+  // Requesting IP (cf-connecting-ip). Limits are per (email, IP) plus an
+  // overall per-email ceiling, so a stranger can't use up a client's codes.
+  ip         String?
   codeHash   String
   expiresAt  DateTime
   attempts   Int       @default(0)

@@ -26,9 +26,12 @@ export async function requestLoginCode(data: { email: string }) {
   const parsed = emailSchema.safeParse(data);
   const email = parsed.success ? normalizeEmail(parsed.data.email) : null;
   if (email) {
+    // Cloudflare's own header only: x-forwarded-for is client-controlled and
+    // would let anyone pick which rate-limit bucket they land in.
+    const ip = (await headers()).get("cf-connecting-ip");
     after(async () => {
       try {
-        await issueLoginCode(email);
+        await issueLoginCode(email, new Date(), ip);
       } catch (error) {
         console.error("[portal] issueLoginCode failed:", error);
       }
