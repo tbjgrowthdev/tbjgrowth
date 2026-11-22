@@ -244,7 +244,7 @@ Client app bridge: register push for the signed-in client (`registerClientPushDe
 **Files:**
 - Modify: `docs/deployment.md`, `mobile/README.md`
 
-- [ ] **Step 1:** Document, in order: (1) back up the database branch and apply `20261122000000_add_client_hub` (check `migrate status` first); (2) create the private R2 bucket `tbj-client-files`; (3) set the Worker secret `CLIENT_SESSION_SECRET` (random 32+ bytes); (4) deploy; (5) create a test client and user in `/admin/clients`; (6) upload the new client APK to `tbj-downloads/tbj-growth-tech.apk` and bump `NEXT_PUBLIC_ANDROID_APP_VERSION` to `1.1.0`.
+- [ ] **Step 1:** Document, in order: (1) back up the database branch and apply the pending Client Hub migrations (`20261122000000_add_client_hub` is already applied as of 2026-11-22; later ones such as `20261123000000_client_hub_notify_throttle` are not; check `migrate status` first); (2) create the private R2 bucket `tbj-client-files`; (3) set the Worker secret `CLIENT_SESSION_SECRET` (random 32+ bytes); (4) deploy; (5) create a test client and user in `/admin/clients`; (6) upload the new client APK to `tbj-downloads/tbj-growth-tech.apk` and bump `NEXT_PUBLIC_ANDROID_APP_VERSION` to `1.1.0`.
 - [ ] **Step 2: Real-phone checklist:**
   - Invite a test client; the code email arrives; sign in on the phone; stay signed in after closing the app.
   - Home, Projects, Reports, Billing, More all render at 360px in en and bn.

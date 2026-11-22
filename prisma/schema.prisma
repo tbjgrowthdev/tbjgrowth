@@ -2520,6 +2520,9 @@ model Project {
   updateIntervalDays Int?
   // Last time the account manager was nudged about this project going stale.
   lastUpdateNudgeAt  DateTime?
+  // Last time the client was pushed about an update on this project (system
+  // updates collapse to one push per hour).
+  lastClientNotifyAt DateTime?
   createdAt          DateTime           @default(now())
   milestones         ProjectMilestone[]
   updates            ProjectUpdate[]
