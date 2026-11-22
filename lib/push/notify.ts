@@ -1,9 +1,8 @@
 import { after } from "next/server";
 import prisma from "@/lib/prisma";
-import { recipientTokens } from "@/lib/push/recipients";
+import { recipientTokens, type StaffPushEvent } from "@/lib/push/recipients";
 import { sendFcm } from "@/lib/push/fcm";
 import { PUSH_MESSAGES } from "@/lib/push/messages";
-import type { PushEvent } from "@/lib/generated/prisma/client";
 
 /**
  * Sends `event`'s push to everyone who should get it. Never throws: a push
@@ -13,7 +12,7 @@ import type { PushEvent } from "@/lib/generated/prisma/client";
  * `url` overrides the default admin page the notification opens (e.g. the
  * exact post that was submitted). It must be an /admin path with no PII.
  */
-export async function notifyAdmins(event: PushEvent, opts: { url?: string } = {}): Promise<void> {
+export async function notifyAdmins(event: StaffPushEvent, opts: { url?: string } = {}): Promise<void> {
   try {
     const tokens = await recipientTokens(event);
     if (tokens.length === 0) return;
@@ -32,7 +31,7 @@ export async function notifyAdmins(event: PushEvent, opts: { url?: string } = {}
  * which the Cloudflare adapter maps to waitUntil), so a visitor never waits
  * on FCM.
  */
-export function scheduleAdminPush(event: PushEvent, opts: { url?: string } = {}): void {
+export function scheduleAdminPush(event: StaffPushEvent, opts: { url?: string } = {}): void {
   try {
     after(() => notifyAdmins(event, opts));
   } catch (error) {

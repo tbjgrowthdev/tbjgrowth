@@ -1,11 +1,11 @@
-import type { PushEvent } from "@/lib/generated/prisma/client";
+import type { StaffPushEvent } from "@/lib/push/recipients";
 
 export type PushMessage = { title: string; body: string; url: string };
 
 // Fixed push copy. Deliberately generic: a lock screen must never show a
 // client's name, email, phone or message. The url is the admin page the
 // notification opens (login still required there).
-export const PUSH_MESSAGES: Record<PushEvent, PushMessage> = {
+export const PUSH_MESSAGES: Record<StaffPushEvent, PushMessage> = {
   NEW_LEAD: {
     title: "New lead received",
     body: "Open the admin panel to view it.",

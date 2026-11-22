@@ -8,7 +8,7 @@ every pair; check the table below instead. (In practice it does hold here —
 `SUPER_ADMIN` ⊇ `ADMIN` ⊇ `EDITOR`-minus-SEO-tools, etc. — but that's because
 it was built that way, not because the code enforces it structurally.)
 
-## The 14 permissions × 5 roles
+## The 16 permissions × 5 roles
 
 | Permission | SUPER_ADMIN | ADMIN | EDITOR | SEO_MANAGER | CONTRIBUTOR |
 |---|---|---|---|---|---|
@@ -26,6 +26,10 @@ it was built that way, not because the code enforces it structurally.)
 | `INTEGRATION_MANAGEMENT` | ✅ | ❌ | ❌ | ❌ | ❌ |
 | `PRICING_MANAGEMENT` | ✅ | ✅ | ✅ | ❌ | ❌ |
 | `EXPORT` | ✅ | ✅ | ❌ | ✅ | ❌ |
+| `CLIENT_MANAGEMENT` | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `CLIENT_UPDATES` | ✅ | ✅ | ✅ | ❌ | ❌ |
+
+Client Hub (`/admin/clients`): `CLIENT_MANAGEMENT` covers clients, client users, invites, projects, milestones, approval requests, invoices and client files. `CLIENT_UPDATES` is the narrower right to post project updates and reports, which EDITOR also has. Clients themselves are never a `Role`: they are `ClientUser` rows with a separate session (`lib/portal/auth.ts`) and can never reach `/admin`.
 
 Checked with `hasPermission(role, permission)`, called by every
 `requirePermission(permission)` in `app/(admin)/actions/*.ts` (full call-site

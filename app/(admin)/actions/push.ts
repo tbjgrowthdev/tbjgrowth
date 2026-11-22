@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession, AuthError } from "@/lib/auth-guard";
-import { eligibleEvents, isPushEnabled, PUSH_EVENTS } from "@/lib/push/recipients";
+import { eligibleEvents, isPushEnabled, isStaffPushEvent } from "@/lib/push/recipients";
 import type { PushEvent } from "@/lib/generated/prisma/client";
 
 // Push notification device registration (called by the TBJ Admin Android
@@ -71,7 +71,7 @@ export async function getPushPreferences() {
 export async function setPushPreference(event: PushEvent, enabled: boolean) {
   try {
     const session = await requireSession();
-    if (!PUSH_EVENTS.includes(event) || typeof enabled !== "boolean") {
+    if (!isStaffPushEvent(event) || typeof enabled !== "boolean") {
       return { success: false as const, error: "Invalid notification setting" };
     }
     if (!eligibleEvents(session.user.role).includes(event)) {

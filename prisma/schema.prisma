@@ -32,6 +32,8 @@ model User {
   pipelineRuns    ContentPipelineRun[]
   pushDevices     PushDevice[]
   pushPreferences PushPreference[]
+  managedClients  Client[]             @relation("ClientAccountManager")
+  projectUpdates  ProjectUpdate[]
 
   // TOTP two-factor auth. twoFactorSecret is written as soon as setup
   // begins but twoFactorEnabled stays false until the user proves they can
@@ -116,22 +118,35 @@ model AdminSession {
 // Push notifications (TBJ Admin Android app)
 // ------------------------------------------------------
 
-// Admin events that can send a push. Push text never carries personal data
-// (lib/push/messages.ts); tapping it opens an /admin page behind login.
+// Events that can send a push. Push text never carries personal data
+// (lib/push/messages.ts); tapping it opens an /admin page behind login, or for
+// CLIENT_* events a /portal page behind the client login.
 enum PushEvent {
   NEW_LEAD
   NEW_BOOKING
   CONTENT_AWAITING_APPROVAL
+  CLIENT_PROJECT_UPDATE
+  CLIENT_APPROVAL_NEEDED
+  CLIENT_REPORT_READY
+  CLIENT_INVOICE_DUE
+  CLIENT_INVOICE_OVERDUE
+  CLIENT_MEETING_REMINDER
 }
 
 // One row per app install that registered for push. Tied to the AdminSession
 // it registered under, so logout or "Revoke" deletes it (lib/session-tracking.ts,
 // lib/auth.ts events.signOut). Rows unseen for 30 days are pruned when a push
 // is sent (lib/push/recipients.ts).
+//
+// Exactly one of userId (staff, TBJ Admin app) and clientUserId (client, Client
+// Hub app) is set: enforced by the CHECK constraint "PushDevice_one_owner" in
+// migration 20261122000000_add_client_hub, and in code.
 model PushDevice {
   id             String        @id @default(cuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientUserId   String?
+  clientUser     ClientUser?   @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
   adminSessionId String?
   adminSession   AdminSession? @relation(fields: [adminSessionId], references: [id], onDelete: Cascade)
   platform       String // "android" | "web"
@@ -141,6 +156,7 @@ model PushDevice {
 
   @@index([userId])
   @@index([adminSessionId])
+  @@index([clientUserId])
 }
 
 // Per-user on/off per event. No row = the role default (lib/push/recipients.ts).
@@ -2152,19 +2168,23 @@ model AvailableSlot {
 }
 
 model Booking {
-  id        String        @id @default(cuid())
-  slotId    String        @unique
-  slot      AvailableSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
-  name      String
-  email     String
-  phone     String?
-  company   String?
-  message   String?       @db.Text
-  status    BookingStatus @default(CONFIRMED)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  slotId       String        @unique
+  slot         AvailableSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  name         String
+  email        String
+  phone        String?
+  company      String?
+  message      String?       @db.Text
+  status       BookingStatus @default(CONFIRMED)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  // Set when a signed-in Client Hub user booked this call from /portal/more.
+  clientUserId String?
+  clientUser   ClientUser?   @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
 
   @@index([status])
+  @@index([clientUserId])
 }
 
 enum BookingStatus {
@@ -2357,4 +2377,278 @@ model ContentLock {
   lastHeartbeat DateTime @default(now())
 
   @@unique([contentType, contentId])
+}
+
+// ------------------------------------------------------
+// Client Hub (/portal, TBJ client Android app)
+// Spec: docs/superpowers/specs/2026-11-22-client-hub-app-design.md
+// Clients are a separate identity from staff User rows (never a Role). Every
+// portal read goes through lib/portal/data.ts, scoped by the session clientId.
+// Fields marked "staff-only" must never be selected by portal queries.
+// ------------------------------------------------------
+
+enum ClientLanguage {
+  en
+  bn
+}
+
+enum ClientUserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  WAITING_ON_CLIENT
+  COMPLETED
+}
+
+enum ProjectUpdateKind {
+  MANUAL
+  MILESTONE
+  APPROVAL
+}
+
+enum ApprovalRequestStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+enum InvoiceStatus {
+  DUE
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum ClientRequestStatus {
+  OPEN
+  DONE
+}
+
+// A client company.
+model Client {
+  id               String          @id @default(cuid())
+  name             String
+  accountManagerId String?
+  accountManager   User?           @relation("ClientAccountManager", fields: [accountManagerId], references: [id], onDelete: SetNull)
+  whatsapp         String?
+  phone            String?
+  // Staff-only. Never selected by portal queries.
+  notes            String?         @db.Text
+  createdAt        DateTime        @default(now())
+  users            ClientUser[]
+  projects         Project[]
+  reports          Report[]
+  invoices         Invoice[]
+  requests         ClientRequest[]
+
+  @@index([accountManagerId])
+}
+
+// A person at a client company who can sign in to /portal (invite only).
+model ClientUser {
+  id                  String                 @id @default(cuid())
+  clientId            String
+  client              Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  // Stored lower-cased and trimmed.
+  email               String                 @unique
+  name                String
+  language            ClientLanguage         @default(en)
+  status              ClientUserStatus       @default(INVITED)
+  lastLoginAt         DateTime?
+  deletionRequestedAt DateTime?
+  createdAt           DateTime               @default(now())
+  sessions            ClientSession[]
+  requests            ClientRequest[]
+  approvalResponses   ApprovalRequest[]
+  bookings            Booking[]
+  pushDevices         PushDevice[]
+  pushPreferences     ClientPushPreference[]
+
+  @@index([clientId])
+}
+
+// One row per client sign-in. The 90-day client JWT carries this id;
+// revokedAt set = that session no longer works (checked by requireClient()).
+model ClientSession {
+  id           String     @id @default(cuid())
+  clientUserId String
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime   @default(now())
+  lastSeenAt   DateTime   @default(now())
+  revokedAt    DateTime?
+
+  @@index([clientUserId])
+}
+
+// Emailed 6-digit sign-in code. Only an HMAC of the code is stored. Not a
+// relation to ClientUser on purpose: the per-email rate limit must behave the
+// same whether or not the email belongs to a client.
+model ClientLoginCode {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, createdAt])
+}
+
+model Project {
+  id                 String             @id @default(cuid())
+  clientId           String
+  client             Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?            @db.Text
+  status             ProjectStatus      @default(NOT_STARTED)
+  // 0-100, set by staff.
+  progress           Int                @default(0)
+  startDate          DateTime?
+  dueDate            DateTime?
+  // Update-reminder interval in days for this project; null = ClientHubSetting default.
+  updateIntervalDays Int?
+  // Last time the account manager was nudged about this project going stale.
+  lastUpdateNudgeAt  DateTime?
+  createdAt          DateTime           @default(now())
+  milestones         ProjectMilestone[]
+  updates            ProjectUpdate[]
+  approvals          ApprovalRequest[]
+  reports            Report[]
+
+  @@index([clientId])
+}
+
+model ProjectMilestone {
+  id        String    @id @default(cuid())
+  projectId String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  dueDate   DateTime?
+  doneAt    DateTime?
+  order     Int       @default(0)
+
+  @@index([projectId])
+}
+
+model ProjectUpdate {
+  id           String              @id @default(cuid())
+  projectId    String
+  project      Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // null for system updates (milestone completed, approval events).
+  authorId     String?
+  author       User?               @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  kind         ProjectUpdateKind   @default(MANUAL)
+  body         String              @db.Text
+  // Staff-only. Never selected by portal queries.
+  internalNote String?             @db.Text
+  createdAt    DateTime            @default(now())
+  attachments  ProjectAttachment[]
+
+  @@index([projectId, createdAt])
+}
+
+model ProjectAttachment {
+  id       String        @id @default(cuid())
+  updateId String
+  update   ProjectUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  name     String
+  // Key in the private CLIENT_FILES R2 bucket: clients/{clientId}/{uuid}.
+  fileKey  String
+
+  @@index([updateId])
+}
+
+model ApprovalRequest {
+  id            String                @id @default(cuid())
+  projectId     String
+  project       Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?               @db.Text
+  status        ApprovalRequestStatus @default(PENDING)
+  response      String?               @db.Text
+  respondedById String?
+  respondedBy   ClientUser?           @relation(fields: [respondedById], references: [id], onDelete: SetNull)
+  respondedAt   DateTime?
+  createdAt     DateTime              @default(now())
+
+  @@index([projectId, status])
+}
+
+// Monthly report. Numbers are typed in by staff, never computed.
+model Report {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  // e.g. "2026-11"
+  period      String
+  title       String
+  summary     String?   @db.Text
+  // Up to 4 items: [{ label, value, change? }]
+  metrics     Json?
+  fileKey     String
+  // null = draft, invisible to the client.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([clientId, publishedAt])
+}
+
+// View-only invoice. Money is integer minor units + ISO currency (BDT, GBP).
+model Invoice {
+  id                String        @id @default(cuid())
+  clientId          String
+  client            Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  number            String
+  amountMinor       Int
+  currency          String
+  status            InvoiceStatus @default(DUE)
+  issueDate         DateTime
+  dueDate           DateTime
+  fileKey           String?
+  // Set once the reminder cron has told the client this invoice is overdue.
+  overdueNotifiedAt DateTime?
+  createdAt         DateTime      @default(now())
+
+  @@index([clientId, status])
+}
+
+model ClientRequest {
+  id           String              @id @default(cuid())
+  clientUserId String
+  clientUser   ClientUser          @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  clientId     String
+  client       Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  message      String              @db.Text
+  status       ClientRequestStatus @default(OPEN)
+  createdAt    DateTime            @default(now())
+
+  @@index([clientId, status])
+}
+
+// Per-client-user push on/off per event. No row = on.
+model ClientPushPreference {
+  clientUserId String
+  clientUser   ClientUser @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  event        PushEvent
+  enabled      Boolean
+
+  @@id([clientUserId, event])
+}
+
+// Singleton (id "global"). Separate from SiteSetting so public-site settings
+// stay untouched. updateReminderDays: 0 = reminders off; allowed 0-60.
+model ClientHubSetting {
+  id                 String   @id @default("global")
+  updateReminderDays Int      @default(7)
+  updatedAt          DateTime @updatedAt
 }

@@ -14,7 +14,11 @@ export type Permission =
   | "SETTINGS_MANAGEMENT"
   | "INTEGRATION_MANAGEMENT"
   | "PRICING_MANAGEMENT"
-  | "EXPORT";
+  | "EXPORT"
+  // Client Hub: full control of clients, users, projects, invoices and files.
+  | "CLIENT_MANAGEMENT"
+  // Client Hub, narrower: post project updates and reports only.
+  | "CLIENT_UPDATES";
 
 // Fixed role -> permission matrix. Not dynamic/admin-editable by design — the
 // role list and the permission list are both closed sets from the spec.
@@ -36,20 +40,26 @@ export type Permission =
 //   webhooks). ADMIN's USER_MANAGEMENT is further scoped at the call site
 //   (see canManageUser below) to exclude managing other Admins/Super Admins.
 // - SUPER_ADMIN is unrestricted.
+// - Client Hub: CLIENT_MANAGEMENT (clients, users, invites, projects,
+//   invoices, client files) is SUPER_ADMIN/ADMIN only. EDITOR gets only
+//   CLIENT_UPDATES (post project updates and reports). Clients themselves are
+//   never a Role: they are ClientUser rows with their own session (lib/portal).
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   SUPER_ADMIN: [
     "VIEW", "CREATE", "EDIT", "DELETE", "PUBLISH", "APPROVE", "SCHEDULE",
     "MEDIA_MANAGEMENT", "SEO_MANAGEMENT", "USER_MANAGEMENT",
     "SETTINGS_MANAGEMENT", "INTEGRATION_MANAGEMENT", "PRICING_MANAGEMENT", "EXPORT",
+    "CLIENT_MANAGEMENT", "CLIENT_UPDATES",
   ],
   ADMIN: [
     "VIEW", "CREATE", "EDIT", "DELETE", "PUBLISH", "APPROVE", "SCHEDULE",
     "MEDIA_MANAGEMENT", "SEO_MANAGEMENT", "USER_MANAGEMENT",
     "SETTINGS_MANAGEMENT", "PRICING_MANAGEMENT", "EXPORT",
+    "CLIENT_MANAGEMENT", "CLIENT_UPDATES",
   ],
   EDITOR: [
     "VIEW", "CREATE", "EDIT", "DELETE", "PUBLISH", "APPROVE", "SCHEDULE",
-    "MEDIA_MANAGEMENT", "PRICING_MANAGEMENT",
+    "MEDIA_MANAGEMENT", "PRICING_MANAGEMENT", "CLIENT_UPDATES",
   ],
   SEO_MANAGER: ["VIEW", "EDIT", "SEO_MANAGEMENT", "EXPORT"],
   CONTRIBUTOR: ["VIEW", "CREATE", "EDIT"],

@@ -13,7 +13,7 @@ Source of truth: `prisma/schema.prisma` (2066 lines, ~75 models/enums as of this
 | `User` | The admin account. `role` (enum `Role`: `SUPER_ADMIN`/`ADMIN`/`EDITOR`/`SEO_MANAGER`/`CONTRIBUTOR`) drives all permission checks (`lib/permissions.ts`). `password` is nullable — reserved for a future SSO-only account. TOTP fields (`twoFactorSecret`/`twoFactorEnabled`/`twoFactorBackupCodes`) live here too. |
 | `Account`, `Session`, `VerificationToken` | NextAuth's standard adapter shape. **Currently unused** — this app is Credentials+JWT only — reserved for adding an OIDC/SSO provider later without a schema migration. |
 | `AdminSession` | The *actual* session-list/device-revocation table this app uses instead of `Session` above. One row per sign-in (ip, user-agent, `revokedAt`). The JWT carries this row's id; see `docs/architecture.md`'s Auth section. |
-| `PushDevice`, `PushPreference` (enum `PushEvent`) | Push notifications for the TBJ Admin Android app. `PushDevice` = one FCM token per app install, tied to the `AdminSession` it registered under, so logout/revoke deletes it; rows unseen for 30 days are pruned on send. `PushPreference` = per-user on/off per event; no row = the role default (`lib/push/recipients.ts`). |
+| `PushDevice`, `PushPreference` (enum `PushEvent`) | Push notifications for the TBJ Admin Android app and (for the `CLIENT_*` events) the client app. `PushDevice` has exactly one owner, `userId` (staff) or `clientUserId` (client), enforced by the `PushDevice_one_owner` CHECK constraint; staff pushes only ever go to devices with `userId`. `PushDevice` = one FCM token per app install, tied to the `AdminSession` it registered under, so logout/revoke deletes it; rows unseen for 30 days are pruned on send. `PushPreference` = per-user on/off per event; no row = the role default (`lib/push/recipients.ts`). |
 | `LoginAttempt` | Every login attempt (email, success, ip) — backs both the brute-force lockout and the Monitoring → Logins admin view. |
 
 ## Content (Posts, Pages, Case Studies, taxonomy, workflow)
@@ -38,6 +38,26 @@ Source of truth: `prisma/schema.prisma` (2066 lines, ~75 models/enums as of this
 |---|---|
 | `AvailableSlot` | A bookable time slot. No unique constraint on `startsAt` — multiple slots can share a start time if needed. |
 | `Booking` | **`slotId` is `@unique`.** This is the real concurrency guard for double-booking — see `docs/known-limitations.md` for why (the Neon HTTP adapter can't do an atomic conditional `updateMany`, so `app/(admin)/actions/booking.ts`'s `createBooking` relies on this DB constraint plus a `P2002` catch instead). |
+
+## Client Hub (`/portal`)
+
+Migration `20261122000000_add_client_hub`. Spec: `docs/superpowers/specs/2026-11-22-client-hub-app-design.md`. Clients are a separate identity from staff `User` rows: there is no client `Role`.
+
+| Model | Purpose |
+|---|---|
+| `Client` | A client company. `accountManagerId` → the staff `User` who looks after it; `whatsapp`/`phone` power the portal's contact buttons. `notes` is **staff-only** and never selected by portal queries. |
+| `ClientUser` | A person at the client who can sign in (invite only). `email` unique, lower-cased; `language` (`en`/`bn`); `status` `INVITED`/`ACTIVE`/`DISABLED`; `deletionRequestedAt` set from the portal, the deletion itself is manual. |
+| `ClientSession` | One row per client sign-in, carried in the 90-day `tbj_client_session` JWT; `revokedAt` set = the session stops working (`requireClient()` checks it on every request). |
+| `ClientLoginCode` | Emailed 6-digit sign-in code, stored only as an HMAC. 10-minute expiry, `attempts` counts wrong guesses (5 = locked). Not related to `ClientUser` on purpose, so rate limiting behaves the same for unknown emails. |
+| `Project`, `ProjectMilestone`, `ProjectUpdate`, `ProjectAttachment` | What the client tracks. `Project.status` `NOT_STARTED`/`IN_PROGRESS`/`WAITING_ON_CLIENT`/`COMPLETED`, `progress` 0–100, `updateIntervalDays` (null = the global default) and `lastUpdateNudgeAt` for the stale-project reminder. `ProjectUpdate.kind` `MANUAL`/`MILESTONE`/`APPROVAL`, `authorId` null for system updates, `internalNote` **staff-only**. |
+| `ApprovalRequest` | Staff asks, client answers `APPROVED` or `CHANGES_REQUESTED` with `response`; `respondedById` → `ClientUser`. |
+| `Report` | Monthly report: `period`, `summary`, up to 4 typed-in `metrics` (`{label, value, change?}`), PDF `fileKey`. `publishedAt` null = draft, invisible to the client. |
+| `Invoice` | View-only. `amountMinor` (integer minor units) + `currency` (BDT, GBP), `status` `DUE`/`PAID`/`OVERDUE`/`VOID`, `overdueNotifiedAt` so the overdue push goes out once. |
+| `ClientRequest` | A message the client sends from the portal; appears in the admin inbox. |
+| `ClientPushPreference` | Per client user on/off per `CLIENT_*` push event; no row = on. |
+| `ClientHubSetting` | Singleton (`id = "global"`): `updateReminderDays` (default 7, 0 = off, 0–60). Kept apart from `SiteSetting`. |
+
+`Booking.clientUserId` (optional) links a call booked from the portal to the client user. All `fileKey`s point into the **private** R2 bucket `tbj-client-files` and are served only through authenticated routes.
 
 ## Leads
 

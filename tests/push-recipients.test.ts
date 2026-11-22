@@ -33,7 +33,12 @@ function matchDevice(d: Device, where: Q): boolean {
       if (d.adminSessionId !== c) return false;
     } else if (c?.not !== undefined && d.adminSessionId === c.not) return false;
   }
-  if (where.userId !== undefined && d.userId !== where.userId) return false;
+  if (where.userId !== undefined) {
+    const c = where.userId;
+    if (c !== null && typeof c === "object") {
+      if ("not" in c && d.userId === c.not) return false;
+    } else if (d.userId !== c) return false;
+  }
   if (where.adminSession?.revokedAt === null) {
     const s = sessions.find((x) => x.id === d.adminSessionId);
     if (!s || s.revokedAt !== null) return false;
@@ -187,4 +192,10 @@ test("revokeAllOther still removes other devices when the session update itself 
   failSessionUpdateMany = true;
   await assert.rejects(revokeAllOtherAdminSessions("a", "s_keep"));
   assert.deepEqual(devices.map((d) => d.token), ["tok_a"]);
+});
+
+test("a client-owned device (no staff user) never receives a staff push", async () => {
+  addUser("a", "ADMIN");
+  devices.push({ id: "d_client", userId: null as unknown as string, adminSessionId: null, token: "tok_client", lastSeenAt: ago(DAY) });
+  assert.deepEqual(await recipientTokens("NEW_BOOKING"), ["tok_a"]);
 });
