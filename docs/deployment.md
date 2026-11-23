@@ -138,6 +138,7 @@ app/api/cron/scheduled-jobs
 app/api/cron/seo-audit-scan
 app/api/cron/uptime-report
 app/api/cron/log-retention
+app/api/cron/client-reminders
 ```
 
 The GitHub Actions workflows that call these need matching secrets configured in **Settings → Secrets and variables → Actions** — see `docs/backup-process.md` for the full secret list (`PRODUCTION_URL`, `CRON_SECRET`, `DATABASE_URL_DIRECT`, R2 credentials, Neon API credentials). Run each workflow once manually (Actions tab → the workflow → **Run workflow**) after adding secrets, before trusting the schedule.
@@ -157,6 +158,33 @@ The GitHub Actions workflows that call these need matching secrets configured in
 - **Lint scope:** the codebase still has ~290 lint errors, so CI lints only files the PR/push adds or modifies. A touched file must be fully clean, pre-existing errors included. Switch the step to `pnpm run lint` once the backlog is gone.
 - **The build has no database, on purpose.** Nothing may query the database at build time: admin pages are `force-dynamic` (`app/(admin)/layout.tsx`) and landing pages render and cache at runtime (`app/landing-pages/layout.tsx`). A CI build failing with `NeonDbError` means a page started prerendering with live data.
 - **These checks don't block a deploy by themselves:** Cloudflare deploys whatever reaches `main`. To make them a gate, protect `main` in GitHub (Settings → Branches): require a pull request and the `checks` status check.
+
+## Client Hub rollout (client portal + TBJ Growth Tech app 1.1.0)
+
+The Client Hub is the client portal at `/portal`, run from the new **Clients** section in `/admin`, and the TBJ Growth Tech Android app now opens it (1.1.0). Do these **in this order**. Steps 1–4 are needed before the first deploy of this code; the deploy fails without step 2 and every portal page fails without step 3.
+
+1. **Database.** Back up first (Neon → Branches → create a branch from production, or the daily backup in `docs/backup-process.md`). Then check what is pending and apply it:
+   ```bash
+   npx prisma migrate status     # check the host it prints is the database you mean
+   npx prisma migrate deploy
+   ```
+   Client Hub migrations, all additive and nullable, safe to apply before the code:
+   - `20261122000000_add_client_hub`: **already applied to production on 2026-11-22.** `migrate status` should list it as applied.
+   - `20261123000000_client_hub_notify_throttle`: `Project.lastClientNotifyAt` (one push per project per hour for milestone updates).
+   - `20261124000000_client_hub_meeting_reminders`: `Booking.reminder24hSentAt`, `Booking.reminder1hSentAt`.
+
+   `prisma.config.ts` reads `DIRECT_URL` from `.env`, which is production. For a throwaway local check, set `DIRECT_URL` (not only `DATABASE_URL`) to the local URL, or use a separate config file, and confirm the host `migrate status` prints before running anything.
+2. **Private R2 bucket** for client files (see "Client Hub files" below): `npx wrangler r2 bucket create tbj-client-files`. Leave public access off and connect no domain.
+3. **Worker secret `CLIENT_SESSION_SECRET`**: random, 32+ bytes (`openssl rand -base64 48`), set with `npx wrangler secret put CLIENT_SESSION_SECRET` or in the Cloudflare dashboard as a *Secret*. Never reuse `NEXTAUTH_SECRET`. Changing it later signs every client out. See `docs/environment-variables.md`.
+4. **Deploy** as usual. Build from WSL, macOS/Linux or CI (`npm run build:cloudflare` doesn't run on Windows with pnpm, see above). Check that the GitHub Actions secrets `PRODUCTION_URL` and `CRON_SECRET` exist; the new `client-reminders` job in `.github/workflows/app-cron.yml` runs every 15 minutes (meeting reminders, overdue invoices, stale-project nudges). Run the workflow once by hand (Actions → App cron → Run workflow) and check the `client-reminders` job is green.
+5. **Create a test client** in `/admin/clients`: a client, then a user with an email you can read. The invite email arrives with a code. Sign in at `/portal/login` in a browser first.
+6. **Release the client app** (`mobile/README.md` has the build steps; 1.1.0, versionCode 2, same package ID and signing key, so it installs over 1.0.0):
+   ```bash
+   npx wrangler r2 object put tbj-downloads/tbj-growth-tech.apk --remote --file client/release/app-client-release.apk \
+     --content-type application/vnd.android.package-archive
+   ```
+   Then set the build variable `NEXT_PUBLIC_ANDROID_APP_VERSION` to `1.1.0` and redeploy, so `/app` shows the new version.
+7. **Pilot on real phones**: the checklist in `mobile/README.md` ("Client Hub pilot"). Only then invite real clients.
 
 ## Client Hub files (private R2 bucket)
 
@@ -194,7 +222,7 @@ The Capacitor project is in `mobile/`. Build steps, the signing key and versioni
    For local testing, put it in `.env.local` too. Never commit it.
 6. Rebuild both APKs (`mobile/README.md`); they pick up `google-services.json` automatically.
 
-Only TBJ Admin registers for push. The client app has Firebase compiled in but never asks for notification permission.
+Both apps register for push, each for its own users: TBJ Admin for staff, the TBJ Growth Tech app (Client Hub, from 1.1.0) for the signed-in client user. A device is never registered for both (`lib/native.ts` `pushTargetFor`, and the `PushDevice_one_owner` CHECK).
 
 ### 2. Hosting the APKs on R2 (two files)
 
