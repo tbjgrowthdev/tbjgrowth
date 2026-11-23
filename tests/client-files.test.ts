@@ -412,6 +412,20 @@ test("a Bangla file name survives the download (RFC 5987 filename*, ASCII fallba
   assert.equal(decodeURIComponent(encoded), "লোগো ফাইনাল.png");
 });
 
+test("the admin invoice list says whether a file is attached, never the storage key", async () => {
+  await actions.createInvoice(invoiceForm({ file: null }));
+  const fd = new FormData();
+  fd.set("invoiceId", t().invoice[0].id);
+  fd.set("file", pdfFile("inv.pdf"));
+  assert.equal((await actions.attachInvoiceFile(fd)).success, true);
+  await actions.createInvoice(invoiceForm({ file: null }));
+  const list = await actions.listInvoicesForAdmin("client_a");
+  assert.equal(list.length, 2);
+  for (const row of list) assert.equal("fileKey" in row, false);
+  assert.deepEqual(list.map((r) => r.hasFile).sort(), [false, true]);
+  assert.equal(JSON.stringify(list).includes("clients/"), false);
+});
+
 test("a file can be added to (or replace the file of) an existing invoice", async () => {
   await actions.createInvoice(invoiceForm({ file: null }));
   const id = t().invoice[0].id;

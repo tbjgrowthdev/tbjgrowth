@@ -2169,8 +2169,13 @@ model AvailableSlot {
 
 model Booking {
   id           String        @id @default(cuid())
-  slotId       String        @unique
-  slot         AvailableSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  // Empty only on a CANCELLED booking whose slot was booked again from the
+  // portal (lib/portal/data.ts bookCall): the record is kept, detached, and
+  // slotStartsAt / slotDuration keep the time it was for.
+  slotId       String?        @unique
+  slot         AvailableSlot? @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  slotStartsAt DateTime?
+  slotDuration Int?
   name         String
   email        String
   phone        String?

@@ -75,11 +75,14 @@ export async function listReportsForAdmin(clientId: string) {
 export async function listInvoicesForAdmin(clientId: string) {
   try {
     await requirePermission("CLIENT_MANAGEMENT");
-    return await prisma.invoice.findMany({
+    const rows = await prisma.invoice.findMany({
       where: { clientId },
       orderBy: { issueDate: "desc" },
       select: { id: true, number: true, amountMinor: true, currency: true, status: true, issueDate: true, dueDate: true, fileKey: true },
     });
+    // The storage key stays on the server: the browser only needs to know a file exists
+    // (downloads go through /api/admin/client-files/[id] by invoice id).
+    return rows.map(({ fileKey, ...row }) => ({ ...row, hasFile: fileKey !== null }));
   } catch (error) {
     if (!(error instanceof AuthError)) console.error("[client-files] invoices failed:", error);
     return [];

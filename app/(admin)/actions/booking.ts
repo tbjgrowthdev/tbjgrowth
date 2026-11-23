@@ -247,10 +247,13 @@ export async function cancelBooking(id: string) {
       where: { id },
       data: { status: "CANCELLED" },
     });
-    await prisma.availableSlot.update({
-      where: { id: booking.slotId },
-      data: { isBooked: false },
-    });
+    // A booking detached from its slot (rebooked from the portal) has no slot to free.
+    if (booking.slotId) {
+      await prisma.availableSlot.update({
+        where: { id: booking.slotId },
+        data: { isBooked: false },
+      });
+    }
     revalidatePath("/admin/booking");
     revalidatePath("/book-a-call");
     return { success: true };

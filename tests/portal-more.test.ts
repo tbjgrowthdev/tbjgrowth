@@ -211,4 +211,21 @@ test("a slot freed by a cancelled booking can be booked from the portal", async 
   assert.equal(live.length, 1);
   assert.deepEqual([live[0].status, live[0].clientUserId], ["CONFIRMED", "cu_a"]);
   assert.equal(t().availableSlot.find((s) => s.id === "slot_free")!.isBooked, true);
+  // The cancelled booking is kept, detached from the slot, and still knows when it was.
+  const old = t().booking.find((b) => b.id === "bk_cancelled");
+  assert.ok(old, "the cancelled booking record is kept");
+  assert.equal(old.status, "CANCELLED");
+  assert.equal(old.slotId, null);
+  assert.equal(new Date(old.slotStartsAt).getTime(), NOW.getTime() + 24 * HOUR);
+  assert.equal(old.slotDuration, 30);
+});
+
+test("two cancelled bookings can be detached from slots in turn (empty slotIds don't clash)", async () => {
+  t().availableSlot.push({ id: "slot_two", startsAt: new Date(NOW.getTime() + 48 * HOUR), duration: 45, isBooked: false, updatedAt: NOW });
+  t().booking.push({ id: "bk_c1", slotId: "slot_free", name: "Old", email: "o@x.test", status: "CANCELLED", clientUserId: null });
+  t().booking.push({ id: "bk_c2", slotId: "slot_two", name: "Old2", email: "o2@x.test", status: "CANCELLED", clientUserId: null });
+  assert.equal((await booking.bookCall({ slotId: "slot_free" })).success, true);
+  assert.equal((await booking.bookCall({ slotId: "slot_two" })).success, true);
+  assert.equal(t().booking.length, 4);
+  assert.equal(t().booking.find((b) => b.id === "bk_c2")!.slotDuration, 45);
 });

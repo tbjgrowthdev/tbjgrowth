@@ -262,11 +262,11 @@ Client app bridge: register push for the signed-in client (`registerClientPushDe
 - Ticking a milestone: if the milestone is marked done but posting its feed update fails, staff see "failed" and a retry won't post the update (the milestone is already done). Return success with a warning, or let a retry post the missing update.
 - Deleting a project leaves its update attachments in the private R2 bucket (the rows cascade, the objects don't). Collect the keys first, delete the project, then delete each object (best effort). Matters for account-deletion requests.
 - Two admins saving the "update reminders" setting at the same moment: find-then-create can fail one save with P2002. Catch P2002 and update instead.
-- `listInvoicesForAdmin` sends each invoice's `fileKey` to the browser (staff-only page); send `hasFile` instead.
+- ~~`listInvoicesForAdmin` sends each invoice's `fileKey` to the browser (staff-only page); send `hasFile` instead.~~ Done: it returns `hasFile`.
 
 From the final review:
 
-- Public booking (`app/(admin)/actions/booking.ts` createBooking) has the same cancelled-slot problem the portal booking now handles: a CANCELLED booking keeps the slot's unique `slotId`, so the freed slot can't be booked again and is left marked booked. Reuse the portal's "a CANCELLED holder gives way" step.
+- Public booking (`app/(admin)/actions/booking.ts` createBooking) has the same cancelled-slot problem the portal booking now handles: a CANCELLED booking keeps the slot's unique `slotId`, so the freed slot can't be booked again and is left marked booked. Reuse the portal's "a CANCELLED holder gives way" step (the cancelled record is detached from the slot and kept, with `slotStartsAt` / `slotDuration`).
 - More → Book a call: after a booking, the slot picker still holds the booked slot id; reset it when the slot list changes.
 - More: `SignOutButton` has no try/finally (stays disabled if sign-out throws); `LanguageSwitch` ignores a failed save.
 - App lock: biometry availability is checked only when the app starts, so turning the lock on in More takes effect after a restart. Re-check when the switch turns on.

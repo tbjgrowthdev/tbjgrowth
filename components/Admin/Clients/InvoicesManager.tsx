@@ -14,7 +14,7 @@ function tooBig(fd: FormData): boolean {
 }
 
 type Status = "DUE" | "PAID" | "OVERDUE" | "VOID";
-type InvoiceRow = { id: string; number: string; amountMinor: number; currency: string; status: Status; issueDate: Date | string; dueDate: Date | string; fileKey: string | null };
+type InvoiceRow = { id: string; number: string; amountMinor: number; currency: string; status: Status; issueDate: Date | string; dueDate: Date | string; hasFile: boolean };
 
 const input = "w-full min-h-11 px-4 py-2 border border-border rounded-lg bg-background text-foreground text-base";
 const label = "block text-sm font-medium text-muted mb-1";
@@ -119,13 +119,13 @@ export default function InvoicesManager({ clientId, invoices }: { clientId: stri
                   <option value="OVERDUE">Overdue</option>
                   <option value="VOID">Void (hidden from client)</option>
                 </select>
-                {i.fileKey && (
+                {i.hasFile && (
                   <a href={`/api/admin/client-files/${i.id}?kind=invoice`} className={btn}>
                     <Download size={16} /> File
                   </a>
                 )}
                 <label className={`${btn} cursor-pointer`}>
-                  <Paperclip size={16} /> {i.fileKey ? "Replace file" : "Add file"}
+                  <Paperclip size={16} /> {i.hasFile ? "Replace file" : "Add file"}
                   <input
                     type="file"
                     accept="application/pdf,image/png,image/jpeg"

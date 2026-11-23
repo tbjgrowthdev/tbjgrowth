@@ -172,6 +172,7 @@ The Client Hub is the client portal at `/portal`, run from the new **Clients** s
    - `20261122000000_add_client_hub`: **already applied to production on 2026-11-22.** `migrate status` should list it as applied.
    - `20261123000000_client_hub_notify_throttle`: `Project.lastClientNotifyAt` (one push per project per hour for milestone updates).
    - `20261124000000_client_hub_meeting_reminders`: `Booking.reminder24hSentAt`, `Booking.reminder1hSentAt`.
+   - `20261125000000_booking_keep_cancelled`: `Booking.slotId` becomes optional, plus `Booking.slotStartsAt` / `slotDuration` (a cancelled booking whose slot is rebooked from the portal is kept, detached). Apply it before deploying the code that uses it.
 
    `prisma.config.ts` reads `DIRECT_URL` from `.env`, which is production. For a throwaway local check, set `DIRECT_URL` (not only `DATABASE_URL`) to the local URL, or use a separate config file, and confirm the host `migrate status` prints before running anything.
 2. **Private R2 bucket** for client files (see "Client Hub files" below): `npx wrangler r2 bucket create tbj-client-files`. Leave public access off and connect no domain.

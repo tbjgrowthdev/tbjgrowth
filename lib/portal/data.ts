@@ -256,7 +256,7 @@ export async function listMeetings(ctx: ClientContext, now: Date = new Date()) {
     take: 20,
   });
   return rows
-    .map((b) => ({ id: b.id, startsAt: b.slot.startsAt, duration: b.slot.duration }))
+    .flatMap((b) => (b.slot ? [{ id: b.id, startsAt: b.slot.startsAt, duration: b.slot.duration }] : []))
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
 }
 
@@ -303,12 +303,17 @@ export async function bookCall(ctx: ClientContext, slotId: string, input: { mess
     } catch (error) {
       if ((error as { code?: string })?.code !== "P2002") throw error;
       // The slot's unique slotId is held. Staff cancelling a booking frees the
-      // slot (isBooked=false) but keeps the CANCELLED row; that row gives way.
-      // A CONFIRMED one means the slot really is taken: it stays booked.
+      // slot (isBooked=false) but keeps the CANCELLED row; that row gives way:
+      // it's kept, detached from the slot, with the time it was for copied onto
+      // it. A CONFIRMED one means the slot really is taken: it stays booked.
       const holder = await prisma.booking.findUnique({ where: { slotId }, select: { id: true, status: true } });
       if (holder?.status !== "CANCELLED") return { ok: false, reason: "taken" };
       try {
-        await prisma.booking.delete({ where: { id: holder.id, status: "CANCELLED" } });
+        await prisma.booking.update({
+          where: { id: holder.id, status: "CANCELLED", slotId },
+          data: { slotId: null, slotStartsAt: new Date(claimed[0].startsAt), slotDuration: claimed[0].duration },
+          select: { id: true },
+        });
       } catch (gone) {
         if ((gone as { code?: string })?.code !== "P2025") throw gone;
       }

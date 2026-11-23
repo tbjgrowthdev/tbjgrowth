@@ -39,6 +39,7 @@ async function meetingReminders(now: Date): Promise<number> {
   let sent = 0;
   for (const b of upcoming) {
     if (!b.clientUser) continue;
+    if (!b.slot) continue; // only a cancelled booking is ever detached from its slot
     const startsIn = new Date(b.slot.startsAt).getTime() - now.getTime();
     // Within the hour: the 1 h reminder. Otherwise (up to a day ahead): the 24 h one.
     const which = startsIn <= HOUR_MS ? "1h" : "24h";

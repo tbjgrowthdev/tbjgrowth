@@ -101,13 +101,16 @@ export default async function BookingAdminPage() {
               </tr>
             ) : (
               bookings.map((booking) => {
-                const { date, time } = formatDateTime(booking.slot.startsAt);
+                // A cancelled booking whose slot was rebooked keeps its own copy of the time.
+                const startsAt = booking.slot?.startsAt ?? booking.slotStartsAt;
+                const duration = booking.slot?.duration ?? booking.slotDuration;
+                const { date, time } = startsAt ? formatDateTime(startsAt) : { date: "—", time: "—" };
                 return (
                   <tr key={booking.id} className="hover:bg-background transition-colors align-top">
                     <td data-label="When" className="px-6 py-4">
                       <div>
                         <div className="font-medium text-foreground">{date}</div>
-                        <div className="text-sm text-muted">{time} · {booking.slot.duration} min</div>
+                        <div className="text-sm text-muted">{time}{duration ? ` · ${duration} min` : ""}</div>
                       </div>
                     </td>
                     <td data-label="Contact" className="px-6 py-4">
