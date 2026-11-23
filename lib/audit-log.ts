@@ -41,6 +41,10 @@ interface LogAuditParams {
   entityLabel?: string | null; // human-readable snapshot (title/name/email) so the log reads without extra joins
   before?: unknown; // omit entirely on create
   after?: unknown; // omit entirely on delete
+  // Set for actions done by someone who isn't staff (a Client Hub user). The
+  // staff session is then not read at all, so a staff member signed in in the
+  // same browser is never recorded as the actor.
+  actor?: { name: string | null; email: string | null };
 }
 
 // Fire-and-forget by design: a failed audit write must never block or fail
@@ -49,7 +53,7 @@ interface LogAuditParams {
 // pass what actually changed.
 export async function logAudit(params: LogAuditParams) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = params.actor ? null : await getServerSession(authOptions);
     const { ipAddress, userAgent } = await getRequestMeta();
     const sessionRole = session?.user?.role;
     const userRole: Role | null = sessionRole && (ALL_ROLES as string[]).includes(sessionRole) ? (sessionRole as Role) : null;
@@ -57,8 +61,8 @@ export async function logAudit(params: LogAuditParams) {
     await prisma.auditLog.create({
       data: {
         userId: session?.user?.id || null,
-        userName: session?.user?.name || null,
-        userEmail: session?.user?.email || null,
+        userName: params.actor ? params.actor.name : session?.user?.name || null,
+        userEmail: params.actor ? params.actor.email : session?.user?.email || null,
         userRole,
         action: params.action,
         category: params.category,

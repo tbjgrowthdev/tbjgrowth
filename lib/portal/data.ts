@@ -16,6 +16,7 @@
 // Pages and Server Actions under /portal never import @/lib/prisma themselves.
 import prisma from "@/lib/prisma";
 import type { ClientContext } from "@/lib/portal/auth";
+import { postSystemUpdate } from "@/lib/clients/updates";
 
 const PROJECT_FIELDS = {
   id: true,
@@ -128,34 +129,53 @@ export async function listApprovals(ctx: ClientContext, opts: { status?: "PENDIN
 }
 
 export type ApprovalDecision = { decision: "APPROVED" | "CHANGES_REQUESTED"; comment?: string | null };
-export type RespondResult = { ok: true; projectId: string } | { ok: false; reason: "not_found" | "already_answered" };
+export type RespondResult =
+  | { ok: true; projectId: string; title: string }
+  | { ok: false; reason: "not_found" | "already_answered" | "invalid_decision" | "comment_required" };
 
 /**
- * Records the client's answer to one of their own pending approvals. The
- * final write is conditional on status PENDING, so two taps (or two devices)
- * can't both answer.
+ * Records the client's answer to one of their own pending approvals.
+ * - The decision is checked at runtime (only APPROVED / CHANGES_REQUESTED);
+ *   asking for changes needs a comment.
+ * - The answer is one atomic UPDATE … WHERE status = 'PENDING', so two taps
+ *   (or two devices) can't both answer.
+ * - Then, best effort: the answer is posted to the project feed (no push:
+ *   the client did it) and the project goes back to IN_PROGRESS once no
+ *   approval is pending.
  */
 export async function respondToApproval(ctx: ClientContext, approvalId: string, answer: ApprovalDecision, now: Date = new Date()): Promise<RespondResult> {
   if (typeof approvalId !== "string" || !approvalId) return { ok: false, reason: "not_found" };
+  const decision = answer?.decision;
+  if (decision !== "APPROVED" && decision !== "CHANGES_REQUESTED") return { ok: false, reason: "invalid_decision" };
+  const comment = typeof answer.comment === "string" ? answer.comment.trim().slice(0, 5000) : "";
+  if (decision === "CHANGES_REQUESTED" && !comment) return { ok: false, reason: "comment_required" };
+
   const approval = await prisma.approvalRequest.findFirst({
     where: { id: approvalId, project: ownProject(ctx) },
-    select: { id: true, status: true, projectId: true },
+    select: { id: true, status: true, title: true, projectId: true, project: { select: { id: true, clientId: true, status: true } } },
   });
   if (!approval) return { ok: false, reason: "not_found" };
   if (approval.status !== "PENDING") return { ok: false, reason: "already_answered" };
 
-  const comment = typeof answer.comment === "string" ? answer.comment.trim().slice(0, 5000) : "";
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    UPDATE "ApprovalRequest"
+    SET "status" = CAST(${decision} AS "ApprovalRequestStatus"), "response" = ${comment || null}, "respondedById" = ${ctx.clientUserId}, "respondedAt" = ${now}
+    WHERE "id" = ${approval.id} AND "status" = 'PENDING'
+    RETURNING "id"`;
+  if (rows.length !== 1) return { ok: false, reason: "already_answered" };
+
   try {
-    await prisma.approvalRequest.update({
-      where: { id: approval.id, status: "PENDING" },
-      data: { status: answer.decision, response: comment || null, respondedById: ctx.clientUserId, respondedAt: now },
-      select: { id: true },
-    });
+    const body = `${decision === "APPROVED" ? "Approved" : "Changes requested"}: ${approval.title}`;
+    await postSystemUpdate(approval.project, "APPROVAL", body, now, { notify: false });
+    const stillPending = await prisma.approvalRequest.count({ where: { projectId: approval.projectId, status: "PENDING" } });
+    if (stillPending === 0 && approval.project.status === "WAITING_ON_CLIENT") {
+      await prisma.project.update({ where: { id: approval.projectId }, data: { status: "IN_PROGRESS" } });
+    }
   } catch (error) {
-    if ((error as { code?: string })?.code === "P2025") return { ok: false, reason: "already_answered" };
-    throw error;
+    // The answer itself is saved; staff see it on the project page either way.
+    console.error("[portal] follow-up after an approval answer failed:", error);
   }
-  return { ok: true, projectId: approval.projectId };
+  return { ok: true, projectId: approval.projectId, title: approval.title };
 }
 
 // ── Reports ───────────────────────────────────────────────────────────────

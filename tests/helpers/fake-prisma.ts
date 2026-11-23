@@ -263,6 +263,15 @@ export function createFakePrisma(schema: Schema, opts: { unique?: Record<string,
 
   const client: Row = { _tables: tables };
   for (const model of Object.keys(schema)) client[model] = delegate(model);
+  // Raw SQL: only the exact statements listed in RAW_STATEMENTS (whitespace-
+  // normalised, $n per bound value) are understood; anything else throws, so
+  // a changed statement fails its tests instead of passing silently.
+  client.$queryRaw = async (strings: TemplateStringsArray, ...values: unknown[]) => {
+    const sql = normalizeSql(strings, values.length);
+    const handler = RAW_STATEMENTS[sql];
+    if (!handler) throw new Error(`fake-prisma: unexpected raw SQL: ${sql}`);
+    return handler(tables, values);
+  };
   client.$transaction = async () => {
     throw new Error("fake-prisma: $transaction is not available on Neon HTTP");
   };
@@ -270,6 +279,21 @@ export function createFakePrisma(schema: Schema, opts: { unique?: Record<string,
 }
 
 /** Relations of the Client Hub models (and the existing models they touch). */
+export function normalizeSql(strings: TemplateStringsArray, valueCount: number): string {
+  return strings.reduce((acc, part, i) => acc + part + (i < valueCount ? `$${i + 1}` : ""), "").replace(/\s+/g, " ").trim();
+}
+
+/** Raw statements the Client Hub sends, emulated over the in-memory tables. */
+export const RAW_STATEMENTS: Record<string, (tables: Record<string, Row[]>, values: unknown[]) => Row[]> = {
+  // lib/portal/data.ts respondToApproval
+  [`UPDATE "ApprovalRequest" SET "status" = CAST($1 AS "ApprovalRequestStatus"), "response" = $2, "respondedById" = $3, "respondedAt" = $4 WHERE "id" = $5 AND "status" = 'PENDING' RETURNING "id"`]: (tables, [status, response, by, at, id]) => {
+    const a = tables.approvalRequest.find((x) => x.id === id && x.status === "PENDING");
+    if (!a) return [];
+    Object.assign(a, { status, response, respondedById: by, respondedAt: at });
+    return [{ id: a.id }];
+  },
+};
+
 export const CLIENT_HUB_SCHEMA: Schema = {
   user: {},
   client: {
