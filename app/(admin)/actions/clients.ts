@@ -94,10 +94,12 @@ export async function listClientsForAdmin() {
   }
 }
 
+/** Staff view of one client. Staff notes are included only for CLIENT_MANAGEMENT (editors get notes: null). */
 export async function getClientForAdmin(id: string) {
   try {
-    await requirePermission("CLIENT_UPDATES");
-    return await prisma.client.findUnique({
+    const session = await requirePermission("CLIENT_UPDATES");
+    const canManage = hasPermission(session.user.role, "CLIENT_MANAGEMENT");
+    const client = await prisma.client.findUnique({
       where: { id },
       select: {
         id: true,
@@ -114,6 +116,8 @@ export async function getClientForAdmin(id: string) {
         },
       },
     });
+    if (!client) return null;
+    return canManage ? client : { ...client, notes: null };
   } catch (error) {
     if (!(error instanceof AuthError)) console.error("[clients] get failed:", error);
     return null;

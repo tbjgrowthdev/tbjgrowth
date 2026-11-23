@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { Upload, Download, Trash2, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { createReport, setReportPublished, deleteReport } from "@/app/(admin)/actions/client-files";
 import { withToast } from "@/lib/admin/toast";
+import { MAX_FILE_BYTES, MAX_FILE_LABEL } from "@/lib/portal/upload-limits";
+
+/** Browser-side size check, so an oversize file gets a clear message instead of a generic body-limit error. */
+function tooBig(fd: FormData): boolean {
+  const f = fd.get("file");
+  return f instanceof File && f.size > MAX_FILE_BYTES;
+}
 
 type Metric = { label: string; value: string; change?: string };
 type ReportRow = { id: string; period: string; title: string; summary: string | null; metrics: unknown; publishedAt: Date | string | null; project: { title: string } | null };
@@ -56,6 +63,7 @@ export default function ReportsManager({
     const fd = new FormData(form);
     fd.set("clientId", clientId);
     fd.set("metrics", JSON.stringify(metrics.filter((m) => m.label.trim() && m.value.trim())));
+    if (tooBig(fd)) return setError(`The file is larger than ${MAX_FILE_LABEL}`);
     if (await run(createReport(fd), { success: "Report saved", error: "Couldn't save the report" })) {
       form.reset();
       setMetrics([{ label: "", value: "", change: "" }]);
@@ -113,7 +121,7 @@ export default function ReportsManager({
           )}
         </fieldset>
         <div>
-          <label htmlFor="rep-file" className={label}>Report file (PDF, PNG or JPG, up to 20 MB)</label>
+          <label htmlFor="rep-file" className={label}>Report file (PDF, PNG or JPG, up to {MAX_FILE_LABEL})</label>
           <input id="rep-file" name="file" type="file" required accept="application/pdf,image/png,image/jpeg" className="block w-full min-h-11 text-base" />
         </div>
         <label className="flex min-h-11 items-center gap-3 text-sm">

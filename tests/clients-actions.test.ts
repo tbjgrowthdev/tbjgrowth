@@ -257,3 +257,13 @@ test("an invite email that fails to send is reported, not shown as sent, and its
   inviteResult = { success: false, skipped: true }; // RESEND_API_KEY missing
   assert.equal((await actions.resendInvite(t().clientUser[0].id)).success, false);
 });
+
+test("client notes are only sent to staff who can manage clients", async () => {
+  t().client[0].notes = "STAFF-ONLY pays late";
+  role = "EDITOR";
+  const forEditor = await actions.getClientForAdmin("client_a");
+  assert.ok(forEditor);
+  assert.equal(JSON.stringify(forEditor).includes("STAFF-ONLY"), false);
+  role = "ADMIN";
+  assert.equal((await actions.getClientForAdmin("client_a"))?.notes, "STAFF-ONLY pays late");
+});

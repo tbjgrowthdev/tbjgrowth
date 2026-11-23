@@ -81,7 +81,16 @@ mock.module("@/lib/portal/auth", {
 });
 mock.module("@/lib/audit-log", { namedExports: { logAudit: async (p: (typeof audits)[number]) => void audits.push(p) } });
 mock.module("next/cache", { namedExports: { revalidatePath: () => {} } });
-mock.module("@/lib/push/client-notify", { namedExports: { notifyClients: async (event: string, clientId: string) => void pushes.push({ event, clientId }) } });
+// Records how many attachments existed when each push went out (quick-post must push after its file is stored).
+let attachmentsAtPush: number[] = [];
+mock.module("@/lib/push/client-notify", {
+  namedExports: {
+    notifyClients: async (event: string, clientId: string) => {
+      attachmentsAtPush.push(t().projectAttachment.length);
+      pushes.push({ event, clientId });
+    },
+  },
+});
 mock.module("@/lib/clients/clock", { namedExports: { now: () => new Date(clock) } });
 
 const files = await import("@/lib/portal/files");
@@ -115,6 +124,7 @@ beforeEach(() => {
   clientCtx = null;
   audits = [];
   pushes = [];
+  attachmentsAtPush = [];
   objects = new Map();
   putFails = false;
   for (const tag of ["a", "b"]) {
@@ -319,13 +329,55 @@ test("staff without CLIENT_MANAGEMENT cannot download", async () => {
 
 // ---- update attachments (quick-post) ----
 
-test("an update attachment is stored privately and shows in the portal by name only", async () => {
-  t().projectUpdate.push({ id: "upd_a", projectId: "proj_a", authorId: "staff_1", kind: "MANUAL", body: "Logo files", internalNote: null, createdAt: clock });
-  role = "EDITOR";
+function quickPost(over: Record<string, string | File | null> = {}) {
   const fd = new FormData();
-  fd.set("updateId", "upd_a");
-  fd.set("file", new File([PNG as BlobPart], "logo.png", { type: "image/png" }));
-  assert.equal((await actions.attachFileToUpdate(fd)).success, true);
+  const base: Record<string, string | File | null> = { projectId: "proj_a", body: "Logo files", notify: "true", file: new File([PNG as BlobPart], "logo.png", { type: "image/png" }), ...over };
+  for (const [k, v] of Object.entries(base)) if (v !== null) fd.set(k, v);
+  return fd;
+}
+
+test("quick-post sends its push only after the attachment is stored", async () => {
+  role = "EDITOR";
+  const r = await actions.postQuickUpdate(quickPost());
+  assert.equal(r.success, true);
+  assert.equal(t().projectUpdate.length, 1);
+  assert.equal(t().projectAttachment.length, 1);
+  assert.ok(objects.has(t().projectAttachment[0].fileKey));
+  assert.deepEqual(pushes, [{ event: "CLIENT_PROJECT_UPDATE", clientId: "client_a" }]);
+  assert.deepEqual(attachmentsAtPush, [1]);
+});
+
+test("quick-post with a bad file or failed storage posts nothing and pushes nothing", async () => {
+  assert.equal((await actions.postQuickUpdate(quickPost({ file: new File(["<svg/>"], "x.svg", { type: "image/svg+xml" }) }))).success, false);
+  putFails = true;
+  assert.equal((await actions.postQuickUpdate(quickPost())).success, false);
+  assert.equal(t().projectUpdate.length, 0);
+  assert.equal(t().projectAttachment.length, 0);
+  assert.deepEqual(pushes, []);
+});
+
+test("if the attachment row fails, the update and its file are taken back and nothing is pushed", async () => {
+  const orig = db.projectAttachment.create;
+  db.projectAttachment.create = async () => {
+    throw new Error("neon down");
+  };
+  assert.equal((await actions.postQuickUpdate(quickPost())).success, false);
+  db.projectAttachment.create = orig;
+  assert.equal(t().projectUpdate.length, 0);
+  assert.equal(objects.size, 0);
+  assert.deepEqual(pushes, []);
+});
+
+test("quick-post without a file, or with notify off, still works", async () => {
+  assert.equal((await actions.postQuickUpdate(quickPost({ file: null }))).success, true);
+  assert.equal((await actions.postQuickUpdate(quickPost({ file: null, notify: "false" }))).success, true);
+  assert.equal(t().projectUpdate.length, 2);
+  assert.equal(pushes.length, 1);
+});
+
+test("an update attachment is stored privately and shows in the portal by name only", async () => {
+  role = "EDITOR";
+  assert.equal((await actions.postQuickUpdate(quickPost())).success, true);
   const att = t().projectAttachment[0];
   assert.match(att.fileKey, /^clients\/client_a\//);
   const project = await portal.getProject(ctxFor("a"), "proj_a");
@@ -336,4 +388,54 @@ test("an update attachment is stored privately and shows in the portal by name o
   assert.equal(res.headers.get("content-type"), "image/png");
   clientCtx = ctxFor("b");
   assert.equal((await get(portalRoute, att.id, "attachment")).status, 404);
+});
+
+test("uploads are limited to 10 MB and fit under the unchanged 10 MB Server Action body limit", async () => {
+  const fs = await import("node:fs");
+  const config = fs.readFileSync("next.config.ts", "utf8");
+  assert.match(config, /bodySizeLimit: "10mb"/);
+  const limits = await import("@/lib/portal/upload-limits");
+  assert.equal(files.MAX_FILE_BYTES, limits.MAX_FILE_BYTES);
+  assert.equal(limits.MAX_FILE_BYTES, 10_000_000);
+  // Leaves room under 10 MiB for the other form fields.
+  assert.ok(10 * 1024 * 1024 - limits.MAX_FILE_BYTES >= 256 * 1024);
+  assert.equal((await files.checkUpload(new File([new Uint8Array(limits.MAX_FILE_BYTES + 1) as BlobPart], "x.pdf", { type: "application/pdf" }))).ok, false);
+});
+
+test("a Bangla file name survives the download (RFC 5987 filename*, ASCII fallback kept)", async () => {
+  assert.equal((await actions.postQuickUpdate(quickPost({ file: new File([PNG as BlobPart], "লোগো ফাইনাল.png", { type: "image/png" }) }))).success, true);
+  const att = t().projectAttachment[0];
+  clientCtx = ctxFor("a");
+  const cd = (await get(portalRoute, att.id, "attachment")).headers.get("content-disposition") ?? "";
+  assert.match(cd, /^attachment; filename="[\x20-\x7e]+\.png"; filename\*=UTF-8''/);
+  const encoded = /filename\*=UTF-8''(.+)$/.exec(cd)![1];
+  assert.equal(decodeURIComponent(encoded), "লোগো ফাইনাল.png");
+});
+
+test("a file can be added to (or replace the file of) an existing invoice", async () => {
+  await actions.createInvoice(invoiceForm({ file: null }));
+  const id = t().invoice[0].id;
+  const fd = new FormData();
+  fd.set("invoiceId", id);
+  fd.set("file", pdfFile("inv.pdf"));
+  assert.equal((await actions.attachInvoiceFile(fd)).success, true);
+  const firstKey = t().invoice[0].fileKey;
+  assert.match(firstKey, /^clients\/client_a\//);
+  assert.ok(objects.has(firstKey));
+  // Replacing removes the old object.
+  const fd2 = new FormData();
+  fd2.set("invoiceId", id);
+  fd2.set("file", pdfFile("inv2.pdf"));
+  assert.equal((await actions.attachInvoiceFile(fd2)).success, true);
+  assert.notEqual(t().invoice[0].fileKey, firstKey);
+  assert.equal(objects.has(firstKey), false);
+  assert.ok(audits.some((a) => a.action === "attach_file" && a.entityType === "Invoice"));
+  // Editors can't; bad files are refused.
+  role = "EDITOR";
+  assert.equal((await actions.attachInvoiceFile(fd2)).success, false);
+  role = "ADMIN";
+  const bad = new FormData();
+  bad.set("invoiceId", id);
+  bad.set("file", new File(["<svg/>"], "x.svg", { type: "image/svg+xml" }));
+  assert.equal((await actions.attachInvoiceFile(bad)).success, false);
 });

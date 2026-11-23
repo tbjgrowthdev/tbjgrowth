@@ -6,8 +6,9 @@
 //
 // Keys are clients/{clientId}/{uuid}. Only the key is stored in the database.
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { MAX_FILE_BYTES, MAX_FILE_LABEL } from "@/lib/portal/upload-limits";
 
-export const MAX_FILE_BYTES = 20 * 1024 * 1024;
+export { MAX_FILE_BYTES };
 
 // Declared type -> the bytes it must start with. Checking the bytes means a
 // renamed HTML or SVG file can't be stored as a "PDF".
@@ -35,10 +36,10 @@ export function getClientFilesBucket(): ClientFilesBucket | null {
 
 export type UploadCheck = { ok: true; contentType: string; bytes: Uint8Array } | { ok: false; error: string };
 
-/** PDF, PNG or JPG, at most 20 MB, and the bytes must match the declared type. */
+/** PDF, PNG or JPG, at most 10 MB, and the bytes must match the declared type. */
 export async function checkUpload(file: unknown): Promise<UploadCheck> {
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a file" };
-  if (file.size > MAX_FILE_BYTES) return { ok: false, error: "The file is larger than 20 MB" };
+  if (file.size > MAX_FILE_BYTES) return { ok: false, error: `The file is larger than ${MAX_FILE_LABEL}` };
   const rule = ALLOWED[file.type];
   if (!rule) return { ok: false, error: "Only PDF, PNG and JPG files can be uploaded" };
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -76,6 +77,17 @@ export async function deleteClientFile(key: string | null | undefined): Promise<
 
 const NO_STORE = { "Cache-Control": "private, no-store" } as const;
 
+/**
+ * attachment; filename="<ASCII fallback>"; filename*=UTF-8''<percent-encoded>
+ * (RFC 6266 / 5987), so a Bangla name downloads as written while old
+ * clients still get a safe ASCII name.
+ */
+export function contentDisposition(name: string): string {
+  const ascii = name.replace(/[^\x20-\x7e]+/g, "-").replace(/["\\]/g, "-");
+  const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 export function fileError(status: 401 | 403 | 404, message: string): Response {
   return Response.json({ error: message }, { status, headers: NO_STORE });
 }
@@ -86,14 +98,14 @@ export async function serveClientFile(key: string, name: string): Promise<Respon
   if (!object) return fileError(404, "File not found");
   const contentType = object.httpMetadata?.contentType && ALLOWED[object.httpMetadata.contentType] ? object.httpMetadata.contentType : "application/octet-stream";
   const ext = ALLOWED[contentType]?.ext;
-  const base = name.replace(/\.[A-Za-z0-9]{1,5}$/, "").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 100) || "file";
-  const filename = ext ? `${base}.${ext}` : base;
+  const stem = name.replace(/\.[A-Za-z0-9]{1,5}$/, "").replace(/[\u0000-\u001f"\\/]+/g, "-").trim().slice(0, 100) || "file";
+  const full = ext ? `${stem}.${ext}` : stem;
   return new Response(object.body, {
     status: 200,
     headers: {
       ...NO_STORE,
       "Content-Type": contentType,
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": contentDisposition(full),
       "Content-Length": String(object.size),
       "X-Content-Type-Options": "nosniff",
     },

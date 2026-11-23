@@ -134,3 +134,43 @@ export async function completeMilestoneOnce(milestoneId: string, now: Date): Pro
     RETURNING "id", "projectId", "title"`;
   return rows[0] ?? null;
 }
+
+/**
+ * A staff-written update. `attach` runs after the update row exists and
+ * before anything else; if it throws, the update is deleted again and the
+ * error rethrown, so the client is never pushed about an update whose file
+ * is missing. The push (when `notify`) is the very last step.
+ */
+export async function postManualUpdate(
+  project: { id: string; clientId: string; status: string },
+  input: { authorId: string; body: string; internalNote: string | null; status?: string; notify: boolean },
+  now: Date,
+  attach?: (updateId: string) => Promise<void>
+): Promise<{ id: string }> {
+  const update = await prisma.projectUpdate.create({
+    data: { projectId: project.id, authorId: input.authorId, kind: "MANUAL", body: input.body, internalNote: input.internalNote, createdAt: now },
+    select: { id: true },
+  });
+  if (attach) {
+    try {
+      await attach(update.id);
+    } catch (error) {
+      try {
+        await prisma.projectUpdate.delete({ where: { id: update.id } });
+      } catch (cleanup) {
+        console.error("[clients] couldn't take back an update after its attachment failed:", cleanup);
+      }
+      throw error;
+    }
+  }
+  if (input.status && input.status !== project.status) {
+    await prisma.project.update({ where: { id: project.id }, data: { status: input.status as never } });
+  }
+  if (input.notify) {
+    // Staff chose to notify: always send, and start the hour in which
+    // automatic (milestone) updates stay quiet.
+    await prisma.project.update({ where: { id: project.id }, data: { lastClientNotifyAt: now } });
+    await safeNotify("CLIENT_PROJECT_UPDATE", project.clientId);
+  }
+  return update;
+}

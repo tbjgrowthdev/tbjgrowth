@@ -256,3 +256,10 @@ Client app bridge: register push for the signed-in client (`registerClientPushDe
   - Book a call from More; the booking appears in `/admin/booking` linked to the client.
   - Airplane mode shows the offline screen; external links open in the system browser.
 - [ ] **Step 3: Commit:** `docs(clients): Client Hub release runbook and pilot checklist`
+
+## Polish list (small issues kept for later, from the checkpoint 2 review)
+
+- Ticking a milestone: if the milestone is marked done but posting its feed update fails, staff see "failed" and a retry won't post the update (the milestone is already done). Return success with a warning, or let a retry post the missing update.
+- Deleting a project leaves its update attachments in the private R2 bucket (the rows cascade, the objects don't). Collect the keys first, delete the project, then delete each object (best effort). Matters for account-deletion requests.
+- Two admins saving the "update reminders" setting at the same moment: find-then-create can fail one save with P2002. Catch P2002 and update instead.
+- `listInvoicesForAdmin` sends each invoice's `fileKey` to the browser (staff-only page); send `hasFile` instead.

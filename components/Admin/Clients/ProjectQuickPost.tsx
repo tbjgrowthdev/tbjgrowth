@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, AlertCircle } from "lucide-react";
-import { postProjectUpdate } from "@/app/(admin)/actions/client-projects";
-import { attachFileToUpdate } from "@/app/(admin)/actions/client-files";
+import { postQuickUpdate } from "@/app/(admin)/actions/client-files";
+import { MAX_FILE_BYTES, MAX_FILE_LABEL } from "@/lib/portal/upload-limits";
 import { withToast } from "@/lib/admin/toast";
 
 type Template = { id: string; en: string; bn: string };
@@ -49,18 +49,22 @@ export default function ProjectQuickPost({
     setBusy(true);
     setError(null);
     try {
-      const result = await withToast(postProjectUpdate(target, { body, internalNote: note || null, status: status || undefined, notify }), {
+      if (file && file.size > MAX_FILE_BYTES) return setError(`The file is larger than ${MAX_FILE_LABEL}`);
+      const fd = new FormData();
+      fd.set("projectId", target);
+      fd.set("body", body);
+      if (note) fd.set("internalNote", note);
+      if (status) fd.set("status", status);
+      fd.set("notify", notify ? "true" : "false");
+      if (file) fd.set("file", file);
+      // One step: the file is stored before the update exists, and the client
+      // is pushed only after both are saved. On failure nothing is posted and
+      // the form keeps its text and file, so staff can just try again.
+      const result = await withToast(postQuickUpdate(fd), {
         success: notify ? "Update posted, client notified" : "Update posted",
         error: "Couldn't post the update",
       });
       if (!result.success) return setError(result.error);
-      if (file) {
-        const fd = new FormData();
-        fd.set("updateId", result.id);
-        fd.set("file", file);
-        const attached = await attachFileToUpdate(fd);
-        if (!attached.success) setError(`Update posted, but the file wasn't attached: ${attached.error}`);
-      }
       setFile(null);
       setFileInputKey((k) => k + 1);
       setBody("");
@@ -121,7 +125,7 @@ export default function ProjectQuickPost({
         </label>
       </div>
       <div>
-        <label htmlFor="qp-file" className="block text-sm font-medium text-muted mb-1">Attach a file (optional: PDF, PNG or JPG, up to 20 MB)</label>
+        <label htmlFor="qp-file" className="block text-sm font-medium text-muted mb-1">Attach a file (optional: PDF, PNG or JPG, up to {MAX_FILE_LABEL})</label>
         <input key={fileInputKey} id="qp-file" type="file" accept="application/pdf,image/png,image/jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full min-h-11 text-base" />
       </div>
       <details>

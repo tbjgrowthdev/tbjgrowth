@@ -318,3 +318,39 @@ test("changing a project's interval is audit-logged", async () => {
   const a = audits.find((x) => x.entityType === "Project")!;
   assert.deepEqual([(a.before as Row).updateIntervalDays, (a.after as Row).updateIntervalDays], [null, 14]);
 });
+
+test("retrying an approval request after a part-way failure doesn't create a second approval", async () => {
+  const orig = db.projectUpdate.create;
+  let failOnce = true;
+  db.projectUpdate.create = async (args: Row) => {
+    if (failOnce) {
+      failOnce = false;
+      throw new Error("neon down");
+    }
+    return orig(args);
+  };
+  const first = await actions.createApprovalRequest("proj_1", { title: "Homepage design" });
+  assert.equal(first.success, false);
+  assert.equal(t().approvalRequest.length, 1); // the approval row was written before the failure
+  const retry = await actions.createApprovalRequest("proj_1", { title: "Homepage design" });
+  assert.equal(retry.success, true);
+  assert.equal((retry as { id: string }).id, t().approvalRequest[0].id);
+  assert.equal(t().approvalRequest.length, 1);
+  assert.equal(t().projectUpdate.filter((u) => u.kind === "APPROVAL").length, 1);
+  assert.equal(t().project[0].status, "WAITING_ON_CLIENT");
+  assert.deepEqual(pushes, [{ event: "CLIENT_APPROVAL_NEEDED", clientId: "client_a" }]);
+});
+
+test("asking again for the same still-pending approval doesn't duplicate it or push again", async () => {
+  await actions.createApprovalRequest("proj_1", { title: "Homepage design" });
+  const again = await actions.createApprovalRequest("proj_1", { title: "  Homepage design " });
+  assert.equal(again.success, true);
+  assert.equal(t().approvalRequest.length, 1);
+  assert.equal(t().projectUpdate.filter((u) => u.kind === "APPROVAL").length, 1);
+  assert.equal(pushes.length, 1);
+  // A different title, or the same title once answered, is a new request.
+  await actions.createApprovalRequest("proj_1", { title: "Logo" });
+  t().approvalRequest[0].status = "APPROVED";
+  await actions.createApprovalRequest("proj_1", { title: "Homepage design" });
+  assert.equal(t().approvalRequest.length, 3);
+});

@@ -11,6 +11,7 @@ import {
   findStaleProjects,
   getHubSettings,
   isValidIntervalDays,
+  postManualUpdate,
   postSystemUpdate,
   safeNotify,
   MAX_UPDATE_REMINDER_DAYS,
@@ -253,7 +254,7 @@ export async function deleteProject(projectId: string): Promise<Result> {
 
 // ---- updates ----
 
-/** The quick-post form: under 30 seconds from a phone. Notifies the client unless `notify` is false. */
+/** Posts an update without a file (the quick-post form uses postQuickUpdate in client-files.ts). Notifies the client unless `notify` is false. */
 export async function postProjectUpdate(projectId: string, input: z.input<typeof updateSchema>): Promise<Result<{ id: string }>> {
   try {
     const session = await requirePermission("CLIENT_UPDATES");
@@ -262,18 +263,7 @@ export async function postProjectUpdate(projectId: string, input: z.input<typeof
     const p = await projectRef(projectId);
     if (!p) return { success: false, error: "Project not found" };
     const d = parsed.data;
-    const at = now();
-    const update = await prisma.projectUpdate.create({
-      data: { projectId, authorId: session.user.id, kind: "MANUAL", body: d.body, internalNote: d.internalNote?.trim() || null, createdAt: at },
-      select: { id: true },
-    });
-    if (d.status && d.status !== p.status) await prisma.project.update({ where: { id: projectId }, data: { status: d.status } });
-    if (d.notify !== false) {
-      // Staff chose to notify: always send, and start the hour in which
-      // automatic (milestone) updates stay quiet.
-      await prisma.project.update({ where: { id: projectId }, data: { lastClientNotifyAt: at } });
-      await safeNotify("CLIENT_PROJECT_UPDATE", p.clientId);
-    }
+    const update = await postManualUpdate(p, { authorId: session.user.id, body: d.body, internalNote: d.internalNote?.trim() || null, status: d.status, notify: d.notify !== false }, now());
     await logAudit({
       action: "post_update",
       category: "Content",
@@ -360,14 +350,33 @@ export async function createApprovalRequest(projectId: string, input: { title: s
     if (!parsed.success) return { success: false, error: firstIssue(parsed.error) };
     const p = await projectRef(projectId);
     if (!p) return { success: false, error: "Project not found" };
+    const title = parsed.data.title;
+    const feedBody = `Approval requested: ${title}`;
+
+    // A retry (or a double submit) of a request that is still open finishes
+    // what's missing instead of creating a second approval: without
+    // transactions, an earlier attempt may have stopped after the row was
+    // written.
+    const open = await prisma.approvalRequest.findFirst({ where: { projectId, title, status: "PENDING" }, orderBy: { createdAt: "desc" }, select: { id: true, createdAt: true } });
+    if (open) {
+      if (p.status !== "WAITING_ON_CLIENT") await prisma.project.update({ where: { id: projectId }, data: { status: "WAITING_ON_CLIENT" } });
+      const posted = await prisma.projectUpdate.findFirst({ where: { projectId, kind: "APPROVAL", body: feedBody, createdAt: { gte: open.createdAt } }, select: { id: true } });
+      if (!posted) {
+        await postSystemUpdate(p, "APPROVAL", feedBody, now(), { notify: false });
+        await safeNotify("CLIENT_APPROVAL_NEEDED", p.clientId);
+      }
+      revalidateProject(p.clientId, projectId);
+      return { success: true, id: open.id };
+    }
+
     const at = now();
     const approval = await prisma.approvalRequest.create({
-      data: { projectId, title: parsed.data.title, description: parsed.data.description?.trim() || null, status: "PENDING", createdAt: at },
+      data: { projectId, title, description: parsed.data.description?.trim() || null, status: "PENDING", createdAt: at },
       select: { id: true },
     });
     await prisma.project.update({ where: { id: projectId }, data: { status: "WAITING_ON_CLIENT" } });
     // The approval push below is the notification; the feed entry stays quiet.
-    await postSystemUpdate(p, "APPROVAL", `Approval requested: ${parsed.data.title}`, at, { notify: false });
+    await postSystemUpdate(p, "APPROVAL", feedBody, at, { notify: false });
     await safeNotify("CLIENT_APPROVAL_NEEDED", p.clientId);
     await logAudit({ action: "request_approval", category: "Approval", entityType: "ApprovalRequest", entityId: approval.id, entityLabel: parsed.data.title, after: { projectId } });
     revalidateProject(p.clientId, projectId);

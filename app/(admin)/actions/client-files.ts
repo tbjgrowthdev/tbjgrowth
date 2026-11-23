@@ -5,13 +5,13 @@ import prisma from "@/lib/prisma";
 import { requirePermission, AuthError } from "@/lib/auth-guard";
 import { logAudit } from "@/lib/audit-log";
 import { now } from "@/lib/clients/clock";
-import { safeNotify } from "@/lib/clients/updates";
+import { postManualUpdate, safeNotify } from "@/lib/clients/updates";
 import { checkUpload, deleteClientFile, parseReportMetrics, storeClientFile } from "@/lib/portal/files";
 
 // Reports, invoices and update attachments for the admin Clients section.
 // - CLIENT_UPDATES (admins, editors): add and publish reports, attach files to updates.
 // - CLIENT_MANAGEMENT (admins): delete reports, everything about invoices.
-// Uploads (PDF/PNG/JPG, 20 MB) go to the private CLIENT_FILES bucket under
+// Uploads (PDF/PNG/JPG, 10 MB) go to the private CLIENT_FILES bucket under
 // clients/{clientId}/{uuid}; only the key is stored. Order without
 // transactions: file first, then the row; if the row fails the file is
 // deleted again, so a row never points at a missing file.
@@ -28,6 +28,8 @@ const str = (fd: FormData, k: string, max = 500): string => {
   const v = fd.get(k);
   return typeof v === "string" ? v.trim().slice(0, max) : "";
 };
+/** A display name for an uploaded file: no line breaks, quotes, slashes or backslashes; at most 120 characters. */
+const safeFileName = (name: string | undefined): string => (name || "file").replace(/[\r\n"\\/]+/g, "-").slice(0, 120);
 const PERIOD = /^\d{4}-(0[1-9]|1[0-2])$/;
 const CURRENCIES = ["BDT", "GBP"] as const;
 const INVOICE_STATUSES = ["DUE", "PAID", "OVERDUE", "VOID"] as const;
@@ -247,31 +249,84 @@ export async function deleteInvoice(invoiceId: string): Promise<Result> {
   }
 }
 
-// ---- update attachments ----
-
-/** Attach one file to a posted update (the quick-post form calls this right after posting). */
-export async function attachFileToUpdate(fd: FormData): Promise<Result<{ id: string }>> {
+/** Adds a file to an existing invoice, or replaces its file (the old object is deleted after the row points at the new one). */
+export async function attachInvoiceFile(fd: FormData): Promise<Result> {
   try {
-    await requirePermission("CLIENT_UPDATES");
-    const updateId = str(fd, "updateId", 100);
-    const update = await prisma.projectUpdate.findUnique({ where: { id: updateId }, select: { id: true, project: { select: { id: true, clientId: true } } } });
-    if (!update) return { success: false, error: "Update not found" };
-    const file = fd.get("file");
-    const upload = await checkUpload(file);
+    await requirePermission("CLIENT_MANAGEMENT");
+    const inv = await prisma.invoice.findUnique({ where: { id: str(fd, "invoiceId", 100) }, select: { id: true, clientId: true, number: true, fileKey: true } });
+    if (!inv) return { success: false, error: "Invoice not found" };
+    const upload = await checkUpload(fd.get("file"));
     if (!upload.ok) return { success: false, error: upload.error };
-    const name = ((file as File).name || "file").replace(/[\r\n"\\/]+/g, "-").slice(0, 120);
-    const fileKey = await storeClientFile(update.project.clientId, upload);
-    let attachment;
+    const fileKey = await storeClientFile(inv.clientId, upload);
     try {
-      attachment = await prisma.projectAttachment.create({ data: { updateId: update.id, name, fileKey }, select: { id: true } });
+      await prisma.invoice.update({ where: { id: inv.id }, data: { fileKey } });
     } catch (error) {
       await deleteClientFile(fileKey);
       throw error;
     }
-    await logAudit({ action: "attach", category: "Media", entityType: "ProjectAttachment", entityId: attachment.id, entityLabel: name, after: { updateId: update.id } });
-    revalidatePath(`/admin/clients/${update.project.clientId}/projects/${update.project.id}`);
-    return { success: true, id: attachment.id };
+    await deleteClientFile(inv.fileKey);
+    await logAudit({ action: "attach_file", category: "Content", entityType: "Invoice", entityId: inv.id, entityLabel: inv.number, after: { replaced: !!inv.fileKey } });
+    revalidateClient(inv.clientId);
+    return { success: true };
   } catch (error) {
     return failure(error, "Couldn't attach the file");
+  }
+}
+
+// ---- quick-post (update with an optional attachment) ----
+
+const UPDATE_STATUSES = ["NOT_STARTED", "IN_PROGRESS", "WAITING_ON_CLIENT", "COMPLETED"] as const;
+
+/**
+ * The quick-post form: body, optional status change, optional file, notify
+ * (on unless "false"). The file is checked and stored before the update is
+ * created, its attachment row is written next, and the client is pushed
+ * last, so a push never points at an update whose file isn't there yet. If
+ * any step before the push fails, nothing is left behind.
+ */
+export async function postQuickUpdate(fd: FormData): Promise<Result<{ id: string }>> {
+  try {
+    const session = await requirePermission("CLIENT_UPDATES");
+    const projectId = str(fd, "projectId", 100);
+    const body = str(fd, "body", 2000);
+    const internalNote = str(fd, "internalNote", 2000) || null;
+    const statusRaw = str(fd, "status", 30);
+    const notify = fd.get("notify") !== "false";
+    if (!body) return { success: false, error: "Write the update first" };
+    const status = statusRaw ? (UPDATE_STATUSES as readonly string[]).find((x) => x === statusRaw) : undefined;
+    if (statusRaw && !status) return { success: false, error: "Invalid status" };
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, clientId: true, title: true, status: true } });
+    if (!project) return { success: false, error: "Project not found" };
+
+    const file = fd.get("file");
+    let stored: { key: string; name: string } | null = null;
+    if (file instanceof File && file.size > 0) {
+      const upload = await checkUpload(file);
+      if (!upload.ok) return { success: false, error: upload.error };
+      stored = { key: await storeClientFile(project.clientId, upload), name: safeFileName(file.name) };
+    }
+
+    let update;
+    try {
+      update = await postManualUpdate(project, { authorId: session.user.id, body, internalNote, status, notify }, now(), stored ? async (updateId) => {
+        await prisma.projectAttachment.create({ data: { updateId, name: stored.name, fileKey: stored.key }, select: { id: true } });
+      } : undefined);
+    } catch (error) {
+      await deleteClientFile(stored?.key);
+      throw error;
+    }
+    await logAudit({
+      action: "post_update",
+      category: "Content",
+      entityType: "ProjectUpdate",
+      entityId: update.id,
+      entityLabel: project.title,
+      after: { projectId, notify, attachment: stored?.name ?? null, ...(status && status !== project.status ? { status } : {}) },
+    });
+    revalidatePath(`/admin/clients/${project.clientId}/projects/${project.id}`);
+    revalidatePath(`/admin/clients/${project.clientId}`);
+    return { success: true, id: update.id };
+  } catch (error) {
+    return failure(error, "Couldn't post the update");
   }
 }

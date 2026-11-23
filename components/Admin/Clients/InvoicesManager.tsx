@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Download, Trash2, AlertCircle } from "lucide-react";
-import { createInvoice, setInvoiceStatus, deleteInvoice } from "@/app/(admin)/actions/client-files";
+import { Plus, Download, Trash2, AlertCircle, Paperclip } from "lucide-react";
+import { createInvoice, setInvoiceStatus, deleteInvoice, attachInvoiceFile } from "@/app/(admin)/actions/client-files";
 import { withToast } from "@/lib/admin/toast";
+import { MAX_FILE_BYTES, MAX_FILE_LABEL } from "@/lib/portal/upload-limits";
+
+/** Browser-side size check, so an oversize file gets a clear message instead of a generic body-limit error. */
+function tooBig(fd: FormData): boolean {
+  const f = fd.get("file");
+  return f instanceof File && f.size > MAX_FILE_BYTES;
+}
 
 type Status = "DUE" | "PAID" | "OVERDUE" | "VOID";
 type InvoiceRow = { id: string; number: string; amountMinor: number; currency: string; status: Status; issueDate: Date | string; dueDate: Date | string; fileKey: string | null };
@@ -49,6 +56,7 @@ export default function InvoicesManager({ clientId, invoices }: { clientId: stri
           const form = e.currentTarget;
           const fd = new FormData(form);
           fd.set("clientId", clientId);
+          if (tooBig(fd)) return setError(`The file is larger than ${MAX_FILE_LABEL}`);
           if (await run(createInvoice(fd), { success: "Invoice saved", error: "Couldn't save the invoice" })) form.reset();
         }}
       >
@@ -86,7 +94,7 @@ export default function InvoicesManager({ clientId, invoices }: { clientId: stri
           </div>
         </div>
         <div>
-          <label htmlFor="inv-file" className={label}>Invoice file (optional: PDF, PNG or JPG, up to 20 MB)</label>
+          <label htmlFor="inv-file" className={label}>Invoice file (optional: PDF, PNG or JPG, up to {MAX_FILE_LABEL})</label>
           <input id="inv-file" name="file" type="file" accept="application/pdf,image/png,image/jpeg" className="block w-full min-h-11 text-base" />
         </div>
         <button type="submit" disabled={busy} className="flex min-h-11 items-center gap-2 px-5 py-2 bg-brand-orange-deep text-white rounded-lg hover:bg-brand-orange disabled:opacity-50">
@@ -116,6 +124,25 @@ export default function InvoicesManager({ clientId, invoices }: { clientId: stri
                     <Download size={16} /> File
                   </a>
                 )}
+                <label className={`${btn} cursor-pointer`}>
+                  <Paperclip size={16} /> {i.fileKey ? "Replace file" : "Add file"}
+                  <input
+                    type="file"
+                    accept="application/pdf,image/png,image/jpeg"
+                    className="sr-only"
+                    disabled={busy}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file) return;
+                      const fd = new FormData();
+                      fd.set("invoiceId", i.id);
+                      fd.set("file", file);
+                      if (tooBig(fd)) return setError(`The file is larger than ${MAX_FILE_LABEL}`);
+                      run(attachInvoiceFile(fd), { success: "File attached", error: "Couldn't attach the file" });
+                    }}
+                  />
+                </label>
                 <button type="button" className={`${btn} text-red-700 dark:text-red-300`} disabled={busy} onClick={() => window.confirm("Delete this invoice and its file?") && run(deleteInvoice(i.id), { success: "Invoice deleted", error: "Couldn't delete the invoice" })}>
                   <Trash2 size={16} /> Delete
                 </button>

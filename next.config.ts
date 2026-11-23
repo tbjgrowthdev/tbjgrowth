@@ -50,8 +50,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pg", "pg-cloudflare"],
   experimental: {
     serverActions: {
-      // Client Hub uploads (reports, invoices) go up to 20 MB plus form fields.
-      bodySizeLimit: "21mb",
+      bodySizeLimit: "10mb",
     },
     cpus: 1,
   },

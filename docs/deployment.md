@@ -166,7 +166,7 @@ Reports, invoices and update attachments for the client portal live in the priva
 npx wrangler r2 bucket create tbj-client-files    # private: leave public access OFF, no custom domain
 ```
 
-Never turn on public access or connect a domain. Files are only served by `/api/portal/files/[id]` (the signed-in client, own files only) and `/api/admin/client-files/[id]` (staff with `CLIENT_MANAGEMENT`), both with `Cache-Control: private, no-store`. Keys are `clients/{clientId}/{uuid}`; uploads are PDF, PNG or JPG up to 20 MB, checked by their first bytes.
+Never turn on public access or connect a domain. Files are only served by `/api/portal/files/[id]` (the signed-in client, own files only) and `/api/admin/client-files/[id]` (staff with `CLIENT_MANAGEMENT`), both with `Cache-Control: private, no-store`. Keys are `clients/{clientId}/{uuid}`; uploads are PDF, PNG or JPG up to 10 MB (`lib/portal/upload-limits.ts`; it fits under the 10 MB Server Action body limit in `next.config.ts`), checked by their first bytes.
 
 ## Android apps (TBJ Admin + TBJ Growth Tech)
 
