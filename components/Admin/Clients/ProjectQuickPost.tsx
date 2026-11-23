@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, AlertCircle } from "lucide-react";
 import { postProjectUpdate } from "@/app/(admin)/actions/client-projects";
+import { attachFileToUpdate } from "@/app/(admin)/actions/client-files";
 import { withToast } from "@/lib/admin/toast";
 
 type Template = { id: string; en: string; bn: string };
@@ -37,6 +38,8 @@ export default function ProjectQuickPost({
   const [status, setStatus] = useState<"" | Status>("");
   const [notify, setNotify] = useState(true);
   const [note, setNote] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +54,15 @@ export default function ProjectQuickPost({
         error: "Couldn't post the update",
       });
       if (!result.success) return setError(result.error);
+      if (file) {
+        const fd = new FormData();
+        fd.set("updateId", result.id);
+        fd.set("file", file);
+        const attached = await attachFileToUpdate(fd);
+        if (!attached.success) setError(`Update posted, but the file wasn't attached: ${attached.error}`);
+      }
+      setFile(null);
+      setFileInputKey((k) => k + 1);
       setBody("");
       setNote("");
       setStatus("");
@@ -107,6 +119,10 @@ export default function ProjectQuickPost({
           <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="h-5 w-5" />
           Notify client
         </label>
+      </div>
+      <div>
+        <label htmlFor="qp-file" className="block text-sm font-medium text-muted mb-1">Attach a file (optional: PDF, PNG or JPG, up to 20 MB)</label>
+        <input key={fileInputKey} id="qp-file" type="file" accept="application/pdf,image/png,image/jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="block w-full min-h-11 text-base" />
       </div>
       <details>
         <summary className="min-h-11 cursor-pointer py-2 text-sm text-caption">Internal note (staff only)</summary>

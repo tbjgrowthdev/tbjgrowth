@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus, Send, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus, Send, ChevronRight, FileBarChart, Receipt } from "lucide-react";
 import PageTitle from "@/components/Admin/PageTitle";
 import ClientForm from "@/components/Admin/Clients/ClientForm";
 import ClientUsersPanel from "@/components/Admin/Clients/ClientUsersPanel";
@@ -21,6 +21,16 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <ArrowLeft size={16} /> All clients
       </Link>
       <PageTitle>{client.name}</PageTitle>
+      <nav className="flex flex-wrap gap-2" aria-label="Client sections">
+        <Link href={`/admin/clients/${client.id}/reports`} className="inline-flex min-h-11 items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm hover:bg-background">
+          <FileBarChart size={16} /> Reports
+        </Link>
+        {viewer.canManage && (
+          <Link href={`/admin/clients/${client.id}/invoices`} className="inline-flex min-h-11 items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm hover:bg-background">
+            <Receipt size={16} /> Invoices
+          </Link>
+        )}
+      </nav>
 
       {viewer.canManage ? (
         <ClientForm initial={client} managers={managers} />

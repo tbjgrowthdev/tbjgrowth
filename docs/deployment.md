@@ -158,6 +158,16 @@ The GitHub Actions workflows that call these need matching secrets configured in
 - **The build has no database, on purpose.** Nothing may query the database at build time: admin pages are `force-dynamic` (`app/(admin)/layout.tsx`) and landing pages render and cache at runtime (`app/landing-pages/layout.tsx`). A CI build failing with `NeonDbError` means a page started prerendering with live data.
 - **These checks don't block a deploy by themselves:** Cloudflare deploys whatever reaches `main`. To make them a gate, protect `main` in GitHub (Settings → Branches): require a pull request and the `checks` status check.
 
+## Client Hub files (private R2 bucket)
+
+Reports, invoices and update attachments for the client portal live in the private R2 bucket `tbj-client-files`, bound as `CLIENT_FILES` in `wrangler.jsonc`. **Create it before deploying the Client Hub code; the deploy fails without it:**
+
+```bash
+npx wrangler r2 bucket create tbj-client-files    # private: leave public access OFF, no custom domain
+```
+
+Never turn on public access or connect a domain. Files are only served by `/api/portal/files/[id]` (the signed-in client, own files only) and `/api/admin/client-files/[id]` (staff with `CLIENT_MANAGEMENT`), both with `Cache-Control: private, no-store`. Keys are `clients/{clientId}/{uuid}`; uploads are PDF, PNG or JPG up to 20 MB, checked by their first bytes.
+
 ## Android apps (TBJ Admin + TBJ Growth Tech)
 
 The Capacitor project is in `mobile/`. Build steps, the signing key and versioning are in `mobile/README.md`. This section covers the one-time cloud setup and releasing an APK.

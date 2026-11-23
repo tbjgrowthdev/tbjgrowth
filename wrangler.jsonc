@@ -25,7 +25,13 @@
     // domain): only app/api/admin/app-download streams it, to signed-in
     // admins. CREATE IT BEFORE DEPLOYING (npx wrangler r2 bucket create
     // tbj-app-builds), or the deploy fails. See docs/deployment.md.
-    { "binding": "APP_BUILDS", "bucket_name": "tbj-app-builds" }
+    { "binding": "APP_BUILDS", "bucket_name": "tbj-app-builds" },
+    // Client Hub files (reports, invoices, update attachments). PRIVATE bucket
+    // (no public access, no custom domain): served only by
+    // /api/portal/files/[id] and /api/admin/client-files/[id]. CREATE IT
+    // BEFORE DEPLOYING (npx wrangler r2 bucket create tbj-client-files), or
+    // the deploy fails. See docs/deployment.md.
+    { "binding": "CLIENT_FILES", "bucket_name": "tbj-client-files" }
   ],
   // Revalidation timestamps written by revalidatePath(). Create this database
   // before deploying and paste its ID here. The deploy command creates the table.

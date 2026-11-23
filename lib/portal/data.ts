@@ -160,13 +160,15 @@ export async function respondToApproval(ctx: ClientContext, approvalId: string, 
 
 // ── Reports ───────────────────────────────────────────────────────────────
 
-const REPORT_FIELDS = { id: true, period: true, title: true, summary: true, metrics: true, publishedAt: true, fileKey: true, project: { select: { id: true, title: true } } } as const;
+const REPORT_FIELDS = { id: true, period: true, title: true, summary: true, metrics: true, publishedAt: true, fileKey: true, project: { select: { id: true, title: true, clientId: true } } } as const;
 
-type ReportRow = { id: string; period: string; title: string; summary: string | null; metrics: unknown; publishedAt: Date | null; fileKey: string | null; project: { id: string; title: string } | null };
+type ReportRow = { id: string; period: string; title: string; summary: string | null; metrics: unknown; publishedAt: Date | null; fileKey: string | null; project: { id: string; title: string; clientId: string } | null };
 
-function shapeReport(r: ReportRow) {
-  const { fileKey, ...rest } = r;
-  return { ...rest, hasFile: !!fileKey };
+// The schema doesn't tie Report.projectId to the report's client, so a
+// project of another client is dropped here (the admin action refuses it too).
+function shapeReport(ctx: ClientContext, r: ReportRow) {
+  const { fileKey, project, ...rest } = r;
+  return { ...rest, project: project && project.clientId === ctx.clientId ? { id: project.id, title: project.title } : null, hasFile: !!fileKey };
 }
 
 /** Published reports only; drafts (publishedAt null) are staff-only. */
@@ -176,7 +178,7 @@ export async function listReports(ctx: ClientContext) {
     select: REPORT_FIELDS,
     orderBy: [{ period: "desc" }, { publishedAt: "desc" }],
   });
-  return rows.map(shapeReport);
+  return rows.map((r) => shapeReport(ctx, r));
 }
 
 export async function getReport(ctx: ClientContext, reportId: string) {
@@ -185,7 +187,7 @@ export async function getReport(ctx: ClientContext, reportId: string) {
     where: { id: reportId, clientId: ctx.clientId, publishedAt: { not: null } },
     select: REPORT_FIELDS,
   });
-  return r ? shapeReport(r) : null;
+  return r ? shapeReport(ctx, r) : null;
 }
 
 // ── Invoices ──────────────────────────────────────────────────────────────
