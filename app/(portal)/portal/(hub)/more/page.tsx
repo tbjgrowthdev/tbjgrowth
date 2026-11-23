@@ -2,7 +2,7 @@ import { MessageCircle, Phone, CalendarClock } from "lucide-react";
 import { requireClientPage } from "@/lib/portal/page-guard";
 import { fill, formatDate, formatTime, portalStrings } from "@/lib/portal/strings";
 import { getProfile, listMeetings, listOpenSlots, listRequests } from "@/lib/portal/data";
-import { BookCallForm, DeletionRequest, LanguageSwitch, NotificationSettings, RequestForm, SignOutButton } from "@/components/Portal/MoreForms";
+import { AppLockSetting, BookCallForm, DeletionRequest, LanguageSwitch, NotificationSettings, RequestForm, SignOutButton } from "@/components/Portal/MoreForms";
 import { clientPushPreferences } from "@/lib/portal/push-devices";
 
 // More: meetings (list + book a call), contact the account manager, send a
@@ -88,6 +88,8 @@ export default async function PortalMorePage() {
         <p className="text-sm text-muted">{t.notificationsBody}</p>
         <NotificationSettings preferences={prefs} labels={t.notify} />
       </section>
+
+      <AppLockSetting t={t} />
 
       <section className="admin-card space-y-3 p-4" aria-labelledby="language">
         <h2 id="language" className="text-lg font-bold">{t.languageTitle}</h2>

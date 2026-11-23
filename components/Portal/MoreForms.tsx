@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus, Send, LogOut, Trash2 } from "lucide-react";
 import { bookCall } from "@/app/(portal)/actions/booking";
 import { sendRequest } from "@/app/(portal)/actions/requests";
 import { setLanguage, requestAccountDeletion } from "@/app/(portal)/actions/profile";
 import { signOutClient } from "@/app/(portal)/actions/auth";
-import { setClientPushPreference } from "@/app/(portal)/actions/push";
+import { setClientPushPreference, unregisterClientPushDevice } from "@/app/(portal)/actions/push";
+import { isClientApp, unregisterCurrentDevice } from "@/lib/native";
+import { CLIENT_LOCK_SETTING_KEY } from "@/lib/native-lock";
 import type { ClientPushEventName } from "@/lib/portal/push-devices";
 import type { PortalStrings } from "@/lib/portal/strings";
 
@@ -139,6 +141,8 @@ export function SignOutButton({ label }: { label: string }) {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
+        // In the app: stop this phone's notifications first (no-op on the web).
+        await unregisterCurrentDevice(unregisterClientPushDevice);
         await signOutClient();
         router.replace("/portal/login");
       }}
@@ -219,5 +223,49 @@ export function NotificationSettings({ preferences, labels }: { preferences: Arr
         </li>
       ))}
     </ul>
+  );
+}
+
+const noopSubscribe = () => () => {};
+function readLockSetting(): boolean {
+  try {
+    return localStorage.getItem(CLIENT_LOCK_SETTING_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** App lock switch, shown only inside the client app. Stored on this phone. */
+export function AppLockSetting({ t }: { t: T }) {
+  // Read on the client only (the server renders nothing): no hydration mismatch.
+  const inApp = useSyncExternalStore(noopSubscribe, () => isClientApp(navigator.userAgent), () => false);
+  const stored = useSyncExternalStore(noopSubscribe, readLockSetting, () => false);
+  const [override, setOverride] = useState<boolean | null>(null);
+  const on = override ?? stored;
+  if (!inApp) return null;
+  return (
+    <section className="admin-card space-y-3 p-4" aria-labelledby="app-lock">
+      <h2 id="app-lock" className="text-lg font-bold">{t.appLockTitle}</h2>
+      <p className="text-sm text-muted">{t.appLockBody}</p>
+      <label className="flex min-h-12 items-center justify-between gap-3">
+        <span className="font-semibold">{t.appLockOn}</span>
+        <input
+          type="checkbox"
+          role="switch"
+          className="h-6 w-6"
+          checked={on}
+          onChange={(e) => {
+            const next = e.target.checked;
+            setOverride(next);
+            try {
+              if (next) localStorage.setItem(CLIENT_LOCK_SETTING_KEY, "1");
+              else localStorage.removeItem(CLIENT_LOCK_SETTING_KEY);
+            } catch {
+              /* storage unavailable */
+            }
+          }}
+        />
+      </label>
+    </section>
   );
 }

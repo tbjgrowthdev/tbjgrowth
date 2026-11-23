@@ -29,3 +29,18 @@ export function backAction(locked: boolean, canGoBack: boolean): "ignore" | "bac
 // Inline, pre-paint version of shouldLockOnLoad. If storage can't be read in
 // the admin app it stays locked (fails closed).
 export const LOCK_INIT_SCRIPT = `(function(){var ua=navigator.userAgent||"";if(ua.indexOf(${JSON.stringify(ADMIN_UA_MARK)})===-1)return;var f=null;try{f=sessionStorage.getItem(${JSON.stringify(UNLOCKED_KEY)})}catch(e){}if(f!=="1")document.documentElement.setAttribute(${JSON.stringify(LOCK_ATTR)},"1")})()`;
+
+// ── TBJ Growth Tech client app (components/Portal/ClientAppBridge.tsx) ──
+// The client app appends CLIENT_UA_MARK to its user agent
+// (mobile/scripts/flavor-configs.mjs). Its app lock is optional: off until
+// the client turns it on in More (CLIENT_LOCK_SETTING_KEY in localStorage,
+// per phone). When on, it locks on a fresh start and after 5+ minutes away,
+// like TBJ Admin, and CLIENT_LOCK_INIT_SCRIPT hides /portal before paint.
+export const CLIENT_UA_MARK = "TBJClientApp";
+export const CLIENT_LOCK_SETTING_KEY = "tbj-client-lock";
+
+export function shouldClientLockOnLoad(userAgent: string, lockSetting: string | null, unlockedFlag: string | null): boolean {
+  return userAgent.includes(CLIENT_UA_MARK) && !userAgent.includes(ADMIN_UA_MARK) && lockSetting === "1" && unlockedFlag !== "1";
+}
+
+export const CLIENT_LOCK_INIT_SCRIPT = `(function(){var ua=navigator.userAgent||"";if(ua.indexOf(${JSON.stringify(CLIENT_UA_MARK)})===-1||ua.indexOf(${JSON.stringify(ADMIN_UA_MARK)})!==-1)return;var on=null,f=null;try{on=localStorage.getItem(${JSON.stringify(CLIENT_LOCK_SETTING_KEY)})}catch(e){}if(on!=="1")return;try{f=sessionStorage.getItem(${JSON.stringify(UNLOCKED_KEY)})}catch(e){}if(f!=="1")document.documentElement.setAttribute(${JSON.stringify(LOCK_ATTR)},"1")})()`;

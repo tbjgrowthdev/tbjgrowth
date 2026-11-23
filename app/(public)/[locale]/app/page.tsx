@@ -37,11 +37,12 @@ export default function AppDownloadPage() {
             <span className="text-sm font-medium text-brand-orange-deep dark:text-brand-orange-light">Mobile app</span>
           </span>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4 tracking-tight">
-            TBJ Growth Tech{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">on your phone</span>
+            For TBJ clients:{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange-deep to-brand-orange">track your project</span>
           </h1>
           <p className="text-lg text-muted max-w-xl mx-auto">
-            Browse our services and case studies, and book a call, from an app on your home screen.
+            The TBJ Growth Tech app is our client portal: project progress and updates, approvals, monthly reports, invoices and meetings, with
+            notifications. Sign in with the email your account manager invited.
           </p>
         </div>
       </section>

@@ -8,10 +8,12 @@ const MAIN = "android/app/src/main/assets/capacitor.config.json";
 const ORIGIN = "https://tbjgrowthtech.com";
 
 export const FLAVORS = {
-  // appendUserAgent lets the site recognise TBJ Admin before any script runs
-  // (biometric lock, lib/native-lock.ts ADMIN_UA_MARK). Keep them in sync.
+  // appendUserAgent lets the site recognise each app before any script runs
+  // (lib/native-lock.ts ADMIN_UA_MARK / CLIENT_UA_MARK: biometric lock, and
+  // middleware keeping the client app on /portal). Keep them in sync.
   admin: { appId: "com.tbjgrowthtech.admin", appName: "TBJ Admin", url: `${ORIGIN}/admin`, appendUserAgent: "TBJAdminApp" },
-  client: { appId: "com.tbjgrowthtech.app", appName: "TBJ Growth Tech", url: `${ORIGIN}/` },
+  // The client app is the Client Hub: it opens /portal, never public pages.
+  client: { appId: "com.tbjgrowthtech.app", appName: "TBJ Growth Tech", url: `${ORIGIN}/portal`, appendUserAgent: "TBJClientApp" },
 };
 
 const base = JSON.parse(readFileSync(MAIN, "utf8"));

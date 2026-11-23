@@ -6,11 +6,16 @@
 // npm package is bundled into the website.
 //
 // Two apps share the shell (mobile/README.md): TBJ Admin
-// (com.tbjgrowthtech.admin, push + biometric lock) and TBJ Growth Tech
-// (com.tbjgrowthtech.app, the public site only). Admin-only behaviour must
-// check isAdminApp(), never just isNativeApp().
+// (com.tbjgrowthtech.admin, /admin, staff push + biometric lock) and TBJ
+// Growth Tech (com.tbjgrowthtech.app, the client portal /portal, client push
+// + optional lock). Each app's behaviour must check its own app (isAdminApp,
+// isClientApp / pushTargetFor), never just isNativeApp().
+import { safePortalPath } from "@/lib/portal/paths";
+import { ADMIN_UA_MARK, CLIENT_UA_MARK } from "@/lib/native-lock";
 
+export { CLIENT_UA_MARK };
 export const ADMIN_APP_ID = "com.tbjgrowthtech.admin";
+export const CLIENT_APP_ID = "com.tbjgrowthtech.app";
 export const PUSH_TOKEN_STORAGE_KEY = "tbj-push-token";
 
 type CapacitorGlobal = {
@@ -86,4 +91,37 @@ export async function unregisterCurrentDevice(unregister: (token: string) => Pro
   } catch {
     /* storage unavailable */
   }
+}
+
+/** The client app identifies itself in its user agent (synchronously readable, also server-side). */
+export function isClientApp(userAgent: string | null | undefined): boolean {
+  return typeof userAgent === "string" && userAgent.includes(CLIENT_UA_MARK) && !userAgent.includes(ADMIN_UA_MARK);
+}
+
+/** The installed app's id, or null on the web. */
+export async function nativeAppId(): Promise<string | null> {
+  const app = nativePlugin<{ getInfo: () => Promise<{ id: string }> }>("App");
+  if (!app) return null;
+  try {
+    return (await app.getInfo()).id;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Which push this shell may register: "staff" only in TBJ Admin, "client"
+ * only in the client app (its id AND its user-agent mark), otherwise none.
+ * Staff and client devices never mix (PushDevice has one owner).
+ */
+export function pushTargetFor({ appId, userAgent }: { appId: string | null; userAgent: string | null | undefined }): "staff" | "client" | null {
+  const ua = typeof userAgent === "string" ? userAgent : "";
+  if (appId === ADMIN_APP_ID && !ua.includes(CLIENT_UA_MARK)) return "staff";
+  if (appId === CLIENT_APP_ID && isClientApp(ua)) return "client";
+  return null;
+}
+
+/** Where tapping a client push may go: a safe /portal path (safePortalPath), else /portal. */
+export function safeClientPushPath(url: unknown): string {
+  return safePortalPath(url) ?? "/portal";
 }

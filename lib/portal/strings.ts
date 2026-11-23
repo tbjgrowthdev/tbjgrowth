@@ -78,6 +78,7 @@ const en = {
     thanks: "Thank you. Your team has your answer.",
   },
   meetingAt: "{date} at {time}",
+  lock: { title: "TBJ Growth Tech is locked", body: "Unlock with your fingerprint, face or phone PIN.", unlock: "Unlock", reason: "Unlock TBJ Growth Tech" },
   reports: {
     title: "Reports",
     empty: "No reports yet. Your monthly report appears here when it's ready.",
@@ -130,6 +131,9 @@ const en = {
     deleteConfirm: "Send a deletion request to your team?",
     deleteRequested: "Deletion requested on {date}. Your team will be in touch.",
     error: "Something went wrong. Please try again.",
+    appLockTitle: "App lock",
+    appLockBody: "Ask for your fingerprint, face or phone PIN when the app opens and after 5 minutes away.",
+    appLockOn: "Use app lock",
     notificationsTitle: "Notifications",
     notificationsBody: "Choose what the TBJ Growth Tech app tells you about.",
     notify: {
@@ -220,6 +224,7 @@ const bn: PortalStrings = {
     thanks: "ধন্যবাদ। আপনার উত্তর টিমের কাছে পৌঁছেছে।",
   },
   meetingAt: "{date}, {time}",
+  lock: { title: "TBJ Growth Tech লক করা আছে", body: "আঙুলের ছাপ, ফেস বা ফোনের পিন দিয়ে খুলুন।", unlock: "খুলুন", reason: "TBJ Growth Tech খুলুন" },
   reports: {
     title: "রিপোর্ট",
     empty: "এখনও কোনো রিপোর্ট নেই। মাসিক রিপোর্ট তৈরি হলে এখানে দেখা যাবে।",
@@ -272,6 +277,9 @@ const bn: PortalStrings = {
     deleteConfirm: "টিমকে অ্যাকাউন্ট মোছার অনুরোধ পাঠাবেন?",
     deleteRequested: "{date} তারিখে মোছার অনুরোধ পাঠানো হয়েছে। আপনার টিম যোগাযোগ করবে।",
     error: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+    appLockTitle: "অ্যাপ লক",
+    appLockBody: "অ্যাপ খুললে এবং ৫ মিনিট বাইরে থাকলে আঙুলের ছাপ, ফেস বা ফোনের পিন চাইবে।",
+    appLockOn: "অ্যাপ লক চালু করুন",
     notificationsTitle: "নোটিফিকেশন",
     notificationsBody: "TBJ Growth Tech অ্যাপ কোন বিষয়ে জানাবে বেছে নিন।",
     notify: {

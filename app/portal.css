@@ -81,3 +81,9 @@
 .portal-shell :is(button, a.portal-tap) {
   min-height: 44px;
 }
+
+/* Client app lock (components/Portal/ClientAppBridge.tsx, lib/native-lock.ts):
+   the portal stays hidden until unlocked, from before first paint. */
+html[data-tbj-lock] .portal-shell > :not(.portal-lock) {
+  visibility: hidden;
+}

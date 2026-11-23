@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Client app (TBJ Growth Tech): the public site only. The push and
-     biometric plugins are compiled into both flavors, so their permissions
-     are stripped here; the website's native bridge only runs in TBJ Admin. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove" />
-    <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
-</manifest>
+<!-- Client app (TBJ Growth Tech): the Client Hub at /portal. It uses push
+     (client notifications) and the optional biometric app lock, so it keeps
+     the permissions the plugins declare, exactly like TBJ Admin. Nothing to
+     add or remove here; the file stays as the place for client-only changes. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

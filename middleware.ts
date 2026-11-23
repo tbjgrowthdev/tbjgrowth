@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getRedirectMap } from "@/lib/redirect-cache";
 import { isKnownLocalePrefix } from "@/lib/i18n";
 import { getNextAuthSecret } from "@/lib/env";
-import { decideGate, isLocaleExempt, isPortalPath } from "@/lib/route-gate";
+import { clientAppRedirect, decideGate, isLocaleExempt, isPortalPath } from "@/lib/route-gate";
 import { CLIENT_SESSION_COOKIE, verifyClientSession } from "@/lib/portal/session-cookie";
 
 /** Splits a known locale prefix ("en-bd", "bn-bd", "en-ae", "ar-ae") off the front of a path, if present. */
@@ -19,6 +19,10 @@ function stripLocalePrefix(pathname: string): { prefix: string | null; rest: str
 export default withAuth(
   async function middleware(req) {
     const pathname = req.nextUrl.pathname;
+
+    // The client app (TBJClientApp user agent) only ever shows /portal.
+    const appRedirect = clientAppRedirect(pathname, req.headers.get("user-agent"));
+    if (appRedirect) return NextResponse.redirect(new URL(appRedirect, req.url));
 
     // 0. Client Hub (/portal): its own session cookie, never the staff token,
     //    never DB redirects or locale handling. See lib/route-gate.ts.

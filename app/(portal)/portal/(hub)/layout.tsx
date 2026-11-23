@@ -1,5 +1,6 @@
 import PortalHeader from "@/components/Portal/PortalHeader";
 import TabBar from "@/components/Portal/TabBar";
+import ClientAppBridge from "@/components/Portal/ClientAppBridge";
 import { requireClientPage } from "@/lib/portal/page-guard";
 import { portalStrings } from "@/lib/portal/strings";
 
@@ -15,6 +16,7 @@ export default async function HubLayout({ children }: { children: React.ReactNod
       <PortalHeader title={t.appName} brand={t.brand} />
       <main className="portal-main mx-auto max-w-3xl pt-5">{children}</main>
       <TabBar labels={t.tabs} />
+      <ClientAppBridge t={t.lock} />
     </div>
   );
 }

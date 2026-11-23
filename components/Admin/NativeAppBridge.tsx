@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { Lock } from "lucide-react";
 import { registerPushDevice } from "@/app/(admin)/actions/push";
-import { isAdminApp, nativePlugin, safeAdminPath, PUSH_TOKEN_STORAGE_KEY } from "@/lib/native";
+import { isAdminApp, nativeAppId, nativePlugin, pushTargetFor, safeAdminPath, PUSH_TOKEN_STORAGE_KEY } from "@/lib/native";
 import { LOCK_ATTR, UNLOCKED_KEY, backAction } from "@/lib/native-lock";
 
 // Native features of the TBJ Admin Android app, wired from the live admin
@@ -151,9 +151,11 @@ export default function NativeAppBridge() {
         );
       }
 
-      if (push) {
+      // Staff push only from TBJ Admin itself, never from the client app.
+      const staffPush = pushTargetFor({ appId: await nativeAppId(), userAgent: navigator.userAgent }) !== "staff" ? null : push;
+      if (staffPush) {
         keep(
-          await push.addListener("registration", async ({ value }: { value: string }) => {
+          await staffPush.addListener("registration", async ({ value }: { value: string }) => {
             try {
               localStorage.setItem(PUSH_TOKEN_STORAGE_KEY, value);
             } catch {
@@ -162,19 +164,19 @@ export default function NativeAppBridge() {
             await registerPushDevice({ token: value, platform: "android" });
           })
         );
-        keep(await push.addListener("registrationError", (error: unknown) => console.error("Push registration failed:", error)));
+        keep(await staffPush.addListener("registrationError", (error: unknown) => console.error("Push registration failed:", error)));
         keep(
           // Navigating reloads the page. If the app is locked it stays locked
           // (lock() cleared the unlocked flag), so a notification tap can't skip it.
-          await push.addListener("pushNotificationActionPerformed", ({ notification }: { notification?: { data?: { url?: unknown } } }) => {
+          await staffPush.addListener("pushNotificationActionPerformed", ({ notification }: { notification?: { data?: { url?: unknown } } }) => {
             window.location.assign(safeAdminPath(notification?.data?.url));
           })
         );
         try {
-          let { receive } = await push.checkPermissions();
-          if (receive === "prompt" || receive === "prompt-with-rationale") receive = (await push.requestPermissions()).receive;
+          let { receive } = await staffPush.checkPermissions();
+          if (receive === "prompt" || receive === "prompt-with-rationale") receive = (await staffPush.requestPermissions()).receive;
           // Registering on every app start also refreshes the device's lastSeenAt.
-          if (receive === "granted" && !cancelled) await push.register();
+          if (receive === "granted" && !cancelled) await staffPush.register();
         } catch (error) {
           console.error("Push setup failed:", error);
         }

@@ -7,6 +7,7 @@
 //   middleware can verify its signature and expiry; requireClient() checks
 //   revocation on every page and Server Action.
 import { ALL_ROLES } from "@/lib/permissions";
+import { ADMIN_UA_MARK, CLIENT_UA_MARK } from "@/lib/native-lock";
 
 // Paths that live outside the app/(public)/[locale] tree entirely (standalone
 // campaign landing pages, metadata routes, the Client Hub): never
@@ -32,6 +33,8 @@ export type GateInput = {
   staffToken: { role?: unknown } | null | undefined;
   /** A client session cookie with a valid signature that hasn't expired. */
   hasClientSession: boolean;
+  /** The request's User-Agent: the client app (TBJClientApp) is kept on /portal. */
+  userAgent?: string | null;
 };
 
 export type GateDecision =
@@ -48,7 +51,21 @@ const ADMIN_ONLY_PREFIXES = ["/admin/settings", "/admin/admins", "/admin/leads",
 // Client Hub admin: CLIENT_MANAGEMENT / CLIENT_UPDATES (admins and editors).
 const CLIENT_HUB_PREFIXES = ["/admin/clients"];
 
-export function decideGate({ pathname, search = "", staffToken, hasClientSession }: GateInput): GateDecision {
+/**
+ * The TBJ Growth Tech client app shows only the portal: any other page it
+ * requests (public site, /login, /admin) goes to /portal. /api is left
+ * alone (file downloads, Server Actions use the page's own route).
+ */
+export function clientAppRedirect(pathname: string, userAgent: string | null | undefined): string | null {
+  if (typeof userAgent !== "string" || !userAgent.includes(CLIENT_UA_MARK) || userAgent.includes(ADMIN_UA_MARK)) return null;
+  if (isPortalPath(pathname) || isUnder(pathname, "/api")) return null;
+  return "/portal";
+}
+
+export function decideGate({ pathname, search = "", staffToken, hasClientSession, userAgent }: GateInput): GateDecision {
+  const appRedirect = clientAppRedirect(pathname, userAgent);
+  if (appRedirect) return redirect(appRedirect);
+
   // Client Hub. A staff token is ignored here on purpose.
   if (isPortalPath(pathname)) {
     // Always open: middleware only knows the signature, and a revoked session

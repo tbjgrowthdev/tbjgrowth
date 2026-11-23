@@ -4,7 +4,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // app, then scripts/flavor-configs.mjs writes one per flavor that changes only
 // the start URL, appId and appName:
 //   admin  -> com.tbjgrowthtech.admin, "TBJ Admin",       https://tbjgrowthtech.com/admin
-//   client -> com.tbjgrowthtech.app,   "TBJ Growth Tech", https://tbjgrowthtech.com/
+//   client -> com.tbjgrowthtech.app,   "TBJ Growth Tech", https://tbjgrowthtech.com/portal
 // The apps load the LIVE site (Server Actions need the real origin), so a
 // website deploy updates both apps with no new APK.
 const config: CapacitorConfig = {
