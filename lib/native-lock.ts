@@ -43,4 +43,7 @@ export function shouldClientLockOnLoad(userAgent: string, lockSetting: string | 
   return userAgent.includes(CLIENT_UA_MARK) && !userAgent.includes(ADMIN_UA_MARK) && lockSetting === "1" && unlockedFlag !== "1";
 }
 
+/** For /portal/login: never start hidden there (no bridge runs on that page to unlock it). */
+export const CLIENT_LOCK_CLEAR_SCRIPT = `document.documentElement.removeAttribute(${JSON.stringify(LOCK_ATTR)})`;
+
 export const CLIENT_LOCK_INIT_SCRIPT = `(function(){var ua=navigator.userAgent||"";if(ua.indexOf(${JSON.stringify(CLIENT_UA_MARK)})===-1||ua.indexOf(${JSON.stringify(ADMIN_UA_MARK)})!==-1)return;var on=null,f=null;try{on=localStorage.getItem(${JSON.stringify(CLIENT_LOCK_SETTING_KEY)})}catch(e){}if(on!=="1")return;try{f=sessionStorage.getItem(${JSON.stringify(UNLOCKED_KEY)})}catch(e){}if(f!=="1")document.documentElement.setAttribute(${JSON.stringify(LOCK_ATTR)},"1")})()`;

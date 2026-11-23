@@ -291,15 +291,36 @@ export async function bookCall(ctx: ClientContext, slotId: string, input: { mess
     RETURNING "id", "startsAt", "duration"`;
   if (claimed.length !== 1) return { ok: false, reason: "taken" };
   const message = typeof input.message === "string" ? input.message.trim().slice(0, 2000) || null : null;
-  try {
-    const booking = await prisma.booking.create({
+  const create = () =>
+    prisma.booking.create({
       data: { slotId, name: user.name, email: user.email, company: user.client.name, message, status: "CONFIRMED", clientUserId: ctx.clientUserId },
       select: { id: true },
     });
+  try {
+    let booking;
+    try {
+      booking = await create();
+    } catch (error) {
+      if ((error as { code?: string })?.code !== "P2002") throw error;
+      // The slot's unique slotId is held. Staff cancelling a booking frees the
+      // slot (isBooked=false) but keeps the CANCELLED row; that row gives way.
+      // A CONFIRMED one means the slot really is taken: it stays booked.
+      const holder = await prisma.booking.findUnique({ where: { slotId }, select: { id: true, status: true } });
+      if (holder?.status !== "CANCELLED") return { ok: false, reason: "taken" };
+      try {
+        await prisma.booking.delete({ where: { id: holder.id, status: "CANCELLED" } });
+      } catch (gone) {
+        if ((gone as { code?: string })?.code !== "P2025") throw gone;
+      }
+      try {
+        booking = await create();
+      } catch (again) {
+        if ((again as { code?: string })?.code === "P2002") return { ok: false, reason: "taken" };
+        throw again;
+      }
+    }
     return { ok: true, bookingId: booking.id, startsAt: new Date(claimed[0].startsAt), duration: claimed[0].duration, name: user.name, email: user.email, company: user.client.name };
   } catch (error) {
-    // Someone else's booking already holds this slot: it stays booked.
-    if ((error as { code?: string })?.code === "P2002") return { ok: false, reason: "taken" };
     try {
       await prisma.availableSlot.update({ where: { id: slotId }, data: { isBooked: false } });
     } catch (release) {

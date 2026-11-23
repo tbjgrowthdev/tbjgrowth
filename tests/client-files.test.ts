@@ -439,3 +439,16 @@ test("a file can be added to (or replace the file of) an existing invoice", asyn
   bad.set("file", new File(["<svg/>"], "x.svg", { type: "image/svg+xml" }));
   assert.equal((await actions.attachInvoiceFile(bad)).success, false);
 });
+
+test("if a step after the attachment fails, the update and its file stay and the post still succeeds", async () => {
+  const orig = db.project.update;
+  db.project.update = async () => {
+    throw new Error("neon blip");
+  };
+  const r = await actions.postQuickUpdate(quickPost({ status: "COMPLETED" }));
+  db.project.update = orig;
+  assert.equal(r.success, true);
+  assert.equal(t().projectUpdate.length, 1);
+  assert.equal(t().projectAttachment.length, 1);
+  assert.ok(objects.has(t().projectAttachment[0].fileKey));
+});

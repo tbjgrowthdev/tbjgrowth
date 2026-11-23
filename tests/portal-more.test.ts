@@ -202,3 +202,13 @@ test("staff inbox lists requests and deletion requests; only client staff can op
     assert.equal((await inbox.setClientRequestStatus(t().clientRequest[0].id, "OPEN")).success, false);
   }
 });
+
+test("a slot freed by a cancelled booking can be booked from the portal", async () => {
+  t().booking.push({ id: "bk_cancelled", slotId: "slot_free", name: "Old", email: "o@x.test", status: "CANCELLED", clientUserId: null });
+  const r = await booking.bookCall({ slotId: "slot_free" });
+  assert.equal(r.success, true);
+  const live = t().booking.filter((b) => b.slotId === "slot_free");
+  assert.equal(live.length, 1);
+  assert.deepEqual([live[0].status, live[0].clientUserId], ["CONFIRMED", "cu_a"]);
+  assert.equal(t().availableSlot.find((s) => s.id === "slot_free")!.isBooked, true);
+});

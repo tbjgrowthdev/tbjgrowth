@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Lock } from "lucide-react";
 import { registerClientPushDevice } from "@/app/(portal)/actions/push";
 import { nativeAppId, nativePlugin, pushTargetFor, safeClientPushPath, PUSH_TOKEN_STORAGE_KEY } from "@/lib/native";
@@ -168,7 +169,9 @@ export default function ClientAppBridge({ t }: { t: PortalStrings["lock"] }) {
   }, []);
 
   if (!locked) return null;
-  return (
+  // Into <body>: the portal shell (an .admin-shell) is hidden while locked,
+  // and visibility:hidden would hide this screen too if it were inside.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -184,6 +187,7 @@ export default function ClientAppBridge({ t }: { t: PortalStrings["lock"] }) {
       <button type="button" onClick={unlock} disabled={unlocking} className="btn-primary min-h-12 w-full max-w-xs rounded-2xl px-4 font-semibold disabled:opacity-60">
         {t.unlock}
       </button>
-    </div>
+    </div>,
+    document.body
   );
 }

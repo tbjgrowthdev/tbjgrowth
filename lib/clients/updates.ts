@@ -163,13 +163,23 @@ export async function postManualUpdate(
       throw error;
     }
   }
+  // From here the update (and its file) is saved for good: the remaining
+  // steps are best effort, so a failure can't make staff post it twice.
   if (input.status && input.status !== project.status) {
-    await prisma.project.update({ where: { id: project.id }, data: { status: input.status as never } });
+    try {
+      await prisma.project.update({ where: { id: project.id }, data: { status: input.status as never } });
+    } catch (error) {
+      console.error("[clients] update posted, but the status change failed:", error);
+    }
   }
   if (input.notify) {
     // Staff chose to notify: always send, and start the hour in which
     // automatic (milestone) updates stay quiet.
-    await prisma.project.update({ where: { id: project.id }, data: { lastClientNotifyAt: now } });
+    try {
+      await prisma.project.update({ where: { id: project.id }, data: { lastClientNotifyAt: now } });
+    } catch (error) {
+      console.error("[clients] couldn't record the notify time:", error);
+    }
     await safeNotify("CLIENT_PROJECT_UPDATE", project.clientId);
   }
   return update;

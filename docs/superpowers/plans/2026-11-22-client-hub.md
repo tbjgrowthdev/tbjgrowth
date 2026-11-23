@@ -263,3 +263,16 @@ Client app bridge: register push for the signed-in client (`registerClientPushDe
 - Deleting a project leaves its update attachments in the private R2 bucket (the rows cascade, the objects don't). Collect the keys first, delete the project, then delete each object (best effort). Matters for account-deletion requests.
 - Two admins saving the "update reminders" setting at the same moment: find-then-create can fail one save with P2002. Catch P2002 and update instead.
 - `listInvoicesForAdmin` sends each invoice's `fileKey` to the browser (staff-only page); send `hasFile` instead.
+
+From the final review:
+
+- Public booking (`app/(admin)/actions/booking.ts` createBooking) has the same cancelled-slot problem the portal booking now handles: a CANCELLED booking keeps the slot's unique `slotId`, so the freed slot can't be booked again and is left marked booked. Reuse the portal's "a CANCELLED holder gives way" step.
+- More → Book a call: after a booking, the slot picker still holds the booked slot id; reset it when the slot list changes.
+- More: `SignOutButton` has no try/finally (stays disabled if sign-out throws); `LanguageSwitch` ignores a failed save.
+- App lock: biometry availability is checked only when the app starts, so turning the lock on in More takes effect after a restart. Re-check when the switch turns on.
+- Portal 404: add a portal `not-found.tsx` (en/bn, the unused `projects.notFound` / `reports.notFound` strings) instead of the public English one that links to `/`.
+- Approval request dedupe is find-then-create: two simultaneous submits can still create two; the retry path writes no audit entry.
+- `attachInvoiceFile`: two simultaneous replaces both delete the same old object and one new object is left unreferenced.
+- Feed entries for approval answers ("Approved: …", "Changes requested: …") are English only.
+- Client pushes keep going to a user whose sessions have all expired, until the device's 30-day idle cutoff (generic text, low risk).
+- `reports/[id]` casts `metrics` without checking its shape; validate before rendering.

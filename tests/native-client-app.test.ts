@@ -87,3 +87,28 @@ test("the client flavor opens /portal with the TBJClientApp user agent; same pac
   assert.equal(/POST_NOTIFICATIONS"\s+tools:node="remove"/.test(manifest), false);
   assert.equal(/USE_BIOMETRIC"\s+tools:node="remove"/.test(manifest), false);
 });
+
+test("the pre-paint lock only runs on signed-in portal pages, and sign-in always clears it", () => {
+  const root = readFileSync("app/(portal)/portal/layout.tsx", "utf8");
+  const hub = readFileSync("app/(portal)/portal/(hub)/layout.tsx", "utf8");
+  const login = readFileSync("app/(portal)/portal/login/page.tsx", "utf8");
+  assert.equal(root.includes("CLIENT_LOCK_INIT_SCRIPT"), false);
+  assert.ok(hub.includes("CLIENT_LOCK_INIT_SCRIPT"));
+  assert.ok(login.includes("CLIENT_LOCK_CLEAR_SCRIPT"));
+});
+
+test("the lock screen is rendered outside the hidden portal shell", () => {
+  const bridge = readFileSync("components/Portal/ClientAppBridge.tsx", "utf8");
+  assert.match(bridge, /createPortal\(/);
+  assert.ok(bridge.includes("document.body"));
+  // No rule that hides the overlay's own ancestors.
+  assert.equal(readFileSync("app/portal.css", "utf8").includes(":not(.portal-lock)"), false);
+});
+
+test("the app hands downloads to Android's DownloadManager with the session cookie, for our host only", () => {
+  const activity = readFileSync("mobile/android/app/src/main/java/com/tbjgrowthtech/app/MainActivity.java", "utf8");
+  assert.ok(activity.includes("setDownloadListener"));
+  assert.ok(activity.includes("CookieManager.getInstance().getCookie"));
+  assert.ok(activity.includes("DownloadManager"));
+  assert.ok(activity.includes("\"tbjgrowthtech.com\""));
+});

@@ -82,8 +82,6 @@
   min-height: 44px;
 }
 
-/* Client app lock (components/Portal/ClientAppBridge.tsx, lib/native-lock.ts):
-   the portal stays hidden until unlocked, from before first paint. */
-html[data-tbj-lock] .portal-shell > :not(.portal-lock) {
-  visibility: hidden;
-}
+/* Client app lock: app/admin.css hides .admin-shell (which the portal shell
+   carries) while html[data-tbj-lock] is set; the lock screen is rendered into
+   <body>, outside it (components/Portal/ClientAppBridge.tsx). */
