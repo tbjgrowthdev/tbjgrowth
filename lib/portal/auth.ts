@@ -91,13 +91,13 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date(), i
   const user = await prisma.clientUser.findUnique({ where: { email } });
   if (!user || user.status === "DISABLED") return;
 
-  const code = await createCodeWithinLimits(email, ip, now);
-  if (!code) return;
-  await sendClientLoginCode({ to: email, code, name: user.name, language: user.language });
+  const issued = await createCodeWithinLimits(email, ip, now);
+  if (!issued) return;
+  await sendClientLoginCode({ to: email, code: issued.code, name: user.name, language: user.language });
 }
 
 /**
- * Stores a new code for `email` and returns it, or null if the hourly limits
+ * Stores a new code for `email` and returns it with its row id, or null if the hourly limits
  * are reached. Used by sign-in and by staff invites (ip null), so invites
  * count toward the same limits.
  *
@@ -106,7 +106,7 @@ export async function issueLoginCode(rawEmail: string, now: Date = new Date(), i
  * requests all pass; this fails closed under a race (Neon HTTP has no
  * transactions to lock with).
  */
-export async function createCodeWithinLimits(email: string, ip: string | null, now: Date): Promise<string | null> {
+export async function createCodeWithinLimits(email: string, ip: string | null, now: Date): Promise<{ code: string; id: string } | null> {
   const code = generateLoginCode();
   const mine = await prisma.clientLoginCode.create({
     data: { email, ip: ip?.slice(0, 100) ?? null, codeHash: await hashLoginCode(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), createdAt: now },
@@ -129,7 +129,16 @@ export async function createCodeWithinLimits(email: string, ip: string | null, n
   } catch (error) {
     console.error("[portal] login code cleanup failed:", error);
   }
-  return code;
+  return { code, id: mine.id };
+}
+
+/** Withdraws a code that was never delivered (the email failed), so it doesn't use up the hourly limit. */
+export async function withdrawLoginCode(id: string): Promise<void> {
+  try {
+    await prisma.clientLoginCode.delete({ where: { id } });
+  } catch (error) {
+    if (!isP2025(error)) throw error;
+  }
 }
 
 /** Uses one of the code's guesses. False when the code is consumed or out of guesses. One statement, so parallel guesses can't exceed the limit. */

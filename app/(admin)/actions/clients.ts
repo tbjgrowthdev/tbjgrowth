@@ -7,7 +7,7 @@ import { requirePermission, requireSession, AuthError } from "@/lib/auth-guard";
 import { ALL_ROLES, hasPermission } from "@/lib/permissions";
 import { logAudit } from "@/lib/audit-log";
 import { sendClientInvite } from "@/lib/email";
-import { createCodeWithinLimits, normalizeEmail, revokeAllClientSessions } from "@/lib/portal/auth";
+import { createCodeWithinLimits, normalizeEmail, revokeAllClientSessions, withdrawLoginCode } from "@/lib/portal/auth";
 
 // Admin "Clients" section: client companies, their portal users and invites.
 // Viewing needs CLIENT_UPDATES (editors post updates for these clients);
@@ -196,13 +196,24 @@ export async function assignAccountManager(clientId: string, userId: string | nu
 
 // ---- client users ----
 
-/** Emails a fresh code plus the portal link. False when the hourly code limit for that email is reached. */
-async function sendInvite(user: { email: string; name: string; language: "en" | "bn" }): Promise<boolean> {
-  const code = await createCodeWithinLimits(user.email, null, new Date());
-  if (!code) return false;
-  await sendClientInvite({ to: user.email, name: user.name, code, portalUrl: portalLoginUrl(user.language), language: user.language });
-  return true;
+/**
+ * Emails a fresh code plus the portal link. "limited" when the hourly code
+ * limit for that email is reached; "email_failed" when Resend refused or
+ * isn't configured (the code is withdrawn so retries aren't used up).
+ */
+async function sendInvite(user: { email: string; name: string; language: "en" | "bn" }): Promise<"sent" | "limited" | "email_failed"> {
+  const issued = await createCodeWithinLimits(user.email, null, new Date());
+  if (!issued) return "limited";
+  const result = await sendClientInvite({ to: user.email, name: user.name, code: issued.code, portalUrl: portalLoginUrl(user.language), language: user.language });
+  if (result?.success) return "sent";
+  await withdrawLoginCode(issued.id);
+  return "email_failed";
 }
+
+const INVITE_PROBLEM = {
+  limited: "Too many codes were sent to this email in the last hour. Try again later.",
+  email_failed: "The invite email couldn't be sent. Check the email settings, then use Resend invite.",
+} as const;
 
 export async function addClientUser(clientId: string, input: z.input<typeof clientUserSchema>): Promise<Result<{ id: string }>> {
   try {
@@ -227,10 +238,11 @@ export async function addClientUser(clientId: string, input: z.input<typeof clie
       if ((error as { code?: string }).code === "P2002") return { success: false, error: "That email already has a portal account" };
       throw error;
     }
-    const sent = await sendInvite(user);
+    // Logged before sending: the user exists from here on, whatever the email does.
     await logAudit({ action: "invite", category: "Users", entityType: "ClientUser", entityId: user.id, entityLabel: email, after: { clientId, email, name: user.name } });
     revalidateClient(clientId);
-    return sent ? { success: true, id: user.id } : { success: false, error: "User added, but too many codes were sent to this email in the last hour. Resend the invite later." };
+    const sent = await sendInvite(user);
+    return sent === "sent" ? { success: true, id: user.id } : { success: false, error: `User added, but: ${INVITE_PROBLEM[sent]}` };
   } catch (error) {
     return failure(error, "Couldn't add the user");
   }
@@ -242,7 +254,8 @@ export async function resendInvite(clientUserId: string): Promise<Result> {
     const user = await prisma.clientUser.findUnique({ where: { id: clientUserId }, select: { id: true, clientId: true, email: true, name: true, language: true, status: true } });
     if (!user) return { success: false, error: "User not found" };
     if (user.status === "DISABLED") return { success: false, error: "Enable this user before sending an invite" };
-    if (!(await sendInvite(user))) return { success: false, error: "Too many codes were sent to this email in the last hour. Try again later." };
+    const sent = await sendInvite(user);
+    if (sent !== "sent") return { success: false, error: INVITE_PROBLEM[sent] };
     await logAudit({ action: "resend_invite", category: "Users", entityType: "ClientUser", entityId: user.id, entityLabel: user.email });
     return { success: true };
   } catch (error) {

@@ -15,6 +15,7 @@ const proxy = new Proxy({}, { get: (_t, k) => (db as Row)[k as string] });
 let role = "ADMIN";
 let invites: Array<{ to: string; code: string; portalUrl: string; language?: string }> = [];
 let audits: Array<{ action: string; entityType: string; entityId?: string | null }> = [];
+let inviteResult: { success: boolean; skipped?: boolean } = { success: true };
 
 class AuthError extends Error {}
 
@@ -38,7 +39,7 @@ mock.module("@/lib/email", {
   namedExports: {
     sendClientInvite: async (p: { to: string; code: string; portalUrl: string; language?: string }) => {
       invites.push(p);
-      return { success: true };
+      return inviteResult;
     },
     sendClientLoginCode: async () => ({ success: true }),
   },
@@ -55,6 +56,7 @@ beforeEach(() => {
   role = "ADMIN";
   invites = [];
   audits = [];
+  inviteResult = { success: true };
   t().user.push({ id: "staff_admin", name: "Ana Admin", email: "ana@tbj.test", role: "ADMIN" });
   t().user.push({ id: "staff_editor", name: "Eli Editor", email: "eli@tbj.test", role: "EDITOR" });
   t().client.push({ id: "client_a", name: "Acme", accountManagerId: null, whatsapp: null, phone: null, notes: null, createdAt: NOW });
@@ -236,4 +238,22 @@ test("actions on an unknown client user fail cleanly", async () => {
     assert.equal((await r).success, false);
   }
   assert.equal(audits.length, 0);
+});
+
+test("an invite email that fails to send is reported, not shown as sent, and its code is withdrawn", async () => {
+  inviteResult = { success: false };
+  const added = await actions.addClientUser("client_a", { email: "new@acme.test", name: "New", language: "en" });
+  assert.equal(added.success, false);
+  assert.match((added as { error: string }).error, /couldn't be sent/i);
+  // The user exists and the add is audit-logged; the unused code is gone.
+  assert.equal(t().clientUser.length, 1);
+  assert.deepEqual(audits.map((a) => a.action), ["invite"]);
+  assert.equal(t().clientLoginCode.length, 0);
+
+  const resent = await actions.resendInvite(t().clientUser[0].id);
+  assert.equal(resent.success, false);
+  assert.equal(t().clientLoginCode.length, 0);
+
+  inviteResult = { success: false, skipped: true }; // RESEND_API_KEY missing
+  assert.equal((await actions.resendInvite(t().clientUser[0].id)).success, false);
 });
