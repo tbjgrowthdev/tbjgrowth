@@ -285,6 +285,13 @@ export function normalizeSql(strings: TemplateStringsArray, valueCount: number):
 
 /** Raw statements the Client Hub sends, emulated over the in-memory tables. */
 export const RAW_STATEMENTS: Record<string, (tables: Record<string, Row[]>, values: unknown[]) => Row[]> = {
+  // lib/portal/data.ts bookCall: claim a free future slot
+  [`UPDATE "AvailableSlot" SET "isBooked" = true, "updatedAt" = $1 WHERE "id" = $2 AND "isBooked" = false AND "startsAt" > $3 RETURNING "id", "startsAt", "duration"`]: (tables, [at, id, now]) => {
+    const slot = tables.availableSlot.find((x) => x.id === id && x.isBooked === false && x.startsAt > (now as Date));
+    if (!slot) return [];
+    Object.assign(slot, { isBooked: true, updatedAt: at });
+    return [{ id: slot.id, startsAt: slot.startsAt, duration: slot.duration }];
+  },
   // lib/portal/data.ts respondToApproval
   [`UPDATE "ApprovalRequest" SET "status" = CAST($1 AS "ApprovalRequestStatus"), "response" = $2, "respondedById" = $3, "respondedAt" = $4 WHERE "id" = $5 AND "status" = 'PENDING' RETURNING "id"`]: (tables, [status, response, by, at, id]) => {
     const a = tables.approvalRequest.find((x) => x.id === id && x.status === "PENDING");
@@ -360,4 +367,5 @@ export const CLIENT_HUB_SCHEMA: Schema = {
   clientHubSetting: {},
   clientLoginCode: {},
   auditLog: {},
+  siteSetting: {},
 };

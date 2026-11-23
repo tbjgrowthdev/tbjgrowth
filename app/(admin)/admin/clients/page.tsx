@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, ChevronRight, Send, Clock } from "lucide-react";
+import { Plus, ChevronRight, Send, Clock, Inbox } from "lucide-react";
 import PageTitle from "@/components/Admin/PageTitle";
 import { listClientsForAdmin, getClientsViewer } from "@/app/(admin)/actions/clients";
 import { listStaleProjects, getUpdateReminderSettings } from "@/app/(admin)/actions/client-projects";
@@ -15,6 +15,11 @@ export default async function ClientsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <PageTitle>Clients</PageTitle>
         <div className="flex flex-wrap gap-2">
+        {viewer.canUpdate && (
+          <Link href="/admin/clients/requests" className="inline-flex min-h-11 items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-background transition-colors">
+            <Inbox size={18} /> Inbox
+          </Link>
+        )}
         {viewer.canUpdate && (
           <Link href="/admin/clients/update" className="inline-flex min-h-11 items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-background transition-colors">
             <Send size={18} /> Post an update

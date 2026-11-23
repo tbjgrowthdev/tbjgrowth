@@ -240,7 +240,7 @@ export async function createClientRequest(ctx: ClientContext, message: string): 
   if (!text) return { ok: false, reason: "empty" };
   if (text.length > MAX_REQUEST_LENGTH) return { ok: false, reason: "too_long" };
   const row = await prisma.clientRequest.create({
-    data: { clientId: ctx.clientId, clientUserId: ctx.clientUserId, message: text },
+    data: { clientId: ctx.clientId, clientUserId: ctx.clientUserId, message: text, status: "OPEN" },
     select: { id: true },
   });
   return { ok: true, id: row.id };
@@ -258,6 +258,55 @@ export async function listMeetings(ctx: ClientContext, now: Date = new Date()) {
   return rows
     .map((b) => ({ id: b.id, startsAt: b.slot.startsAt, duration: b.slot.duration }))
     .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
+}
+
+/** Free future slots anyone can book (the same pool as the public /book-a-call page). */
+export async function listOpenSlots(ctx: ClientContext, now: Date = new Date()) {
+  void ctx; // slots aren't per client; the context still marks this as a signed-in portal read
+  const rows = await prisma.availableSlot.findMany({
+    where: { isBooked: false, startsAt: { gt: now } },
+    select: { id: true, startsAt: true, duration: true },
+    orderBy: { startsAt: "asc" },
+    take: 60,
+  });
+  return rows;
+}
+
+export type BookResult = { ok: true; bookingId: string; startsAt: Date; duration: number; name: string; email: string; company: string } | { ok: false; reason: "taken" | "not_found" };
+
+/**
+ * Books a call for the signed-in client user, prefilled from their account.
+ * The slot is claimed with one atomic UPDATE (free and in the future), and
+ * Booking.slotId's unique index still protects against a public booking
+ * that got there first. If writing the booking fails for another reason the
+ * slot is released again.
+ */
+export async function bookCall(ctx: ClientContext, slotId: string, input: { message?: string | null }, now: Date = new Date()): Promise<BookResult> {
+  if (typeof slotId !== "string" || !slotId) return { ok: false, reason: "not_found" };
+  const user = await prisma.clientUser.findFirst({ where: { id: ctx.clientUserId, clientId: ctx.clientId }, select: { name: true, email: true, client: { select: { name: true } } } });
+  if (!user) return { ok: false, reason: "not_found" };
+  const claimed = await prisma.$queryRaw<Array<{ id: string; startsAt: Date; duration: number }>>`
+    UPDATE "AvailableSlot" SET "isBooked" = true, "updatedAt" = ${now}
+    WHERE "id" = ${slotId} AND "isBooked" = false AND "startsAt" > ${now}
+    RETURNING "id", "startsAt", "duration"`;
+  if (claimed.length !== 1) return { ok: false, reason: "taken" };
+  const message = typeof input.message === "string" ? input.message.trim().slice(0, 2000) || null : null;
+  try {
+    const booking = await prisma.booking.create({
+      data: { slotId, name: user.name, email: user.email, company: user.client.name, message, status: "CONFIRMED", clientUserId: ctx.clientUserId },
+      select: { id: true },
+    });
+    return { ok: true, bookingId: booking.id, startsAt: new Date(claimed[0].startsAt), duration: claimed[0].duration, name: user.name, email: user.email, company: user.client.name };
+  } catch (error) {
+    // Someone else's booking already holds this slot: it stays booked.
+    if ((error as { code?: string })?.code === "P2002") return { ok: false, reason: "taken" };
+    try {
+      await prisma.availableSlot.update({ where: { id: slotId }, data: { isBooked: false } });
+    } catch (release) {
+      console.error("[portal] couldn't release a slot after a failed booking:", release);
+    }
+    throw error;
+  }
 }
 
 // ── Profile ───────────────────────────────────────────────────────────────
@@ -286,6 +335,44 @@ export async function getProfile(ctx: ClientContext) {
     phone: u.client.phone,
     accountManagerName: u.client.accountManager?.name ?? null,
   };
+}
+
+export async function setLanguage(ctx: ClientContext, language: unknown): Promise<boolean> {
+  if (language !== "en" && language !== "bn") return false;
+  const u = await prisma.clientUser.findFirst({ where: { id: ctx.clientUserId, clientId: ctx.clientId }, select: { id: true } });
+  if (!u) return false;
+  await prisma.clientUser.update({ where: { id: u.id }, data: { language } });
+  return true;
+}
+
+/** Records an account-deletion request (deletion itself is a manual staff step). `first` is false when it was already requested. */
+export async function requestAccountDeletion(ctx: ClientContext, now: Date = new Date()): Promise<{ ok: true; first: boolean } | { ok: false }> {
+  const u = await prisma.clientUser.findFirst({ where: { id: ctx.clientUserId, clientId: ctx.clientId }, select: { id: true, deletionRequestedAt: true } });
+  if (!u) return { ok: false };
+  if (u.deletionRequestedAt) return { ok: true, first: false };
+  await prisma.clientUser.update({ where: { id: u.id }, data: { deletionRequestedAt: now } });
+  return { ok: true, first: true };
+}
+
+/**
+ * Where staff mail about this client goes: the account manager, else the
+ * site's notification email. Never shown to the client (server-side only).
+ */
+export async function staffContactFor(ctx: ClientContext): Promise<{ to: string | null; clientName: string; userName: string; userEmail: string } | null> {
+  const u = await prisma.clientUser.findFirst({
+    where: { id: ctx.clientUserId, clientId: ctx.clientId },
+    select: { name: true, email: true, client: { select: { name: true, accountManager: { select: { email: true } } } } },
+  });
+  if (!u) return null;
+  const site = u.client.accountManager?.email ? null : await prisma.siteSetting.findFirst({ select: { email: true } });
+  return { to: u.client.accountManager?.email ?? site?.email ?? null, clientName: u.client.name, userName: u.name, userEmail: u.email };
+}
+
+/** The site's notification email (Site Settings), where public and portal bookings are announced. Server-side only. */
+export async function bookingNotifyEmail(ctx: ClientContext): Promise<string | null> {
+  void ctx;
+  const site = await prisma.siteSetting.findFirst({ select: { email: true } });
+  return site?.email ?? null;
 }
 
 // ── Files ─────────────────────────────────────────────────────────────────

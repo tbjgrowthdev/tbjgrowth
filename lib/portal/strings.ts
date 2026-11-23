@@ -78,6 +78,59 @@ const en = {
     thanks: "Thank you. Your team has your answer.",
   },
   meetingAt: "{date} at {time}",
+  reports: {
+    title: "Reports",
+    empty: "No reports yet. Your monthly report appears here when it's ready.",
+    download: "Download report",
+    back: "Reports",
+    notFound: "This report isn't available.",
+  },
+  billing: {
+    title: "Billing",
+    empty: "No invoices yet.",
+    issued: "Issued {date}",
+    due: "Due {date}",
+    download: "Download invoice",
+    status: { DUE: "Due", PAID: "Paid", OVERDUE: "Overdue", VOID: "Cancelled" },
+    note: "Questions about an invoice? Contact your account manager from More.",
+  },
+  more: {
+    title: "More",
+    meetings: "Meetings",
+    noMeetings: "No meetings booked.",
+    minutes: "{n} min",
+    bookTitle: "Book a call",
+    noSlots: "No free times right now. Send a request and we'll find a time.",
+    pickTime: "Choose a time",
+    bookMessage: "What would you like to talk about? (optional)",
+    book: "Book this time",
+    booked: "Booked. You'll see it under Meetings.",
+    taken: "That time was just taken. Please choose another.",
+    contactTitle: "Contact",
+    contactWith: "Your account manager: {name}",
+    whatsapp: "WhatsApp",
+    call: "Call",
+    noContact: "Your team's contact details will appear here.",
+    requestTitle: "Send a request",
+    requestLabel: "Your message",
+    requestPlaceholder: "Ask a question or request a change",
+    requestSend: "Send request",
+    requestSent: "Sent. Your team will get back to you.",
+    requestEmpty: "Write your message first.",
+    requestTooLong: "Please keep it under 2000 characters.",
+    myRequests: "Your requests",
+    requestOpen: "Open",
+    requestDone: "Done",
+    languageTitle: "Language",
+    accountTitle: "Account",
+    signedInAs: "Signed in as {email}",
+    deleteTitle: "Delete my account",
+    deleteBody: "Ask us to delete your portal account. Your team will confirm with you before anything is deleted.",
+    deleteButton: "Request account deletion",
+    deleteConfirm: "Send a deletion request to your team?",
+    deleteRequested: "Deletion requested on {date}. Your team will be in touch.",
+    error: "Something went wrong. Please try again.",
+  },
   signOut: "Sign out",
 } as const;
 
@@ -158,6 +211,59 @@ const bn: PortalStrings = {
     thanks: "ধন্যবাদ। আপনার উত্তর টিমের কাছে পৌঁছেছে।",
   },
   meetingAt: "{date}, {time}",
+  reports: {
+    title: "রিপোর্ট",
+    empty: "এখনও কোনো রিপোর্ট নেই। মাসিক রিপোর্ট তৈরি হলে এখানে দেখা যাবে।",
+    download: "রিপোর্ট ডাউনলোড করুন",
+    back: "রিপোর্ট",
+    notFound: "এই রিপোর্টটি দেখা যাচ্ছে না।",
+  },
+  billing: {
+    title: "বিল",
+    empty: "এখনও কোনো ইনভয়েস নেই।",
+    issued: "ইস্যু {date}",
+    due: "পরিশোধের শেষ তারিখ {date}",
+    download: "ইনভয়েস ডাউনলোড করুন",
+    status: { DUE: "বাকি", PAID: "পরিশোধিত", OVERDUE: "মেয়াদোত্তীর্ণ", VOID: "বাতিল" },
+    note: "ইনভয়েস নিয়ে প্রশ্ন থাকলে ‘আরও’ থেকে অ্যাকাউন্ট ম্যানেজারের সঙ্গে যোগাযোগ করুন।",
+  },
+  more: {
+    title: "আরও",
+    meetings: "মিটিং",
+    noMeetings: "কোনো মিটিং বুক করা নেই।",
+    minutes: "{n} মিনিট",
+    bookTitle: "কল বুক করুন",
+    noSlots: "এখন কোনো খালি সময় নেই। অনুরোধ পাঠান, আমরা সময় ঠিক করব।",
+    pickTime: "একটি সময় বেছে নিন",
+    bookMessage: "কী নিয়ে কথা বলতে চান? (ঐচ্ছিক)",
+    book: "এই সময় বুক করুন",
+    booked: "বুক হয়েছে। মিটিং-এর তালিকায় দেখতে পাবেন।",
+    taken: "এই সময়টি এইমাত্র বুক হয়ে গেছে। অন্য একটি বেছে নিন।",
+    contactTitle: "যোগাযোগ",
+    contactWith: "আপনার অ্যাকাউন্ট ম্যানেজার: {name}",
+    whatsapp: "হোয়াটসঅ্যাপ",
+    call: "কল করুন",
+    noContact: "আপনার টিমের যোগাযোগের তথ্য এখানে দেখা যাবে।",
+    requestTitle: "অনুরোধ পাঠান",
+    requestLabel: "আপনার বার্তা",
+    requestPlaceholder: "প্রশ্ন করুন বা কোনো পরিবর্তন চান",
+    requestSend: "অনুরোধ পাঠান",
+    requestSent: "পাঠানো হয়েছে। আপনার টিম শিগগির জানাবে।",
+    requestEmpty: "আগে বার্তাটি লিখুন।",
+    requestTooLong: "২০০০ অক্ষরের মধ্যে লিখুন।",
+    myRequests: "আপনার অনুরোধ",
+    requestOpen: "চলমান",
+    requestDone: "সম্পন্ন",
+    languageTitle: "ভাষা",
+    accountTitle: "অ্যাকাউন্ট",
+    signedInAs: "{email} হিসেবে সাইন ইন করা",
+    deleteTitle: "আমার অ্যাকাউন্ট মুছুন",
+    deleteBody: "পোর্টাল অ্যাকাউন্ট মোছার অনুরোধ পাঠান। কিছু মোছার আগে আপনার টিম আপনার সঙ্গে নিশ্চিত হবে।",
+    deleteButton: "অ্যাকাউন্ট মোছার অনুরোধ পাঠান",
+    deleteConfirm: "টিমকে অ্যাকাউন্ট মোছার অনুরোধ পাঠাবেন?",
+    deleteRequested: "{date} তারিখে মোছার অনুরোধ পাঠানো হয়েছে। আপনার টিম যোগাযোগ করবে।",
+    error: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+  },
   signOut: "সাইন আউট",
 };
 
@@ -173,6 +279,22 @@ export function formatDate(d: Date | string, language: PortalLanguage): string {
 }
 export function formatTime(d: Date | string, language: PortalLanguage): string {
   return new Date(d).toLocaleTimeString(language === "bn" ? "bn-BD" : "en-GB", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Dhaka" });
+}
+
+/** Money stored as integer minor units plus an ISO currency (BDT, GBP). */
+export function formatMoney(amountMinor: number, currency: string, language: PortalLanguage): string {
+  try {
+    return new Intl.NumberFormat(language === "bn" ? "bn-BD" : "en-GB", { style: "currency", currency }).format(amountMinor / 100);
+  } catch {
+    return `${(amountMinor / 100).toFixed(2)} ${currency}`;
+  }
+}
+
+/** "2026-10" as a month name in the client's language. */
+export function formatPeriod(period: string, language: PortalLanguage): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(period);
+  if (!m) return period;
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 1)).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 /** Replaces {name} placeholders. */

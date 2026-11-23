@@ -633,3 +633,41 @@ export async function sendClientInvite(params: { to: string; name: string; code:
   const text = `${subject}\n\n${introFor(plainName)}\n\n${params.portalUrl}\n\n${step} ${params.code}\n\n${later}\n`;
   return deliverResendEmail({ type: "client-invite", to: params.to, subject, html, text, fromName: BRAND_NAME });
 }
+
+function adminLink(path: string): string {
+  return `${(process.env.NEXT_PUBLIC_BASE_URL || "https://tbjgrowthtech.com").replace(/\/+$/, "")}${path}`;
+}
+
+/** Staff: a client sent a request from the portal. */
+export async function sendClientRequestNotification(params: { to: string | null; clientName: string; userName: string; userEmail: string; message: string }) {
+  if (!process.env.RESEND_API_KEY || !params.to) {
+    console.log("Client request email skipped (no RESEND_API_KEY or no recipient).");
+    return { success: false, skipped: true };
+  }
+  const subject = `Client request: ${params.clientName.replace(/[\r\n]+/g, " ").slice(0, 100)}`;
+  const link = adminLink("/admin/clients/requests");
+  const html = `
+    <h2>New request from ${escapeHtml(params.clientName)}</h2>
+    <p><strong>From:</strong> ${escapeHtml(params.userName)} (${escapeHtml(params.userEmail)})</p>
+    <p>${escapeHtml(params.message).replace(/\n/g, "<br/>")}</p>
+    <p><a href="${escapeHtml(link)}">Open the client inbox</a></p>
+  `;
+  return deliverResendEmail({ type: "client-request", to: params.to, replyTo: params.userEmail, subject, html, text: `${subject}\n\nFrom: ${params.userName} (${params.userEmail})\n\n${params.message}\n\n${link}\n` });
+}
+
+/** Staff: a client user asked for their account to be deleted (a manual staff step in v1). */
+export async function sendAccountDeletionRequestNotification(params: { to: string | null; clientName: string; userName: string; userEmail: string }) {
+  if (!process.env.RESEND_API_KEY || !params.to) {
+    console.log("Deletion request email skipped (no RESEND_API_KEY or no recipient).");
+    return { success: false, skipped: true };
+  }
+  const subject = `Account deletion request: ${params.clientName.replace(/[\r\n]+/g, " ").slice(0, 100)}`;
+  const link = adminLink("/admin/clients/requests");
+  const html = `
+    <h2>Account deletion requested</h2>
+    <p>${escapeHtml(params.userName)} (${escapeHtml(params.userEmail)}) at ${escapeHtml(params.clientName)} asked for their portal account to be deleted.</p>
+    <p>Disable the user in the Clients section, then delete their data as agreed with the client.</p>
+    <p><a href="${escapeHtml(link)}">Open the client inbox</a></p>
+  `;
+  return deliverResendEmail({ type: "client-deletion-request", to: params.to, subject, html, text: `${subject}\n\n${params.userName} (${params.userEmail}) at ${params.clientName}\n\n${link}\n` });
+}
