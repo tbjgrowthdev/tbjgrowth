@@ -7,6 +7,8 @@ import { bookCall } from "@/app/(portal)/actions/booking";
 import { sendRequest } from "@/app/(portal)/actions/requests";
 import { setLanguage, requestAccountDeletion } from "@/app/(portal)/actions/profile";
 import { signOutClient } from "@/app/(portal)/actions/auth";
+import { setClientPushPreference } from "@/app/(portal)/actions/push";
+import type { ClientPushEventName } from "@/lib/portal/push-devices";
 import type { PortalStrings } from "@/lib/portal/strings";
 
 type T = PortalStrings["more"];
@@ -185,5 +187,37 @@ export function DeletionRequest({ t, requestedLabel }: { t: T; requestedLabel: s
       )}
       {failed && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{t.error}</p>}
     </div>
+  );
+}
+
+/** One switch per push event; saves on change. */
+export function NotificationSettings({ preferences, labels }: { preferences: Array<{ event: ClientPushEventName; enabled: boolean }>; labels: T["notify"] }) {
+  const [state, setState] = useState(preferences);
+  const [busy, setBusy] = useState<string | null>(null);
+  return (
+    <ul className="divide-y divide-[var(--border-c)]">
+      {state.map((p) => (
+        <li key={p.event}>
+          <label className="flex min-h-12 items-center justify-between gap-3">
+            <span className="font-semibold">{labels[p.event]}</span>
+            <input
+              type="checkbox"
+              role="switch"
+              className="h-6 w-6"
+              checked={p.enabled}
+              disabled={busy === p.event}
+              onChange={async (e) => {
+                const enabled = e.target.checked;
+                setBusy(p.event);
+                setState((s) => s.map((x) => (x.event === p.event ? { ...x, enabled } : x)));
+                const r = await setClientPushPreference(p.event, enabled);
+                if (!r.success) setState((s) => s.map((x) => (x.event === p.event ? { ...x, enabled: !enabled } : x)));
+                setBusy(null);
+              }}
+            />
+          </label>
+        </li>
+      ))}
+    </ul>
   );
 }

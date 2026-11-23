@@ -130,6 +130,15 @@ const en = {
     deleteConfirm: "Send a deletion request to your team?",
     deleteRequested: "Deletion requested on {date}. Your team will be in touch.",
     error: "Something went wrong. Please try again.",
+    notificationsTitle: "Notifications",
+    notificationsBody: "Choose what the TBJ Growth Tech app tells you about.",
+    notify: {
+      CLIENT_PROJECT_UPDATE: "Project updates",
+      CLIENT_APPROVAL_NEEDED: "Approval requests",
+      CLIENT_REPORT_READY: "New reports",
+      CLIENT_INVOICE_DUE: "Invoices",
+      CLIENT_MEETING_REMINDER: "Meeting reminders",
+    },
   },
   signOut: "Sign out",
 } as const;
@@ -263,6 +272,15 @@ const bn: PortalStrings = {
     deleteConfirm: "টিমকে অ্যাকাউন্ট মোছার অনুরোধ পাঠাবেন?",
     deleteRequested: "{date} তারিখে মোছার অনুরোধ পাঠানো হয়েছে। আপনার টিম যোগাযোগ করবে।",
     error: "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+    notificationsTitle: "নোটিফিকেশন",
+    notificationsBody: "TBJ Growth Tech অ্যাপ কোন বিষয়ে জানাবে বেছে নিন।",
+    notify: {
+      CLIENT_PROJECT_UPDATE: "প্রজেক্ট আপডেট",
+      CLIENT_APPROVAL_NEEDED: "অনুমোদনের অনুরোধ",
+      CLIENT_REPORT_READY: "নতুন রিপোর্ট",
+      CLIENT_INVOICE_DUE: "ইনভয়েস",
+      CLIENT_MEETING_REMINDER: "মিটিং মনে করিয়ে দেওয়া",
+    },
   },
   signOut: "সাইন আউট",
 };

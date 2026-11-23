@@ -87,6 +87,7 @@ mock.module("@/lib/push/recipients", {
       if (recipientsThrow) throw new Error("db down");
       return tokensFor[event] ?? [];
     },
+    staffUserTokens: async () => [],
   },
 });
 mock.module("@/lib/push/fcm", {

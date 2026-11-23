@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { after } from "next/server";
 import { z } from "zod";
-import { issueLoginCode, normalizeEmail, verifyLoginCode as verifyCode, requireClient, revokeClientSession, ClientAuthError } from "@/lib/portal/auth";
+import { issueLoginCode, normalizeEmail, verifyLoginCode as verifyCode, requireClient, endClientSession, ClientAuthError } from "@/lib/portal/auth";
 import { CLIENT_SESSION_COOKIE, clientSessionCookieOptions } from "@/lib/portal/session-cookie";
 
 // Client Hub sign-in (/portal/login). Both sign-in steps are public by
@@ -62,7 +62,7 @@ export async function signOutClient() {
   const jar = await cookies();
   try {
     const ctx = await requireClient();
-    await revokeClientSession(ctx.sessionId);
+    await endClientSession(ctx);
   } catch (error) {
     // Already signed out or revoked: still clear the cookie below.
     if (!(error instanceof ClientAuthError)) console.error("[portal] signOutClient failed:", error);

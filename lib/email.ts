@@ -671,3 +671,24 @@ export async function sendAccountDeletionRequestNotification(params: { to: strin
   `;
   return deliverResendEmail({ type: "client-deletion-request", to: params.to, subject, html, text: `${subject}\n\n${params.userName} (${params.userEmail}) at ${params.clientName}\n\n${link}\n` });
 }
+
+/** Staff: one account manager's client projects that have had no update within their reminder interval. */
+export async function sendStaleProjectNudge(params: { to: string; name: string | null; projects: Array<{ clientName: string; title: string; lastUpdateAt: Date | null; intervalDays: number }> }) {
+  if (!process.env.RESEND_API_KEY) {
+    console.log("RESEND_API_KEY not set — skipping stale-project nudge.");
+    return { success: false, skipped: true };
+  }
+  const link = adminLink("/admin/clients/update");
+  const rows = params.projects
+    .map((p) => `<li><strong>${escapeHtml(p.clientName)}</strong>: ${escapeHtml(p.title)} (${p.lastUpdateAt ? `last update ${escapeHtml(p.lastUpdateAt.toISOString().slice(0, 10))}` : "no updates yet"}, every ${p.intervalDays} days)</li>`)
+    .join("");
+  const subject = params.projects.length === 1 ? "A client project needs an update" : `${params.projects.length} client projects need an update`;
+  const html = `
+    <h2>${subject}</h2>
+    <p>${params.name ? `${escapeHtml(params.name)}, these` : "These"} projects have had no update for their client within their reminder interval:</p>
+    <ul>${rows}</ul>
+    <p><a href="${escapeHtml(link)}">Post a quick update</a> (under 30 seconds from the TBJ Admin app).</p>
+  `;
+  const text = `${subject}\n\n${params.projects.map((p) => `- ${p.clientName}: ${p.title}`).join("\n")}\n\n${link}\n`;
+  return deliverResendEmail({ type: "client-stale-nudge", to: params.to, subject, html, text });
+}

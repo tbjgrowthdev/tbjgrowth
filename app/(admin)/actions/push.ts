@@ -34,7 +34,9 @@ export async function registerPushDevice(data: { token: string; platform: "andro
     await prisma.pushDevice.upsert({
       where: { token },
       create: { token, platform, userId: session.user.id, adminSessionId: session.user.sessionId ?? null, lastSeenAt: now },
-      update: { platform, userId: session.user.id, adminSessionId: session.user.sessionId ?? null, lastSeenAt: now },
+      // clientUserId: null — a token moving from the client app to TBJ Admin must
+      // drop its client owner (the PushDevice_one_owner CHECK allows one owner).
+      update: { platform, userId: session.user.id, adminSessionId: session.user.sessionId ?? null, clientUserId: null, lastSeenAt: now },
     });
     return { success: true as const };
   } catch (error) {

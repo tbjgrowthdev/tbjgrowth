@@ -2,11 +2,12 @@ import { MessageCircle, Phone, CalendarClock } from "lucide-react";
 import { requireClientPage } from "@/lib/portal/page-guard";
 import { fill, formatDate, formatTime, portalStrings } from "@/lib/portal/strings";
 import { getProfile, listMeetings, listOpenSlots, listRequests } from "@/lib/portal/data";
-import { BookCallForm, DeletionRequest, LanguageSwitch, RequestForm, SignOutButton } from "@/components/Portal/MoreForms";
+import { BookCallForm, DeletionRequest, LanguageSwitch, NotificationSettings, RequestForm, SignOutButton } from "@/components/Portal/MoreForms";
+import { clientPushPreferences } from "@/lib/portal/push-devices";
 
 // More: meetings (list + book a call), contact the account manager, send a
-// request, language, sign out, request account deletion. Notification
-// settings join this page with client push (Task 10).
+// request, notification settings, language, sign out, request account
+// deletion.
 
 function digits(phone: string): string {
   return phone.replace(/[^\d+]/g, "");
@@ -17,7 +18,7 @@ export default async function PortalMorePage() {
   const lang = ctx.language;
   const all = portalStrings(lang);
   const t = all.more;
-  const [profile, meetings, slots, requests] = await Promise.all([getProfile(ctx), listMeetings(ctx), listOpenSlots(ctx), listRequests(ctx)]);
+  const [profile, meetings, slots, requests, prefs] = await Promise.all([getProfile(ctx), listMeetings(ctx), listOpenSlots(ctx), listRequests(ctx), clientPushPreferences(ctx)]);
   const when = (d: Date | string) => fill(all.meetingAt, { date: formatDate(d, lang), time: formatTime(d, lang) });
 
   return (
@@ -80,6 +81,12 @@ export default async function PortalMorePage() {
             </ul>
           </>
         )}
+      </section>
+
+      <section className="admin-card space-y-3 p-4" aria-labelledby="notifications">
+        <h2 id="notifications" className="text-lg font-bold">{t.notificationsTitle}</h2>
+        <p className="text-sm text-muted">{t.notificationsBody}</p>
+        <NotificationSettings preferences={prefs} labels={t.notify} />
       </section>
 
       <section className="admin-card space-y-3 p-4" aria-labelledby="language">

@@ -2182,6 +2182,10 @@ model Booking {
   // Set when a signed-in Client Hub user booked this call from /portal/more.
   clientUserId String?
   clientUser   ClientUser?   @relation(fields: [clientUserId], references: [id], onDelete: SetNull)
+  // Client Hub meeting reminders (lib/clients/reminders.ts): set once each
+  // push has gone out, so a cron run twice never reminds twice.
+  reminder24hSentAt DateTime?
+  reminder1hSentAt  DateTime?
 
   @@index([status])
   @@index([clientUserId])

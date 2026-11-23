@@ -18,9 +18,12 @@ const ROOT = process.cwd();
 const SCAN_DIRS = ["app", "lib", "components"];
 const SKIP_DIRS = new Set(["node_modules", ".next", ".open-next", "generated"]);
 
-// Calls that count as an auth check.
-// requireClient (lib/portal/auth.ts) is the Client Hub equivalent of requireSession.
-const AUTH_CALLS = new Set(["requireSession", "requirePermission", "guardMutation", "guardRead", "requireClient"]);
+// Calls that count as an auth check, by area. Staff and client identities
+// never satisfy each other: requireClient (lib/portal/auth.ts) counts only
+// under app/(portal)/, the staff guards only outside it.
+const STAFF_AUTH_CALLS = new Set(["requireSession", "requirePermission", "guardMutation", "guardRead"]);
+const CLIENT_AUTH_CALLS = new Set(["requireClient"]);
+const isPortalFile = (rel) => rel.startsWith("app/(portal)/");
 const OPT_OUT = /\/\/\s*auth-check:\s*public\b/;
 
 function* walk(dir) {
@@ -94,6 +97,8 @@ for (const dir of SCAN_DIRS) {
     if (!hasUseServerDirective(sf)) continue;
     checkedFiles++;
 
+    const rel = relative(ROOT, file).replace(/\\/g, "/");
+    const AUTH_CALLS = isPortalFile(rel) ? CLIENT_AUTH_CALLS : STAFF_AUTH_CALLS;
     const fns = collectFunctions(sf);
     const calls = new Map(fns.map((f) => [f.name, calledNames(f.body)]));
 
@@ -112,7 +117,6 @@ for (const dir of SCAN_DIRS) {
       }
     }
 
-    const rel = relative(ROOT, file).replace(/\\/g, "/");
     const optedOut = (node) => OPT_OUT.test(text.slice(node.getFullStart(), node.getStart(sf)));
     const fail = (node, name) => {
       const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf));

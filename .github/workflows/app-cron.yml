@@ -1,4 +1,4 @@
-name: App cron (scheduled jobs + link check + content refresh + content recommendations + content cannibalization + content health + orphan pages + SEO audit)
+name: App cron (scheduled jobs + client reminders + link check + content refresh + content recommendations + content cannibalization + content health + orphan pages + SEO audit)
 
 # vercel.json's "crons" config only fires when the app is actually hosted on
 # Vercel — it has had no effect since the app moved to Cloudflare Workers,
@@ -8,6 +8,7 @@ name: App cron (scheduled jobs + link check + content refresh + content recommen
 on:
   schedule:
     - cron: "*/5 * * * *" # scheduled-jobs: publish/unpublish/update at their scheduled time
+    - cron: "*/15 * * * *" # client-reminders: Client Hub meeting reminders, overdue invoices, stale-project nudges
     - cron: "0 3 * * *" # link-check: nightly broken-link crawl
     - cron: "30 3 * * *" # log-retention: nightly delete of old log rows (rules in lib/retention.ts)
     - cron: "0 4 * * 1" # content-refresh-scan: weekly (Monday) detection scan
@@ -26,6 +27,18 @@ jobs:
       - name: Trigger scheduled jobs processor
         run: |
           curl -fsS -X GET "${PRODUCTION_URL}/api/cron/scheduled-jobs" \
+            -H "Authorization: Bearer ${CRON_SECRET}"
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  client-reminders:
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Client Hub reminders
+        run: |
+          curl -fsS -X GET "${PRODUCTION_URL}/api/cron/client-reminders" \
             -H "Authorization: Bearer ${CRON_SECRET}"
         env:
           PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}

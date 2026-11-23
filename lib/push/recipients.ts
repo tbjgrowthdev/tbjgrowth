@@ -64,3 +64,32 @@ export async function recipientTokens(event: StaffPushEvent): Promise<string[]> 
     .filter((d) => d.user !== null && isPushEnabled(d.user.role, event, d.user.pushPreferences[0]?.enabled))
     .map((d) => d.token);
 }
+
+/** FCM tokens of one staff member's signed-in TBJ Admin devices (direct nudges, not event broadcasts). */
+export async function staffUserTokens(userId: string): Promise<string[]> {
+  const cutoff = new Date(Date.now() - DEVICE_MAX_IDLE_MS);
+  const devices = await prisma.pushDevice.findMany({
+    where: { userId, lastSeenAt: { gte: cutoff }, adminSession: { revokedAt: null } },
+    select: { token: true },
+  });
+  return devices.map((d) => d.token);
+}
+
+/**
+ * Devices of a client company's portal users that should get `event`, with
+ * each user's language. Disabled users never get pushes; a
+ * ClientPushPreference row turns an event off (default: all on).
+ */
+export async function clientRecipientDevices(event: PushEvent, clientId: string): Promise<Array<{ token: string; language: "en" | "bn" }>> {
+  const cutoff = new Date(Date.now() - DEVICE_MAX_IDLE_MS);
+  const devices = await prisma.pushDevice.findMany({
+    where: { lastSeenAt: { gte: cutoff }, userId: null, clientUser: { clientId, status: { not: "DISABLED" } } },
+    select: {
+      token: true,
+      clientUser: { select: { language: true, pushPreferences: { where: { event }, select: { enabled: true } } } },
+    },
+  });
+  return devices
+    .filter((d) => d.clientUser !== null && (d.clientUser.pushPreferences[0]?.enabled ?? true))
+    .map((d) => ({ token: d.token, language: d.clientUser!.language === "bn" ? ("bn" as const) : ("en" as const) }));
+}

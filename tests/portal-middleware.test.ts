@@ -20,7 +20,7 @@ async function clientValid(token: string | undefined, now = NOW) {
 }
 
 test("no client cookie at /portal/x redirects to /portal/login", () => {
-  assert.deepEqual(decideGate({ pathname: "/portal/projects", staffToken: null, hasClientSession: false }), { kind: "redirect", to: "/portal/login" });
+  assert.deepEqual(decideGate({ pathname: "/portal/projects", staffToken: null, hasClientSession: false }), { kind: "redirect", to: "/portal/login?from=%2Fportal%2Fprojects" });
   assert.deepEqual(decideGate({ pathname: "/portal", staffToken: null, hasClientSession: false }), { kind: "redirect", to: "/portal/login" });
 });
 
@@ -31,7 +31,7 @@ test("invalid or expired client cookie redirects to /portal/login", async () => 
   assert.equal(await clientValid("not-a-jwt"), false);
   const in91Days = new Date(NOW.getTime() + 91 * 24 * 60 * 60 * 1000);
   assert.equal(await clientValid(valid, in91Days), false, "expired");
-  assert.deepEqual(decideGate({ pathname: "/portal/billing", staffToken: null, hasClientSession: false }), { kind: "redirect", to: "/portal/login" });
+  assert.deepEqual(decideGate({ pathname: "/portal/billing", staffToken: null, hasClientSession: false }), { kind: "redirect", to: "/portal/login?from=%2Fportal%2Fbilling" });
 });
 
 test("a valid client session opens /portal pages", () => {
@@ -45,7 +45,7 @@ test("valid client cookie at /admin redirects to /login (no staff token)", () =>
 });
 
 test("a staff NextAuth token at /portal/x redirects to /portal/login", () => {
-  assert.deepEqual(decideGate({ pathname: "/portal/projects", staffToken: staff("SUPER_ADMIN"), hasClientSession: false }), { kind: "redirect", to: "/portal/login" });
+  assert.deepEqual(decideGate({ pathname: "/portal/projects", staffToken: staff("SUPER_ADMIN"), hasClientSession: false }), { kind: "redirect", to: "/portal/login?from=%2Fportal%2Fprojects" });
 });
 
 test("a staff-secret JWT is not a valid client session", async () => {
@@ -111,4 +111,11 @@ test("/admin/clients: admins and editors may open it; contributors and SEO manag
   }
   assert.deepEqual(decideGate({ pathname: "/admin/clients", staffToken: staff("CONTRIBUTOR"), hasClientSession: false }), { kind: "redirect", to: "/admin?error=AccessDenied" });
   assert.deepEqual(decideGate({ pathname: "/admin/clients", staffToken: staff("SEO_MANAGER"), hasClientSession: false }), { kind: "redirect", to: "/admin?error=AccessDenied" });
+});
+
+test("a deep link without a session keeps where it was going (?from=, query included)", () => {
+  assert.deepEqual(decideGate({ pathname: "/portal/projects/abc", search: "?tab=updates", staffToken: null, hasClientSession: false }), {
+    kind: "redirect",
+    to: "/portal/login?from=%2Fportal%2Fprojects%2Fabc%3Ftab%3Dupdates",
+  });
 });

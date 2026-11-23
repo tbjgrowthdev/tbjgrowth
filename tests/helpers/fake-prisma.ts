@@ -285,6 +285,32 @@ export function normalizeSql(strings: TemplateStringsArray, valueCount: number):
 
 /** Raw statements the Client Hub sends, emulated over the in-memory tables. */
 export const RAW_STATEMENTS: Record<string, (tables: Record<string, Row[]>, values: unknown[]) => Row[]> = {
+  // lib/clients/reminders.ts: claim a meeting reminder (24 h / 1 h)
+  [`UPDATE "Booking" SET "reminder24hSentAt" = $1 WHERE "id" = $2 AND "reminder24hSentAt" IS NULL RETURNING "id"`]: (tables, [at, id]) => {
+    const b = tables.booking.find((x) => x.id === id && x.reminder24hSentAt == null);
+    if (!b) return [];
+    b.reminder24hSentAt = at;
+    return [{ id: b.id }];
+  },
+  [`UPDATE "Booking" SET "reminder1hSentAt" = $1 WHERE "id" = $2 AND "reminder1hSentAt" IS NULL RETURNING "id"`]: (tables, [at, id]) => {
+    const b = tables.booking.find((x) => x.id === id && x.reminder1hSentAt == null);
+    if (!b) return [];
+    b.reminder1hSentAt = at;
+    return [{ id: b.id }];
+  },
+  // lib/clients/reminders.ts: DUE invoices past their due date become OVERDUE, once
+  [`UPDATE "Invoice" SET "status" = 'OVERDUE', "overdueNotifiedAt" = $1 WHERE "status" = 'DUE' AND "dueDate" < $2 AND "overdueNotifiedAt" IS NULL RETURNING "id", "clientId"`]: (tables, [at, cutoff]) => {
+    const rows = tables.invoice.filter((x) => x.status === "DUE" && x.dueDate < (cutoff as Date) && x.overdueNotifiedAt == null);
+    for (const r of rows) Object.assign(r, { status: "OVERDUE", overdueNotifiedAt: at });
+    return rows.map((r) => ({ id: r.id, clientId: r.clientId }));
+  },
+  // lib/clients/reminders.ts: claim a stale-project nudge for this interval
+  [`UPDATE "Project" SET "lastUpdateNudgeAt" = $1 WHERE "id" = $2 AND ("lastUpdateNudgeAt" IS NULL OR "lastUpdateNudgeAt" <= $3) RETURNING "id"`]: (tables, [at, id, cutoff]) => {
+    const p = tables.project.find((x) => x.id === id && (x.lastUpdateNudgeAt == null || x.lastUpdateNudgeAt <= (cutoff as Date)));
+    if (!p) return [];
+    p.lastUpdateNudgeAt = at;
+    return [{ id: p.id }];
+  },
   // lib/portal/data.ts bookCall: claim a free future slot
   [`UPDATE "AvailableSlot" SET "isBooked" = true, "updatedAt" = $1 WHERE "id" = $2 AND "isBooked" = false AND "startsAt" > $3 RETURNING "id", "startsAt", "duration"`]: (tables, [at, id, now]) => {
     const slot = tables.availableSlot.find((x) => x.id === id && x.isBooked === false && x.startsAt > (now as Date));
@@ -302,7 +328,11 @@ export const RAW_STATEMENTS: Record<string, (tables: Record<string, Row[]>, valu
 };
 
 export const CLIENT_HUB_SCHEMA: Schema = {
-  user: {},
+  user: {
+    pushPreferences: { model: "pushPreference", kind: "many", from: "id", to: "userId" },
+  },
+  adminSession: {},
+  pushPreference: {},
   client: {
     accountManager: { model: "user", kind: "one", from: "accountManagerId", to: "id" },
     users: { model: "clientUser", kind: "many", from: "id", to: "clientId" },
@@ -316,6 +346,7 @@ export const CLIENT_HUB_SCHEMA: Schema = {
     sessions: { model: "clientSession", kind: "many", from: "id", to: "clientUserId" },
     bookings: { model: "booking", kind: "many", from: "id", to: "clientUserId" },
     pushDevices: { model: "pushDevice", kind: "many", from: "id", to: "clientUserId" },
+    pushPreferences: { model: "clientPushPreference", kind: "many", from: "id", to: "clientUserId" },
   },
   clientSession: {
     clientUser: { model: "clientUser", kind: "one", from: "clientUserId", to: "id" },
@@ -362,6 +393,8 @@ export const CLIENT_HUB_SCHEMA: Schema = {
   },
   pushDevice: {
     clientUser: { model: "clientUser", kind: "one", from: "clientUserId", to: "id" },
+    user: { model: "user", kind: "one", from: "userId", to: "id" },
+    adminSession: { model: "adminSession", kind: "one", from: "adminSessionId", to: "id" },
   },
   clientPushPreference: {},
   clientHubSetting: {},

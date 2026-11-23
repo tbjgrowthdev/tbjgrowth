@@ -265,9 +265,30 @@ export async function revokeClientSession(sessionId: string, now: Date = new Dat
   }
 }
 
-/** Signs a client user out everywhere (used when staff disable the user). One update per row: Neon HTTP can't run updateMany. */
+/**
+ * Removes a client user's push devices. PushDevice rows aren't tied to one
+ * client session, so this clears all of the user's phones; the app
+ * registers again the next time it opens signed in. Never throws: a
+ * push-table problem must never block signing out.
+ */
+export async function deleteClientPushDevices(clientUserId: string): Promise<void> {
+  try {
+    await prisma.pushDevice.deleteMany({ where: { clientUserId } });
+  } catch (error) {
+    console.error("[portal] couldn't remove push devices:", error);
+  }
+}
+
+/** Sign-out: revokes this session and stops pushes to the user's devices. */
+export async function endClientSession(ctx: { clientUserId: string; sessionId: string }, now: Date = new Date()): Promise<void> {
+  await revokeClientSession(ctx.sessionId, now);
+  await deleteClientPushDevices(ctx.clientUserId);
+}
+
+/** Signs a client user out everywhere (used when staff disable the user or revoke sessions). One update per row: Neon HTTP can't run updateMany. */
 export async function revokeAllClientSessions(clientUserId: string, now: Date = new Date()): Promise<number> {
   const open = await prisma.clientSession.findMany({ where: { clientUserId, revokedAt: null }, select: { id: true } });
   await Promise.all(open.map((s: { id: string }) => revokeClientSession(s.id, now)));
+  await deleteClientPushDevices(clientUserId);
   return open.length;
 }

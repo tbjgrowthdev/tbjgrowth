@@ -56,7 +56,11 @@ export function decideGate({ pathname, search = "", staffToken, hasClientSession
     // back here (redirect loop). The login page checks the database itself;
     // /portal/signout clears a dead cookie.
     if (isUnder(pathname, "/portal/login") || isUnder(pathname, "/portal/signout")) return NEXT;
-    return hasClientSession ? NEXT : redirect("/portal/login");
+    if (hasClientSession) return NEXT;
+    // Keep where they were going (e.g. a push tap with an expired session);
+    // the login page only follows it through safePortalPath().
+    const target = pathname + search;
+    return redirect(target === "/portal" ? "/portal/login" : `/portal/login?from=${encodeURIComponent(target)}`);
   }
 
   const isAdminPath = pathname.startsWith("/admin");

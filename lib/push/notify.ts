@@ -1,8 +1,8 @@
 import { after } from "next/server";
 import prisma from "@/lib/prisma";
-import { recipientTokens, type StaffPushEvent } from "@/lib/push/recipients";
+import { recipientTokens, staffUserTokens, type StaffPushEvent } from "@/lib/push/recipients";
 import { sendFcm } from "@/lib/push/fcm";
-import { PUSH_MESSAGES } from "@/lib/push/messages";
+import { PUSH_MESSAGES, type PushMessage } from "@/lib/push/messages";
 
 /**
  * Sends `event`'s push to everyone who should get it. Never throws: a push
@@ -38,5 +38,17 @@ export function scheduleAdminPush(event: StaffPushEvent, opts: { url?: string } 
     // Outside a request scope (scripts, cron): just run it.
     console.warn("after() unavailable, sending push inline:", error);
     void notifyAdmins(event, opts);
+  }
+}
+
+/** Push to one staff member's devices (e.g. the stale-project nudge). Never throws. `message.url` must be an /admin path with no PII. */
+export async function notifyStaffUser(userId: string, message: PushMessage): Promise<void> {
+  try {
+    const tokens = await staffUserTokens(userId);
+    if (tokens.length === 0) return;
+    const { invalidTokens } = await sendFcm(tokens, message);
+    if (invalidTokens.length > 0) await prisma.pushDevice.deleteMany({ where: { token: { in: invalidTokens } } });
+  } catch (error) {
+    console.error("Staff push failed:", error);
   }
 }

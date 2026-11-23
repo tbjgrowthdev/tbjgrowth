@@ -24,7 +24,7 @@ export default withAuth(
     //    never DB redirects or locale handling. See lib/route-gate.ts.
     if (isPortalPath(pathname)) {
       const hasClientSession = (await verifyClientSession(req.cookies.get(CLIENT_SESSION_COOKIE)?.value)) !== null;
-      const decision = decideGate({ pathname, staffToken: null, hasClientSession });
+      const decision = decideGate({ pathname, search: req.nextUrl.search, staffToken: null, hasClientSession });
       if (decision.kind === "redirect") return NextResponse.redirect(new URL(decision.to, req.url));
       return NextResponse.next();
     }
