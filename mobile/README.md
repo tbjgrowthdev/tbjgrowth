@@ -71,6 +71,9 @@ aapt dump badging <apk> | grep -E "package|label|permission"
 
 Since 1.1.0 both APKs list `POST_NOTIFICATIONS` and `USE_BIOMETRIC` (the
 client app has push and the optional app lock).
+They also list `WRITE_EXTERNAL_STORAGE` with `maxSdkVersion 28`: Android 9 and
+below need it to save downloads (reports, invoices) to Downloads, and the app
+asks for it the first time someone downloads. Android 10+ never sees it.
 
 ## Releasing a new version
 

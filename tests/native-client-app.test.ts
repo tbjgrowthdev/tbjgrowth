@@ -112,3 +112,23 @@ test("the app hands downloads to Android's DownloadManager with the session cook
   assert.ok(activity.includes("DownloadManager"));
   assert.ok(activity.includes("\"tbjgrowthtech.com\""));
 });
+
+test("Android 9 and below get the storage permission downloads need, and are asked for it at runtime", () => {
+  const manifest = readFileSync("mobile/android/app/src/main/AndroidManifest.xml", "utf8");
+  // Only up to API 28: Android 10+ needs no permission for DownloadManager into Downloads.
+  assert.match(manifest, /<uses-permission\s+android:name="android\.permission\.WRITE_EXTERNAL_STORAGE"\s+android:maxSdkVersion="28"\s*\/>/);
+  const activity = readFileSync("mobile/android/app/src/main/java/com/tbjgrowthtech/app/MainActivity.java", "utf8");
+  assert.ok(activity.includes("Build.VERSION_CODES.Q"));
+  assert.ok(activity.includes("requestPermissions("));
+  assert.ok(activity.includes("onRequestPermissionsResult"));
+  // Neither flavor strips it.
+  for (const f of ["client", "admin"]) {
+    let m = "";
+    try {
+      m = readFileSync(`mobile/android/app/src/${f}/AndroidManifest.xml`, "utf8");
+    } catch {
+      /* no flavor manifest */
+    }
+    assert.equal(/WRITE_EXTERNAL_STORAGE"[^>]*tools:node="remove"/.test(m), false, f);
+  }
+});

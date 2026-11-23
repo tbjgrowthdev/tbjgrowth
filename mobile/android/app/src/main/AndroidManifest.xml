@@ -40,4 +40,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Downloads (MainActivity) save to the shared Downloads folder. Android 9
+         and below need this for that; Android 10+ doesn't, so it stops at 28. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 </manifest>
